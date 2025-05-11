@@ -19,6 +19,9 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				poppins: ['Poppins', 'sans-serif'],
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -63,16 +66,13 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				store: {
-					'dark-blue': '#1A1F2C',
-					'purple': '#9b87f5',
-					'light-purple': '#D6BCFA',
-					'accent-purple': '#7E69AB',
-				}
-			},
-			fontFamily: {
-				sans: ['Inter', 'sans-serif'],
-				serif: ['Playfair Display', 'serif'],
+				// Custom e-commerce colors
+				'brand-blue': '#4A90E2',
+				'brand-light-blue': '#5DADE2',
+				'brand-red': '#ea384c',
+				'brand-dark-red': '#8B0000',
+				'brand-gray': '#F5F5F5',
+				'brand-dark': '#333333',
 			},
 			borderRadius: {
 				lg: 'var(--radius)',

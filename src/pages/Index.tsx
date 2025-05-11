@@ -1,13 +1,33 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import { Helmet } from 'react-helmet';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
+import Hero from '@/components/Hero';
+import FeaturedCategories from '@/components/FeaturedCategories';
+import FeaturedProducts from '@/components/FeaturedProducts';
+import PromoBanner from '@/components/PromoBanner';
+import Testimonials from '@/components/Testimonials';
 
 const Index = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
-      </div>
-    </div>
+    <>
+      <Helmet>
+        <title>ElégantShop - Premium Online Store</title>
+        <meta name="description" content="Discover premium products for your modern lifestyle at ElégantShop. Free shipping on orders over $50." />
+      </Helmet>
+      
+      <Header />
+      
+      <main>
+        <Hero />
+        <FeaturedCategories />
+        <FeaturedProducts />
+        <PromoBanner />
+        <Testimonials />
+      </main>
+      
+      <Footer />
+    </>
   );
 };
 

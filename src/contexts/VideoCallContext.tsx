@@ -1,8 +1,7 @@
-
 import React, { createContext, useState, useContext, useRef, useEffect } from 'react';
 import { toast } from '@/components/ui/sonner';
 import * as SimplePeer from 'simple-peer';
-import { io } from 'socket.io-client';
+import io from 'socket.io-client';
 
 interface VideoCallContextType {
   callState: CallState;

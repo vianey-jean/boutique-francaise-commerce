@@ -11,59 +11,34 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 
-// Base64 encoded short ringtone audio
-const RINGTONE_BASE64 = "data:audio/mpeg;base64,SUQzAwAAAAABDFRJVDIAAAAFAAAAU29uZwBUUEUxAAAAEAAAAEZyZWUgU291bmQgRWZmZWN0APBWSW5mbwAAAA8AAABMYXZmNTguNDUuMTAwAAAAAAAAAAAAAAD/+xDEAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAADAAACQAAYGBgYREREREScnJyc3Nzc3N0VFRUVZWVlZWWZmZmZ6enp6eoqKioqampqam6mpqanAwMDAwNTU1NTU6enp6ekCAgICFBQUFBQoKCgoQEBAQEBaWlpaWnNzc3OLi4uLi6Wlpaen09PT09P////wTEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/7EMQpAATwBF7AEG3AAANIAAAARVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/+xDEfwAAA0gAAAAAAAAAA0gAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVQ==";
-
+// Utilisons un fichier audio statique au lieu d'un base64 problématique
+// Une sonnerie simple en MP3 ou WAV serait idéale, mais nous utiliserons un son de notification du navigateur pour l'instant
 const CallNotification = () => {
   const { incomingCall, acceptCall, rejectCall } = useVideoCall();
-  const ringtoneRef = useRef<HTMLAudioElement | null>(null);
   
-  // Initialize audio element and play/stop ringtone when incomingCall changes
+  // Utiliser l'API de notification native du navigateur pour le son
   useEffect(() => {
-    // Create audio element if it doesn't exist
-    if (!ringtoneRef.current) {
-      try {
-        ringtoneRef.current = new Audio(RINGTONE_BASE64);
-        ringtoneRef.current.loop = true;
-        
-        // Add event listener for errors
-        ringtoneRef.current.addEventListener('error', (e) => {
-          console.error("Ringtone error:", e);
-          // Fallback to browser's native notification sound if available
-          if ("Notification" in window && Notification.permission === "granted") {
-            new Notification("Appel entrant", {
-              icon: "/favicon.ico",
-              silent: false
-            });
-          }
+    if (incomingCall) {
+      // Demander la permission pour les notifications si nécessaire
+      if ("Notification" in window && Notification.permission !== "denied") {
+        Notification.requestPermission();
+      }
+      
+      // Créer une notification avec son
+      if ("Notification" in window && Notification.permission === "granted") {
+        const notification = new Notification("Appel entrant", {
+          icon: "/favicon.ico",
+          body: `Appel ${incomingCall.isVideo ? 'vidéo' : 'audio'} de ${incomingCall.name}`,
+          silent: false, // Utiliser le son de notification du navigateur
+          tag: "incoming-call", // Empêche les notifications multiples
         });
-      } catch (err) {
-        console.error("Could not create audio element:", err);
+        
+        // Fermer la notification quand l'utilisateur répond ou rejette l'appel
+        return () => {
+          notification.close();
+        };
       }
     }
-    
-    // Play ringtone when there's an incoming call
-    if (incomingCall && ringtoneRef.current) {
-      ringtoneRef.current.play().catch(err => {
-        console.error("Could not play ringtone:", err);
-        // Request permission for notifications as fallback
-        if ("Notification" in window && Notification.permission !== "denied") {
-          Notification.requestPermission();
-        }
-      });
-    } else if (ringtoneRef.current) {
-      // Stop ringtone when there's no incoming call
-      ringtoneRef.current.pause();
-      ringtoneRef.current.currentTime = 0;
-    }
-    
-    // Cleanup on unmount
-    return () => {
-      if (ringtoneRef.current) {
-        ringtoneRef.current.pause();
-        ringtoneRef.current.currentTime = 0;
-      }
-    };
   }, [incomingCall]);
   
   // Handle accept call with error handling

@@ -45,7 +45,7 @@ export const useVideoCall = () => {
   return context;
 };
 
-// Mock WebRTC functionality for development when server is unavailable
+// Mode de développement pour simuler WebRTC sans serveur
 const useMockWebRTC = process.env.NODE_ENV === 'development';
 
 export const VideoCallProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -201,7 +201,7 @@ export const VideoCallProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setLocalStream(stream);
       
       // Create peer connection
-      const peer = new Peer({
+      const peerOptions = {
         initiator: true,
         trickle: false,
         stream: stream,
@@ -211,7 +211,10 @@ export const VideoCallProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             { urls: 'stun:global.stun.twilio.com:3478' }
           ]
         }
-      });
+      };
+      
+      // Création manuelle du peer sans dépendre du module events
+      const peer = new Peer(peerOptions);
       
       peer.on('signal', (signal) => {
         console.log('Generated signal for peer, sending to remote user');
@@ -331,7 +334,7 @@ export const VideoCallProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       
       setLocalStream(stream);
       
-      const peer = new Peer({
+      const peerOptions = {
         initiator: false,
         trickle: false,
         stream: stream,
@@ -341,7 +344,9 @@ export const VideoCallProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             { urls: 'stun:global.stun.twilio.com:3478' }
           ]
         }
-      });
+      };
+      
+      const peer = new Peer(peerOptions);
       
       peer.on('signal', (signal) => {
         console.log('Generated accept signal, sending to caller');

@@ -21,15 +21,18 @@ export default defineConfig(({ mode }) => ({
     },
   },
   define: {
-    global: 'window', // This provides the global object required by simple-peer
+    global: 'globalThis', // Utiliser globalThis plutôt que window
   },
   optimizeDeps: {
-    exclude: ['simple-peer'], // Exclude simple-peer from optimization
     esbuildOptions: {
-      // Ne pas essayer de bundler ces modules Node.js
       define: {
         global: 'globalThis',
       },
+    },
+  },
+  build: {
+    commonjsOptions: {
+      transformMixedEsModules: true, // Nécessaire pour simple-peer
     },
   },
 }));

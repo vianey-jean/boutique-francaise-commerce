@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import { useVideoCall } from '@/contexts/VideoCallContext';
 import { 
   PhoneCall,
@@ -11,13 +11,11 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 
-// Utilisons un fichier audio statique au lieu d'un base64 problématique
-// Une sonnerie simple en MP3 ou WAV serait idéale, mais nous utiliserons un son de notification du navigateur pour l'instant
 const CallNotification = () => {
   const { incomingCall, acceptCall, rejectCall } = useVideoCall();
   
-  // Utiliser l'API de notification native du navigateur pour le son
-  useEffect(() => {
+  // Utiliser l'API de notification native du navigateur si disponible
+  React.useEffect(() => {
     if (incomingCall) {
       // Demander la permission pour les notifications si nécessaire
       if ("Notification" in window && Notification.permission !== "denied") {
@@ -32,6 +30,18 @@ const CallNotification = () => {
           silent: false, // Utiliser le son de notification du navigateur
           tag: "incoming-call", // Empêche les notifications multiples
         });
+        
+        // Jouer un son d'alerte avec l'API Audio Web
+        try {
+          const audio = new Audio();
+          audio.src = "/notification.mp3"; // Utiliser un fichier MP3 statique plutôt qu'un Base64
+          audio.play().catch(err => {
+            console.log('Impossible de jouer le son:', err);
+            // Si le son échoue, on s'appuie sur le son de la notification
+          });
+        } catch (error) {
+          console.error('Erreur avec la lecture audio:', error);
+        }
         
         // Fermer la notification quand l'utilisateur répond ou rejette l'appel
         return () => {

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import AdminLayout from './AdminLayout';
@@ -295,8 +294,8 @@ const AdminChatContent = () => {
                 Aucun autre administrateur
               </div>
             ) : (
-              admins.map((admin: AdminUser) => (
-                <div key={admin.id}>
+              admins.map((admin: AdminUser, index: number) => (
+                <div key={admin.id || index}>
                   <button
                     className={`w-full p-3 flex items-center hover:bg-gray-100 ${
                       selectedAdmin?.id === admin.id ? 'bg-gray-100' : ''

@@ -1,7 +1,6 @@
-
 import React, { createContext, useState, useContext, useRef, useEffect } from 'react';
 import { toast } from '@/components/ui/sonner';
-import Peer from 'simple-peer';
+import * as SimplePeer from 'simple-peer';
 import io from 'socket.io-client';
 
 interface VideoCallContextType {
@@ -54,7 +53,7 @@ export const VideoCallProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
   const [incomingCall, setIncomingCall] = useState<IncomingCall | null>(null);
   
-  const peerRef = useRef<Peer.Instance | null>(null);
+  const peerRef = useRef<SimplePeer.Instance | null>(null);
   const socketRef = useRef<any>(null);
   const socketErrorShown = useRef<boolean>(false);
   
@@ -213,8 +212,8 @@ export const VideoCallProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         }
       };
       
-      // Création manuelle du peer sans dépendre du module events
-      const peer = new Peer(peerOptions);
+      // Création du peer avec SimplePeer
+      const peer = new SimplePeer(peerOptions);
       
       peer.on('signal', (signal) => {
         console.log('Generated signal for peer, sending to remote user');
@@ -346,7 +345,7 @@ export const VideoCallProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         }
       };
       
-      const peer = new Peer(peerOptions);
+      const peer = new SimplePeer(peerOptions);
       
       peer.on('signal', (signal) => {
         console.log('Generated accept signal, sending to caller');

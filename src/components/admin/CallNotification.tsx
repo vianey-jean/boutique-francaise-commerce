@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useVideoCall } from '@/contexts/VideoCallContext';
 import { 
   PhoneCall,
@@ -11,54 +11,78 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 
+// Son de sonnerie statique (URL vers un fichier audio hébergé)
+const RINGTONE_URL = 'https://actions.google.com/sounds/v1/alarms/beep_short.ogg';
+
 const CallNotification = () => {
   const { incomingCall, acceptCall, rejectCall } = useVideoCall();
+  const audioRef = React.useRef<HTMLAudioElement | null>(null);
   
-  // Utiliser l'API de notification native du navigateur si disponible
-  React.useEffect(() => {
+  // Créer et gérer l'audio element pour la sonnerie
+  useEffect(() => {
     if (incomingCall) {
-      // Demander la permission pour les notifications si nécessaire
-      if ("Notification" in window && Notification.permission !== "denied") {
-        Notification.requestPermission();
+      // Créer un élément audio pour la sonnerie
+      if (!audioRef.current) {
+        const audio = new Audio(RINGTONE_URL);
+        audio.loop = true;
+        audioRef.current = audio;
       }
       
-      // Créer une notification avec son
-      if ("Notification" in window && Notification.permission === "granted") {
-        const notification = new Notification("Appel entrant", {
-          icon: "/favicon.ico",
-          body: `Appel ${incomingCall.isVideo ? 'vidéo' : 'audio'} de ${incomingCall.name}`,
-          silent: false, // Utiliser le son de notification du navigateur
-          tag: "incoming-call", // Empêche les notifications multiples
+      // Jouer la sonnerie
+      try {
+        audioRef.current.play().catch(err => {
+          console.log('Impossible de jouer le son:', err);
         });
-        
-        // Jouer un son d'alerte avec l'API Audio Web
-        try {
-          const audio = new Audio();
-          audio.src = "/notification.mp3"; // Utiliser un fichier MP3 statique plutôt qu'un Base64
-          audio.play().catch(err => {
-            console.log('Impossible de jouer le son:', err);
-            // Si le son échoue, on s'appuie sur le son de la notification
-          });
-        } catch (error) {
-          console.error('Erreur avec la lecture audio:', error);
-        }
-        
-        // Fermer la notification quand l'utilisateur répond ou rejette l'appel
-        return () => {
-          notification.close();
-        };
+      } catch (error) {
+        console.error('Erreur avec la lecture audio:', error);
       }
+      
+      // Utiliser l'API de notification native du navigateur si disponible
+      if ("Notification" in window && Notification.permission !== "denied") {
+        Notification.requestPermission().then(permission => {
+          if (permission === "granted") {
+            new Notification("Appel entrant", {
+              icon: "/favicon.ico",
+              body: `Appel ${incomingCall.isVideo ? 'vidéo' : 'audio'} de ${incomingCall.name}`,
+              tag: "incoming-call", // Empêche les notifications multiples
+            });
+          }
+        });
+      }
+      
+      // Nettoyage
+      return () => {
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+        }
+      };
     }
   }, [incomingCall]);
   
   // Handle accept call with error handling
   const handleAcceptCall = async () => {
     try {
+      // Arrêter la sonnerie avant d'accepter l'appel
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
       await acceptCall();
     } catch (error) {
       console.error("Error accepting call:", error);
       toast.error("Impossible d'accepter l'appel. Vérifiez vos permissions de microphone et caméra.");
     }
+  };
+  
+  // Handle reject call
+  const handleRejectCall = () => {
+    // Arrêter la sonnerie avant de rejeter l'appel
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    rejectCall();
   };
   
   if (!incomingCall) return null;
@@ -80,7 +104,7 @@ const CallNotification = () => {
       
       <div className="flex space-x-2 justify-center">
         <Button
-          onClick={rejectCall}
+          onClick={handleRejectCall}
           className="bg-red-600 hover:bg-red-700 text-white"
           size="sm"
         >

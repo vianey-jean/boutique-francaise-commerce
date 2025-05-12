@@ -81,7 +81,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     
     setLoadingFavorites(true);
     try {
-      const response = await favoritesAPI.get(user.id);
+      const response = await favoritesAPI.get();
       if (response.data && response.data.items && Array.isArray(response.data.items)) {
         setFavorites(response.data.items);
       } else {
@@ -104,7 +104,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     
     setLoadingCart(true);
     try {
-      const response = await panierAPI.get(user.id);
+      const response = await panierAPI.get();
       const cartData = response.data;
       
       if (!cartData || !Array.isArray(cartData.items)) {
@@ -200,7 +200,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
     
     try {
-      await panierAPI.addItem(user.id, product.id, quantity);
+      await panierAPI.addItem(product.id, quantity);
       
       if (existingItemIndex >= 0) {
         const updatedCart = [...cart];
@@ -221,7 +221,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (!isAuthenticated || !user) return;
     
     try {
-      await panierAPI.removeItem(user.id, productId);
+      await panierAPI.removeItem(productId);
       setCart(cart.filter(item => item.product.id !== productId));
       toast.info('Produit supprimé du panier');
     } catch (error) {
@@ -246,7 +246,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
     
     try {
-      await panierAPI.updateItem(user.id, productId, quantity);
+      await panierAPI.updateItem(productId, quantity);
       
       const updatedCart = cart.map(item => {
         if (item.product.id === productId) {
@@ -266,7 +266,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (!isAuthenticated || !user) return;
     
     try {
-      await panierAPI.clear(user.id);
+      await panierAPI.clear();
       setCart([]);
     } catch (error) {
       console.error("Erreur lors de la suppression du panier:", error);
@@ -288,11 +288,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     
     try {
       if (isFav) {
-        await favoritesAPI.removeItem(user.id, product.id);
+        await favoritesAPI.remove(product.id);
         setFavorites(favorites.filter(fav => fav.id !== product.id));
         toast.info('Produit retiré des favoris');
       } else {
-        await favoritesAPI.addItem(user.id, product.id);
+        await favoritesAPI.add(product.id);
         setFavorites([...favorites, product]);
         toast.success('Produit ajouté aux favoris');
       }

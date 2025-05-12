@@ -29,6 +29,34 @@
           "content": "oui",
           "timestamp": "2025-05-11T11:35:25.848Z",
           "read": false
+        },
+        {
+          "id": "msg-1746988018768",
+          "senderId": "4",
+          "content": "cc",
+          "timestamp": "2025-05-11T18:26:58.768Z",
+          "read": false
+        },
+        {
+          "id": "msg-1746988045559",
+          "senderId": "4",
+          "content": "cc",
+          "timestamp": "2025-05-11T18:27:25.559Z",
+          "read": false
+        },
+        {
+          "id": "msg-1746988426156",
+          "senderId": "4",
+          "content": "mbolatsara",
+          "timestamp": "2025-05-11T18:33:46.156Z",
+          "read": false
+        },
+        {
+          "id": "msg-1747019339587",
+          "senderId": "3",
+          "content": "oui",
+          "timestamp": "2025-05-12T03:08:59.587Z",
+          "read": false
         }
       ],
       "participants": [
@@ -43,12 +71,12 @@
       "lastSeen": "2025-05-03T19:05:50.021Z"
     },
     "3": {
-      "isOnline": true,
-      "lastSeen": "2025-05-11T11:35:35.514Z"
+      "isOnline": false,
+      "lastSeen": "2025-05-12T03:17:06.725Z"
     },
     "4": {
       "isOnline": true,
-      "lastSeen": "2025-05-11T15:53:14.133Z"
+      "lastSeen": "2025-05-12T03:16:38.295Z"
     }
   },
   "autoReplySent": {}

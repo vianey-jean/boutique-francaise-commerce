@@ -1,158 +1,109 @@
 
-import React from 'react';
-import './App.css';
-import { Toaster } from './components/ui/sonner';
 import { Routes, Route } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './contexts/AuthContext';
 import { StoreProvider } from './contexts/StoreContext';
+import { NotificationProvider } from './contexts/NotificationContext';
+import { Toaster } from './components/ui/sonner';
 import ProtectedRoute from './components/ProtectedRoute';
+import './App.css';
 
+// Pages
 import Index from './pages/Index';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
-import NotFound from './pages/NotFound';
+import ProfilePage from './pages/ProfilePage';
 import ProductDetail from './pages/ProductDetail';
 import CategoryPage from './pages/CategoryPage';
 import CartPage from './pages/CartPage';
-import FavoritesPage from './pages/FavoritesPage';
 import CheckoutPage from './pages/CheckoutPage';
-import ChatPage from './pages/ChatPage';
-import ContactPage from './pages/ContactPage';
-import OrderPage from './pages/OrderPage';
 import OrdersPage from './pages/OrdersPage';
-import ProfilePage from './pages/ProfilePage';
-import DeliveryPage from './pages/DeliveryPage';
-import ReturnsPage from './pages/ReturnsPage';
-import CustomerServicePage from './pages/CustomerServicePage';
-import BlogPage from './pages/BlogPage';
-import CarriersPage from './pages/CarriersPage';
-import HistoryPage from './pages/HistoryPage';
+import OrderPage from './pages/OrderPage';
+import FavoritesPage from './pages/FavoritesPage';
+import ContactPage from './pages/ContactPage';
+import FAQPage from './pages/FAQPage';
 import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
+import NotFound from './pages/NotFound';
+import DeliveryPage from './pages/DeliveryPage';
+import ReturnsPage from './pages/ReturnsPage';
 import CookiesPage from './pages/CookiesPage';
-import FAQPage from './pages/FAQPage';
+import BlogPage from './pages/BlogPage';
+import HistoryPage from './pages/HistoryPage';
+import CustomerServicePage from './pages/CustomerServicePage';
+import CarriersPage from './pages/CarriersPage';
+import ChatPage from './pages/ChatPage';
 
+// Admin Pages
 import AdminLayout from './pages/admin/AdminLayout';
+import AdminChatPage from './pages/admin/AdminChatPage';
 import AdminProductsPage from './pages/admin/AdminProductsPage';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
 import AdminMessagesPage from './pages/admin/AdminMessagesPage';
-import AdminChatPage from './pages/admin/AdminChatPage';
+import AdminOrdersPage from './pages/admin/AdminOrdersPage';
 import AdminClientChatPage from './pages/admin/AdminClientChatPage';
 import AdminSettingsPage from './pages/admin/AdminSettingsPage';
-import AdminOrdersPage from './pages/admin/AdminOrdersPage';
 
-
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 1
+    }
+  }
+});
 
 function App() {
   return (
-    <AuthProvider>
-      <StoreProvider>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/produit/:productId" element={<ProductDetail />} />
-          <Route path="/categorie/:categoryName" element={<CategoryPage />} />
-          
-          {/* Pages d'information */}
-          <Route path="/livraison" element={<DeliveryPage />} />
-          <Route path="/retours" element={<ReturnsPage />} />
-          <Route path="/service-client" element={<CustomerServicePage />} />
-          <Route path="/contact" element={<ContactPage />} />
-          <Route path="/blog" element={<BlogPage />} />
-          <Route path="/carrieres" element={<CarriersPage />} />
-          <Route path="/notre-histoire" element={<HistoryPage />} />
-          <Route path="/conditions-utilisation" element={<TermsPage />} />
-          <Route path="/politique-confidentialite" element={<PrivacyPage />} />
-          <Route path="/politique-cookies" element={<CookiesPage />} />
-          <Route path="/faq" element={<FAQPage />} />
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <StoreProvider>
+          <NotificationProvider>
+            <Routes>
+              {/* Client Routes */}
+              <Route path="/" element={<Index />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/inscription" element={<RegisterPage />} />
+              <Route path="/mot-de-passe-oublie" element={<ForgotPasswordPage />} />
+              <Route path="/produit/:id" element={<ProductDetail />} />
+              <Route path="/categorie/:category" element={<CategoryPage />} />
+              <Route path="/panier" element={<CartPage />} />
+              <Route path="/paiement" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
+              <Route path="/commandes" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
+              <Route path="/commande/:id" element={<ProtectedRoute><OrderPage /></ProtectedRoute>} />
+              <Route path="/favoris" element={<ProtectedRoute><FavoritesPage /></ProtectedRoute>} />
+              <Route path="/profil" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+              <Route path="/contact" element={<ContactPage />} />
+              <Route path="/faq" element={<FAQPage />} />
+              <Route path="/conditions-generales" element={<TermsPage />} />
+              <Route path="/politique-confidentialite" element={<PrivacyPage />} />
+              <Route path="/livraison" element={<DeliveryPage />} />
+              <Route path="/retours" element={<ReturnsPage />} />
+              <Route path="/cookies" element={<CookiesPage />} />
+              <Route path="/blog" element={<BlogPage />} />
+              <Route path="/histoire" element={<HistoryPage />} />
+              <Route path="/service-client" element={<CustomerServicePage />} />
+              <Route path="/transporteurs" element={<CarriersPage />} />
+              <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
 
-          <Route path="/chat" element={
-                <ProtectedRoute>
-                  <ChatPage />
-                </ProtectedRoute>
-              } />
-          <Route path="/panier" element={
-                <ProtectedRoute>
-                  <CartPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/favoris" element={
-                <ProtectedRoute>
-                  <FavoritesPage />
-                </ProtectedRoute>
-              } />
-          {/* Routes protégées */}
-          <Route path="/paiement" element={
-            <ProtectedRoute>
-              <CheckoutPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/commandes" element={
-            <ProtectedRoute>
-              <OrdersPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/commande/:orderId" element={
-            <ProtectedRoute>
-              <OrderPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/profil" element={
-            <ProtectedRoute>
-              <ProfilePage />
-            </ProtectedRoute>
-          } />
+              {/* Admin Routes */}
+              <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><AdminChatPage /></AdminLayout></ProtectedRoute>} />
+              <Route path="/admin/produits" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><AdminProductsPage /></AdminLayout></ProtectedRoute>} />
+              <Route path="/admin/utilisateurs" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><AdminUsersPage /></AdminLayout></ProtectedRoute>} />
+              <Route path="/admin/messages" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><AdminMessagesPage /></AdminLayout></ProtectedRoute>} />
+              <Route path="/admin/commandes" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><AdminOrdersPage /></AdminLayout></ProtectedRoute>} />
+              <Route path="/admin/service-client" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><AdminClientChatPage /></AdminLayout></ProtectedRoute>} />
+              <Route path="/admin/parametres" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout><AdminSettingsPage /></AdminLayout></ProtectedRoute>} />
 
-          
-              {/* Pages Admin */}
-              <Route path="/admin/produits" element={
-                <ProtectedRoute requireAdmin>
-                  <AdminProductsPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/utilisateurs" element={
-                <ProtectedRoute requireAdmin>
-                  <AdminUsersPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/messages" element={
-                <ProtectedRoute requireAdmin>
-                  <AdminMessagesPage />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/admin/parametres" element={
-                <ProtectedRoute requireAdmin>
-                  <AdminSettingsPage />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/admin/:adminId?" element={
-                <ProtectedRoute requireAdmin>
-                  <AdminChatPage />
-                </ProtectedRoute>
-              } />
-              <Route path="admin/commandes" element={
-                <ProtectedRoute requireAdmin>
-                  <AdminOrdersPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/service-client" element={
-                <ProtectedRoute requireAdmin>
-                  <AdminClientChatPage />
-                </ProtectedRoute>
-              } />
-
-        
-          {/* Page 404 */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        <Toaster />
-      </StoreProvider>
-    </AuthProvider>
+              {/* 404 Route */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            <Toaster />
+          </NotificationProvider>
+        </StoreProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }
 

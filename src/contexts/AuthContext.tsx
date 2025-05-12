@@ -73,7 +73,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const login = async (email: string, password: string): Promise<void> => {
     try {
       console.log("Tentative de connexion avec:", { email, password });
-      const response = await authAPI.login({ email, password });
+      const response = await authAPI.login(email, password);
       localStorage.setItem('authToken', response.data.token);
       setUser(response.data.user);
       toast.success('Connexion réussie', {
@@ -106,7 +106,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const register = async (nom: string, email: string, password: string) => {
     try {
-      const response = await authAPI.register({ nom, email, password });
+      const response = await authAPI.register(email, password, nom, email); // We'll fix params order here
       localStorage.setItem('authToken', response.data.token);
       setUser(response.data.user);
       toast.success('Inscription réussie', {
@@ -138,7 +138,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const resetPassword = async (email: string, code: string, newPassword: string) => {
     try {
-      await authAPI.resetPassword({ email, passwordUnique: code, newPassword });
+      await authAPI.resetPassword(code, newPassword);
       // Le message de confirmation est géré par le composant
     } catch (error) {
       console.error("Erreur de réinitialisation de mot de passe:", error);
@@ -164,7 +164,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         throw new Error('Session expirée');
       }
       
-      const response = await authAPI.updateProfile(user.id, data);
+      const response = await authAPI.updateProfile(data);
       setUser(prev => prev ? { ...prev, ...response.data } : null);
       toast.success('Profil mis à jour avec succès', {
         style: { backgroundColor: 'green', color: 'white' },
@@ -194,7 +194,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         throw new Error('Session expirée');
       }
       
-      await authAPI.updatePassword(user.id, currentPassword, newPassword);
+      await authAPI.updatePassword(currentPassword, newPassword);
       toast.success('Mot de passe mis à jour avec succès', {
         style: { backgroundColor: 'green', color: 'white' },
       });

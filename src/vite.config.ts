@@ -25,6 +25,7 @@ export default defineConfig({
   build: {
     commonjsOptions: {
       transformMixedEsModules: true,
+      include: [/socket\.io-client/, /socket\.io-parser/, /engine\.io-client/, /debug/, /ws/, /component-emitter/, /socket\.io-parser/, /engine\.io-parser/],
     },
   },
   server: {

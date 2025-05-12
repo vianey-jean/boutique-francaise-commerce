@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import API from '@/services/api';
@@ -9,6 +9,8 @@ import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { useNotifications } from '@/contexts/NotificationContext';
+import NotificationBadge from '@/components/ui/notification-badge';
 
 interface Contact {
   id: string;
@@ -26,6 +28,7 @@ interface Contact {
 const AdminMessagesPage = () => {
   const queryClient = useQueryClient();
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const { markContactsAsRead } = useNotifications();
   
   const { data: contacts = [] } = useQuery({
     queryKey: ['contacts'],
@@ -34,6 +37,11 @@ const AdminMessagesPage = () => {
       return response.data;
     }
   });
+  
+  useEffect(() => {
+    // Marquer les contacts comme lus lorsque cette page est chargée
+    markContactsAsRead();
+  }, []);
   
   const updateReadStatusMutation = useMutation({
     mutationFn: async ({ id, read }: { id: string, read: boolean }) => {
@@ -57,9 +65,18 @@ const AdminMessagesPage = () => {
     return formatDistanceToNow(new Date(date), { addSuffix: true, locale: fr });
   };
   
+  const unreadContactsCount = contacts.filter((contact: Contact) => !contact.read).length;
+  
   return (
     <AdminLayout>
-      <h1 className="text-2xl font-bold mb-6">Messages des clients</h1>
+      <h1 className="text-2xl font-bold mb-6">
+        Messages des clients
+        {unreadContactsCount > 0 && (
+          <span className="ml-2 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-800 rounded">
+            {unreadContactsCount} non {unreadContactsCount === 1 ? 'lu' : 'lus'}
+          </span>
+        )}
+      </h1>
       
       <div className="grid md:grid-cols-3 gap-6">
         <Card className="md:col-span-1">
@@ -75,7 +92,7 @@ const AdminMessagesPage = () => {
               ) : (
                 <div>
                   {contacts.map((contact: Contact) => (
-                    <div key={contact.id}>
+                    <div key={contact.id} className="relative">
                       <button
                         className={cn(
                           "w-full text-left p-4 hover:bg-gray-100 transition-colors",
@@ -104,6 +121,11 @@ const AdminMessagesPage = () => {
                           {contact.message}
                         </p>
                       </button>
+                      {!contact.read && (
+                        <div className="absolute top-2 right-2">
+                          <NotificationBadge count={1} />
+                        </div>
+                      )}
                       <Separator />
                     </div>
                   ))}

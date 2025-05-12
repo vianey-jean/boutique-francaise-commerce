@@ -1,21 +1,19 @@
 
 import axios from 'axios';
 
-// 🔁 URL de base récupérée depuis le .env
-const AUTH_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:10000/api';
 
-// Créer une instance axios avec la configuration de base
+// Créer une instance Axios avec l'URL de base
 const API = axios.create({
-  baseURL: `${AUTH_BASE_URL}/api`, // Utilisation correcte de la template string
-  timeout: 10000, // Timeout plus long pour éviter les erreurs de connexion
+  baseURL: API_URL,
 });
 
-// Ajouter un intercepteur pour inclure le token d'authentification
+// Intercepteur pour gérer le token d'authentification
 API.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('authToken');
     if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
@@ -24,310 +22,220 @@ API.interceptors.request.use(
   }
 );
 
-// Ajouter un intercepteur pour gérer les erreurs globalement
-API.interceptors.response.use(
-  response => response,
-  error => {
-    // Log de l'erreur pour le débogage
-    console.error("API Error:", error.response || error);
-    
-    // Si l'erreur est 401 (non autorisé) et que ce n'est pas une tentative de connexion
-    if (error.response && error.response.status === 401 && 
-        !error.config.url.includes('/auth/login') && 
-        !error.config.url.includes('/auth/verify-token')) {
-      // Essayer de rafraîchir le token ou rediriger vers la page de connexion
-      console.log("Session expirée, redirection vers la page de connexion...");
-      localStorage.removeItem('authToken');
-      window.location.href = '/login';
-    }
-    
-    return Promise.reject(error);
-  }
-);
-
-// Interface Auth
-export interface AuthResponse {
-  user: User;
-  token: string;
-}
-
+// Types pour l'API
 export interface User {
   id: string;
-  nom: string;
-  prenom?: string;
   email: string;
-  role: 'admin' | 'client';
-  dateCreation: string;
+  nom: string;
+  prenom: string;
+  role: string;
   adresse?: string;
   ville?: string;
   codePostal?: string;
-  pays?: string;
   telephone?: string;
-  genre?: 'homme' | 'femme' | 'autre';
-  passwordUnique?: string;
-}
-
-export interface LoginData {
-  email: string;
-  password: string;
-}
-
-export interface RegisterData {
-  nom: string;
-  email: string;
-  password: string;
-}
-
-export interface ForgotPasswordData {
-  email: string;
-}
-
-export interface ResetPasswordData {
-  email: string;
-  passwordUnique: string;
-  newPassword: string;
+  pays?: string;
+  genre?: string;
+  isVerified?: boolean;
+  createdAt?: string;
 }
 
 export interface UpdateProfileData {
   nom?: string;
   prenom?: string;
+  email?: string;
   adresse?: string;
   ville?: string;
   codePostal?: string;
-  pays?: string;
   telephone?: string;
-  genre?: 'homme' | 'femme' | 'autre';
+  pays?: string;
+  genre?: string;
 }
 
-// Services d'authentification
-export const authAPI = {
-  login: (data: LoginData) => API.post<AuthResponse>('/auth/login', data),
-  register: (data: RegisterData) => API.post<AuthResponse>('/auth/register', data),
-  forgotPassword: (email: string) => API.post('/auth/forgot-password', { email }),
-  resetPassword: (data: ResetPasswordData) => API.post('/auth/reset-password', data),
-  verifyToken: () => API.get('/auth/verify-token'),
-  checkEmail: (email: string) => API.post('/auth/check-email', { email }),
-  updateProfile: (userId: string, data: UpdateProfileData) => API.put(`/users/${userId}`, data),
-  updatePassword: (userId: string, currentPassword: string, newPassword: string) => 
-    API.put(`/users/${userId}/password`, { currentPassword, newPassword }),
-  resetPasswordWithTempCode: (userId: string, passwordUnique: string, newPassword: string) =>
-    API.put(`/users/${userId}/password`, { passwordUnique, newPassword }),
-  getUserProfile: (userId: string) => API.get(`/users/${userId}`),
-  verifyPassword: (userId: string, password: string) => 
-    API.post(`/users/${userId}/verify-password`, { password }),
-  setTempPassword: (userId: string, passwordUnique: string) =>
-    API.put(`/users/${userId}/temp-password`, { passwordUnique }),
-};
-
-// Interface Produit
 export interface Product {
   id: string;
   name: string;
   description: string;
   price: number;
-  image: string; // Maintenu pour compatibilité
-  images?: string[]; // Nouveau tableau d'images
-  category: string;
-  isSold: boolean;
   originalPrice?: number;
-  promotion?: number | null;
-  promotionEnd?: string | null;
+  promotion?: number;
+  image: string;
+  images?: string[];
+  category: string;
   stock?: number;
+  isSold?: boolean;
   dateAjout?: string;
-}
-
-// Services pour les produits
-export const productsAPI = {
-  getAll: () => API.get<Product[]>('/products'),
-  getById: (id: string) => API.get<Product>(`/products/${id}`),
-  getByCategory: (category: string) => API.get<Product[]>(`/products/category/${category}`),
-  getMostFavorited: () => API.get<Product[]>('/products/stats/most-favorited'),
-  getNewArrivals: () => API.get<Product[]>('/products/stats/new-arrivals'),
-  create: (product: FormData) => API.post<Product>('/products', product),
-  update: (id: string, product: FormData) => API.put<Product>(`/products/${id}`, product),
-  delete: (id: string) => API.delete(`/products/${id}`),
-  applyPromotion: (id: string, promotion: number, duration: number) => 
-    API.post(`/products/${id}/promotion`, { promotion, duration }),
-  search: (query: string) => API.get<Product[]>(`/products/search?q=${encodeURIComponent(query)}`),
-};
-
-// Interface Contact
-export interface Contact {
-  id: string;
-  nom: string;
-  prenom: string;
-  email: string;
-  telephone: string;
-  adresse: string;
-  objet: string;
-  message: string;
-  dateCreation: string;
-  read: boolean;
-}
-
-// Services pour les contacts
-export const contactsAPI = {
-  getAll: () => API.get<Contact[]>('/contacts'),
-  getById: (id: string) => API.get<Contact>(`/contacts/${id}`),
-  create: (contact: any) => API.post<Contact>('/contacts', contact),
-  update: (id: string, data: any) => API.put<Contact>(`/contacts/${id}`, data),
-  delete: (id: string) => API.delete(`/contacts/${id}`),
-  markAsRead: (id: string, read: boolean) => API.put<Contact>(`/contacts/${id}`, { read }),
-};
-
-// Interface Panier
-export interface CartItem {
-  productId: string;
-  quantity: number;
-  price: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Cart {
+  id: string;
   userId: string;
   items: CartItem[];
+  total: number;
 }
 
-// Services pour le panier
-export const panierAPI = {
-  get: (userId: string) => API.get<Cart>(`/panier/${userId}`),
-  addItem: (userId: string, productId: string, quantity: number = 1) => 
-    API.post(`/panier/${userId}/add`, { productId, quantity }),
-  updateItem: (userId: string, productId: string, quantity: number) => 
-    API.put(`/panier/${userId}/update`, { productId, quantity }),
-  removeItem: (userId: string, productId: string) => 
-    API.delete(`/panier/${userId}/remove/${productId}`),
-  clear: (userId: string) => API.delete(`/panier/${userId}/clear`),
-};
+export interface CartItem {
+  productId: string;
+  quantity: number;
+  name: string;
+  price: number;
+  image: string;
+}
 
-// Interface Favoris
-export interface Favorites {
+export interface Order {
+  id: string;
   userId: string;
-  items: Product[];
+  items: CartItem[];
+  total: number;
+  totalAmount?: number;
+  status: string;
+  paymentMethod: string;
+  shippingAddress: ShippingAddress;
+  createdAt: string;
+  updatedAt?: string;
+  trackingNumber?: string;
 }
 
-// Services pour les favoris
-export const favoritesAPI = {
-  get: (userId: string) => API.get<Favorites>(`/favorites/${userId}`),
-  addItem: (userId: string, productId: string) => 
-    API.post(`/favorites/${userId}/add`, { productId }),
-  removeItem: (userId: string, productId: string) => 
-    API.delete(`/favorites/${userId}/remove/${productId}`),
-};
-
-// Interface Adresse de livraison
 export interface ShippingAddress {
   nom: string;
   prenom: string;
   adresse: string;
+  complementAdresse?: string;
   ville: string;
   codePostal: string;
   pays: string;
   telephone: string;
 }
 
-// Interface Commande
-export interface OrderItem {
-  productId: string;
-  name: string;
-  price: number;
-  quantity: number;
-  image: string;
-  images?: string[]; // Support pour multiples images
-  subtotal: number;
-}
-
-export interface Order {
+export interface ServiceConversation {
   id: string;
-  userId: string;
-  userName: string;
-  userEmail: string;
-  items: OrderItem[];
-  totalAmount: number;
-  shippingAddress: ShippingAddress;
-  paymentMethod: string;
-  status: 'confirmée' | 'en préparation' | 'en livraison' | 'livrée';
-  createdAt: string;
-  updatedAt: string;
+  client: User;
+  messages: Message[];
+  lastActivity: string;
 }
 
-// Services pour les commandes
-export const ordersAPI = {
-  getAll: () => API.get<Order[]>('/orders'),
-  getUserOrders: () => API.get<Order[]>('/orders/user'),
-  getById: (orderId: string) => API.get<Order>(`/orders/${orderId}`),
-  create: (orderData: any) => API.post<Order>('/orders', orderData),
-  updateStatus: (orderId: string, status: string) => 
-    API.put(`/orders/${orderId}/status`, { status }),
+// API d'authentification
+export const authAPI = {
+  login: (email: string, password: string) => API.post('/auth/login', { email, password }),
+  register: (email: string, password: string, nom: string, prenom: string) =>
+    API.post('/auth/register', { email, password, nom, prenom }),
+  verifyEmail: (token: string) => API.get(`/auth/verify-email/${token}`),
+  forgotPassword: (email: string) => API.post('/auth/forgot-password', { email }),
+  resetPassword: (token: string, password: string) =>
+    API.post('/auth/reset-password', { token, password }),
+  getProfile: () => API.get('/users/me'),
+  updateProfile: (data: UpdateProfileData) => API.put('/users/me', data),
+  updatePassword: (currentPassword: string, newPassword: string) =>
+    API.put('/users/password', { currentPassword, newPassword }),
+  verifyToken: () => API.get('/auth/verify-token'),
+  checkEmail: (email: string) => API.post('/auth/check-email', { email }),
+  verifyPassword: (password: string) => API.post('/auth/verify-password', { password }),
 };
 
-// Interface pour les messages
+// API des produits
+export const productsAPI = {
+  getAll: () => API.get('/products'),
+  getById: (id: string) => API.get(`/products/${id}`),
+  getByCategory: (category: string) => API.get(`/products/category/${category}`),
+  search: (query: string) => API.get(`/products/search/${query}`),
+  create: (productData: FormData) => API.post('/products', productData),
+  update: (id: string, productData: FormData) => API.put(`/products/${id}`, productData),
+  delete: (id: string) => API.delete(`/products/${id}`),
+  updateStock: (id: string, stock: number) => API.put(`/products/${id}/stock`, { stock }),
+  getMostFavorited: () => API.get('/products/most-favorited'),
+  getNewArrivals: () => API.get('/products/new-arrivals'),
+};
+
+// API du panier
+export const panierAPI = {
+  get: () => API.get('/panier'),
+  addItem: (productId: string, quantity: number) =>
+    API.post('/panier/items', { productId, quantity }),
+  updateItem: (productId: string, quantity: number) =>
+    API.put('/panier/items', { productId, quantity }),
+  removeItem: (productId: string) => API.delete(`/panier/items/${productId}`),
+  clear: () => API.delete('/panier'),
+};
+
+// API des favoris
+export const favoritesAPI = {
+  get: () => API.get('/favorites'),
+  add: (productId: string) => API.post('/favorites', { productId }),
+  remove: (productId: string) => API.delete(`/favorites/${productId}`),
+  addItem: (productId: string) => API.post('/favorites', { productId }),
+  removeItem: (productId: string) => API.delete(`/favorites/${productId}`),
+};
+
+// API des commandes
+export const ordersAPI = {
+  create: (orderData: any) => API.post('/orders', orderData),
+  getAll: () => API.get('/orders'),
+  getById: (id: string) => API.get(`/orders/${id}`),
+  updateStatus: (id: string, status: string) =>
+    API.put(`/orders/${id}/status`, { status }),
+  getAllAdmin: () => API.get('/orders/admin'),
+  updateTracking: (id: string, trackingNumber: string) =>
+    API.put(`/orders/${id}/tracking`, { trackingNumber }),
+  getUserOrders: () => API.get('/orders/user'),
+};
+
+// API des contacts
+export const contactsAPI = {
+  sendMessage: (name: string, email: string, subject: string, message: string) =>
+    API.post('/contacts', { name, email, subject, message }),
+  getAll: () => API.get('/contacts'),
+  markAsRead: (id: string) => API.put(`/contacts/${id}/read`),
+  delete: (id: string) => API.delete(`/contacts/${id}`),
+};
+
+// API d'administration des messages client
+export const clientChatAPI = {
+  getServiceChat: () => API.get('/client-chat/service'),
+  getServiceConversations: () => API.get('/client-chat/service/all'),
+  sendServiceMessage: (content: string) => 
+    API.post('/client-chat/service', { message: content }),
+  sendServiceReply: (clientId: string, content: string) =>
+    API.post(`/client-chat/service/${clientId}/reply`, { message: content }),
+  editMessage: (messageId: string, content: string, conversationId: string) => 
+    API.put(`/client-chat/messages/${messageId}/edit`, { content, conversationId }),
+  deleteMessage: (messageId: string, conversationId: string) => 
+    API.delete(`/client-chat/messages/${messageId}?conversationId=${conversationId}`),
+  setOnline: () => API.post('/client-chat/online'),
+  setOffline: () => API.post('/client-chat/offline'),
+};
+
+// API de chat admin
+export const adminChatAPI = {
+  getConversations: () => API.get('/admin-chat/conversations'),
+  getConversation: (adminId: string) => API.get(`/admin-chat/conversation/${adminId}`),
+  sendMessage: (adminId: string, content: string) => 
+    API.post(`/admin-chat/message/${adminId}`, { content }),
+  editMessage: (messageId: string, content: string) => 
+    API.put(`/admin-chat/message/${messageId}`, { content }),
+  deleteMessage: (messageId: string) => 
+    API.delete(`/admin-chat/message/${messageId}`),
+};
+
+// API de notification
+export const notificationAPI = {
+  getAll: () => API.get('/notifications'),
+  markOrdersAsRead: () => API.put('/notifications/orders/read'),
+  markContactsAsRead: () => API.put('/notifications/contacts/read'),
+  markAdminChatAsRead: (adminId: string) => API.put(`/notifications/admin-chat/${adminId}/read`),
+  markClientChatAsRead: (clientId: string) => API.put(`/notifications/client-chat/${clientId}/read`),
+};
+
+// Type de message pour les chats
 export interface Message {
   id: string;
   senderId: string;
   content: string;
   timestamp: string;
-  read: boolean;
-  isAutoReply?: boolean;
+  read?: boolean;
   isEdited?: boolean;
-  isAdminReply?: boolean;
   isSystemMessage?: boolean;
+  isAutoReply?: boolean;
 }
-
-// Interface pour les conversations admin
-export interface Conversation {
-  messages: Message[];
-  participants: string[];
-}
-
-// Interface pour les conversations client-service
-export interface ServiceConversation extends Conversation {
-  type: 'service';
-  clientInfo?: User;
-  unreadCount?: number;
-}
-
-// Services pour le chat entre administrateurs
-export const adminChatAPI = {
-  getAdmins: () => API.get('/admin-chat/admins'),
-  getConversations: () => API.get('/admin-chat/conversations'),
-  getConversation: (adminId: string) => API.get(`/admin-chat/conversations/${adminId}`),
-  sendMessage: (adminId: string, message: string) => 
-    API.post(`/admin-chat/conversations/${adminId}`, { message }),
-  markAsRead: (messageId: string, conversationId: string) => 
-    API.put(`/admin-chat/messages/${messageId}/read`, { conversationId }),
-  setOnline: () => API.post('/admin-chat/online'),
-  setOffline: () => API.post('/admin-chat/offline'),
-  getStatus: (adminId: string) => API.get(`/admin-chat/status/${adminId}`),
-  editMessage: (messageId: string, content: string, conversationId: string) => 
-    API.put(`/admin-chat/messages/${messageId}/edit`, { content, conversationId }),
-  deleteMessage: (messageId: string, conversationId: string) => 
-    API.delete(`/admin-chat/messages/${messageId}?conversationId=${conversationId}`),
-};
-
-// Services pour le chat entre clients et service client
-export const clientChatAPI = {
-  // Gestion de statut
-  setOnline: () => API.post('/client-chat/online'),
-  setOffline: () => API.post('/client-chat/offline'),
-  getStatus: (userId: string) => API.get(`/client-chat/status/${userId}`),
-  
-  // Pour les clients
-  getServiceAdmins: () => API.get('/client-chat/service-admins'),
-  getServiceChat: () => API.get('/client-chat/service'),
-  sendServiceMessage: (message: string) => API.post('/client-chat/service/message', { message }),
-  
-  // Pour les admins (service client)
-  getServiceConversations: () => API.get('/client-chat/admin/service'),
-  sendServiceReply: (conversationId: string, message: string) => 
-    API.post(`/client-chat/admin/service/${conversationId}/reply`, { message }),
-  
-  // Opérations communes sur les messages
-  editMessage: (messageId: string, content: string, conversationId: string) => 
-    API.put(`/client-chat/messages/${messageId}`, { content, conversationId }),
-  deleteMessage: (messageId: string, conversationId: string) => 
-    API.delete(`/client-chat/messages/${messageId}?conversationId=${conversationId}`),
-  markAsRead: (messageId: string, conversationId: string) => 
-    API.put(`/client-chat/messages/${messageId}/read`, { conversationId })
-};
 
 export default API;

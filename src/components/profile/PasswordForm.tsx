@@ -1,73 +1,44 @@
 
 import React, { useState } from 'react';
+import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Eye, EyeOff } from 'lucide-react';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { useAuth } from '@/contexts/AuthContext';
+import { Input } from '../ui/input';
+import { Button } from '../ui/button';
+import { Label } from '../ui/label';
+import { useAuth } from '../../contexts/AuthContext';
+import { toast } from 'sonner';
 import PasswordStrengthIndicator from '../auth/PasswordStrengthIndicator';
-import { toast } from '@/components/ui/sonner';
-import { authAPI } from '@/services/api';
 
 const passwordSchema = z.object({
-  currentPassword: z.string().min(1, 'Mot de passe actuel requis'),
+  currentPassword: z.string().min(1, 'Le mot de passe actuel est requis'),
   newPassword: z
     .string()
     .min(8, 'Le mot de passe doit contenir au moins 8 caractères')
-    .refine(
-      (password) => /[A-Z]/.test(password),
-      'Le mot de passe doit contenir au moins une majuscule'
-    )
-    .refine(
-      (password) => /[a-z]/.test(password),
-      'Le mot de passe doit contenir au moins une minuscule'
-    )
-    .refine(
-      (password) => /[0-9]/.test(password),
-      'Le mot de passe doit contenir au moins un chiffre'
-    )
-    .refine(
-      (password) => /[^A-Za-z0-9]/.test(password),
-      'Le mot de passe doit contenir au moins un caractère spécial'
-    ),
-  confirmPassword: z.string().min(1, 'Confirmation du mot de passe requise'),
+    .regex(/[A-Z]/, 'Le mot de passe doit contenir au moins une majuscule')
+    .regex(/[a-z]/, 'Le mot de passe doit contenir au moins une minuscule')
+    .regex(/[0-9]/, 'Le mot de passe doit contenir au moins un chiffre')
+    .regex(/[^A-Za-z0-9]/, 'Le mot de passe doit contenir au moins un caractère spécial'),
+  confirmPassword: z.string().min(1, 'Veuillez confirmer votre mot de passe'),
 }).refine((data) => data.newPassword === data.confirmPassword, {
   message: 'Les mots de passe ne correspondent pas',
   path: ['confirmPassword'],
-}).refine((data) => data.newPassword !== data.currentPassword, {
-  message: 'Le nouveau mot de passe doit être différent de l\'ancien',
-  path: ['newPassword'],
 });
 
-type PasswordFormValues = z.infer<typeof passwordSchema>;
+type PasswordFormData = z.infer<typeof passwordSchema>;
 
-type PasswordFormProps = {
-  loading?: boolean;
-  onPasswordChange?: (currentPassword: string, newPassword: string) => Promise<boolean>;
-};
-
-const PasswordForm = ({ loading: externalLoading, onPasswordChange }: PasswordFormProps = {}) => {
-  const { user, updatePassword } = useAuth();
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+const PasswordForm = () => {
+  const { user, updateUserPassword } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState(0);
 
-  const actualLoading = externalLoading || isLoading;
-
-  const form = useForm<PasswordFormValues>({
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    formState: { errors },
+  } = useForm<PasswordFormData>({
     resolver: zodResolver(passwordSchema),
     defaultValues: {
       currentPassword: '',
@@ -76,168 +47,86 @@ const PasswordForm = ({ loading: externalLoading, onPasswordChange }: PasswordFo
     },
   });
 
-  const onSubmit = async (data: PasswordFormValues) => {
-    if (!user) {
-      toast.error('Vous devez être connecté');
+  const watchNewPassword = watch('newPassword');
+
+  // Calculate password strength
+  React.useEffect(() => {
+    if (!watchNewPassword) {
+      setPasswordStrength(0);
       return;
     }
-    
+
+    let strength = 0;
+    if (watchNewPassword.length >= 8) strength += 1;
+    if (/[A-Z]/.test(watchNewPassword)) strength += 1;
+    if (/[a-z]/.test(watchNewPassword)) strength += 1;
+    if (/[0-9]/.test(watchNewPassword)) strength += 1;
+    if (/[^A-Za-z0-9]/.test(watchNewPassword)) strength += 1;
+
+    setPasswordStrength(strength);
+  }, [watchNewPassword]);
+
+  const onSubmit = async (data: PasswordFormData) => {
+    if (!user) return;
+
     setIsLoading(true);
     try {
-      // Vérifier d'abord si le mot de passe actuel est correct
-      const verifyResponse = await authAPI.verifyPassword(user.id, data.currentPassword);
-      
-      if (!verifyResponse.data.valid) {
-        toast.error('Mot de passe actuel incorrect', {
-          style: { backgroundColor: 'red', color: 'white' },
-        });
-        setIsLoading(false);
-        return;
-      }
-      
-      // Si une fonction de mise à jour personnalisée est fournie, l'utiliser
-      if (onPasswordChange) {
-        await onPasswordChange(data.currentPassword, data.newPassword);
-      } else {
-        // Sinon, utiliser la fonction par défaut du contexte
-        await updatePassword(data.currentPassword, data.newPassword);
-      }
-      
-      // Réinitialiser le formulaire
-      form.reset();
-      
-      toast.success('Mot de passe mis à jour avec succès', {
-        style: { backgroundColor: 'green', color: 'white' },
-      });
+      await updateUserPassword(data.currentPassword, data.newPassword);
+      toast.success('Mot de passe mis à jour avec succès');
+      reset();
     } catch (error: any) {
-      console.error('Erreur lors de la mise à jour du mot de passe:', error);
-      toast.error(error.response?.data?.message || 'Erreur lors de la mise à jour du mot de passe', {
-        style: { backgroundColor: 'red', color: 'white' },
-      });
+      toast.error(error.message || 'Erreur lors de la mise à jour du mot de passe');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Sécurité</CardTitle>
-        <CardDescription>Modifiez votre mot de passe</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="currentPassword"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Mot de passe actuel</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Input
-                        type={showCurrentPassword ? 'text' : 'password'}
-                        placeholder="Entrez votre mot de passe actuel"
-                        {...field}
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-0 top-0 h-full px-3"
-                        onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                      >
-                        {showCurrentPassword ? (
-                          <EyeOff className="h-4 w-4" />
-                        ) : (
-                          <Eye className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-6">
+      <div className="space-y-2">
+        <Label htmlFor="currentPassword">Mot de passe actuel</Label>
+        <Input
+          id="currentPassword"
+          type="password"
+          {...register('currentPassword')}
+          className={errors.currentPassword ? 'border-red-500' : ''}
+        />
+        {errors.currentPassword && (
+          <p className="text-red-500 text-sm">{errors.currentPassword.message}</p>
+        )}
+      </div>
 
-            <FormField
-              control={form.control}
-              name="newPassword"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nouveau mot de passe</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Input
-                        type={showNewPassword ? 'text' : 'password'}
-                        placeholder="Entrez votre nouveau mot de passe"
-                        {...field}
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-0 top-0 h-full px-3"
-                        onClick={() => setShowNewPassword(!showNewPassword)}
-                      >
-                        {showNewPassword ? (
-                          <EyeOff className="h-4 w-4" />
-                        ) : (
-                          <Eye className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                  </FormControl>
-                  <PasswordStrengthIndicator password={field.value} />
-                  <FormDescription>
-                    Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+      <div className="space-y-2">
+        <Label htmlFor="newPassword">Nouveau mot de passe</Label>
+        <Input
+          id="newPassword"
+          type="password"
+          {...register('newPassword')}
+          className={errors.newPassword ? 'border-red-500' : ''}
+        />
+        {watchNewPassword && <PasswordStrengthIndicator strength={passwordStrength} />}
+        {errors.newPassword && (
+          <p className="text-red-500 text-sm">{errors.newPassword.message}</p>
+        )}
+      </div>
 
-            <FormField
-              control={form.control}
-              name="confirmPassword"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Confirmer le mot de passe</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Input
-                        type={showConfirmPassword ? 'text' : 'password'}
-                        placeholder="Confirmez votre nouveau mot de passe"
-                        {...field}
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-0 top-0 h-full px-3"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      >
-                        {showConfirmPassword ? (
-                          <EyeOff className="h-4 w-4" />
-                        ) : (
-                          <Eye className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+      <div className="space-y-2">
+        <Label htmlFor="confirmPassword">Confirmer le nouveau mot de passe</Label>
+        <Input
+          id="confirmPassword"
+          type="password"
+          {...register('confirmPassword')}
+          className={errors.confirmPassword ? 'border-red-500' : ''}
+        />
+        {errors.confirmPassword && (
+          <p className="text-red-500 text-sm">{errors.confirmPassword.message}</p>
+        )}
+      </div>
 
-            <Button type="submit" className="w-full" disabled={actualLoading}>
-              {actualLoading ? 'Mise à jour...' : 'Mettre à jour le mot de passe'}
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+      <Button type="submit" disabled={isLoading}>
+        {isLoading ? 'Mise à jour...' : 'Mettre à jour le mot de passe'}
+      </Button>
+    </form>
   );
 };
 

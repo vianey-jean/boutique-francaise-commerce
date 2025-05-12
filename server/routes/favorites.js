@@ -30,12 +30,12 @@ const getFavorites = (req, res, next) => {
 };
 
 // Get user favorites
-router.get('/', auth, getFavorites, (req, res) => {
+router.get('/', auth.isAuthenticated, getFavorites, (req, res) => {
   res.json(req.favorites);
 });
 
 // Add item to favorites
-router.post('/', auth, getFavorites, async (req, res) => {
+router.post('/', auth.isAuthenticated, getFavorites, async (req, res) => {
   try {
     const { productId } = req.body;
     if (!productId) {
@@ -73,7 +73,7 @@ router.post('/', auth, getFavorites, async (req, res) => {
 });
 
 // Remove item from favorites
-router.delete('/:productId', auth, getFavorites, (req, res) => {
+router.delete('/:productId', auth.isAuthenticated, getFavorites, (req, res) => {
   try {
     const { productId } = req.params;
     const userId = req.user.id;

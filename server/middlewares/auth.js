@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 const secretKey = 'your_jwt_secret'; // Devrait être dans une variable d'environnement
 
 // Middleware pour vérifier si l'utilisateur est connecté
-exports.isAuthenticated = (req, res, next) => {
+const isAuthenticated = (req, res, next) => {
   const authHeader = req.headers.authorization;
   
   if (!authHeader) {
@@ -42,9 +42,11 @@ exports.isAuthenticated = (req, res, next) => {
 };
 
 // Middleware pour vérifier si l'utilisateur est admin
-exports.isAdmin = (req, res, next) => {
+const isAdmin = (req, res, next) => {
   if (!req.user || req.user.role !== 'admin') {
     return res.status(403).json({ message: 'Accès réservé aux administrateurs' });
   }
   next();
 };
+
+module.exports = { isAuthenticated, isAdmin };

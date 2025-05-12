@@ -30,12 +30,12 @@ const getCart = (req, res, next) => {
 };
 
 // Get user cart
-router.get('/', auth, getCart, (req, res) => {
+router.get('/', auth.isAuthenticated, getCart, (req, res) => {
   res.json(req.cart);
 });
 
 // Add item to cart
-router.post('/items', auth, getCart, async (req, res) => {
+router.post('/items', auth.isAuthenticated, getCart, async (req, res) => {
   try {
     const { productId, quantity } = req.body;
     if (!productId || !quantity) {
@@ -87,7 +87,7 @@ router.post('/items', auth, getCart, async (req, res) => {
 });
 
 // Update cart item
-router.put('/items', auth, getCart, (req, res) => {
+router.put('/items', auth.isAuthenticated, getCart, (req, res) => {
   try {
     const { productId, quantity } = req.body;
     if (!productId || !quantity) {
@@ -123,7 +123,7 @@ router.put('/items', auth, getCart, (req, res) => {
 });
 
 // Remove item from cart
-router.delete('/items/:productId', auth, getCart, (req, res) => {
+router.delete('/items/:productId', auth.isAuthenticated, getCart, (req, res) => {
   try {
     const { productId } = req.params;
     const userId = req.user.id;
@@ -148,7 +148,7 @@ router.delete('/items/:productId', auth, getCart, (req, res) => {
 });
 
 // Clear cart
-router.delete('/', auth, getCart, (req, res) => {
+router.delete('/', auth.isAuthenticated, getCart, (req, res) => {
   try {
     const userId = req.user.id;
     const carts = req.allCarts;

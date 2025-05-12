@@ -1,6 +1,5 @@
 
 import React, { useState, useEffect } from 'react';
-import AdminLayout from './AdminLayout';
 import {
   Table,
   TableBody,
@@ -8,272 +7,230 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { useToast } from '@/components/ui/use-toast';
-import { Input } from '@/components/ui/input';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import API from '@/services/api';
-import { User } from '@/services/api';
-import { useAuth } from '@/contexts/AuthContext';
-import { Shield, ShieldX, LockKeyhole, Edit, Key } from 'lucide-react';
+} from '../../components/ui/table';
+import { Input } from '../../components/ui/input';
+import { Button } from '../../components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
+import { Badge } from '../../components/ui/badge';
+import { toast } from 'sonner';
+import { Card } from '../../components/ui/card';
+import api from '../../services/api';
 
-const AdminUsersPage = () => {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+interface User {
+  id: string;
+  nom: string;
+  prenom: string;
+  email: string;
+  role: string;
+  createdAt: string;
+  password?: string;
+  passwordUnique?: string;
+}
+
+const AdminUsersPage: React.FC = () => {
+  const [users, setUsers] = useState<User[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isUserDialogOpen, setIsUserDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [tempPassword, setTempPassword] = useState('');
-  const { user: currentUser } = useAuth();
-  const { toast } = useToast();
-  
-  const { data: users = [], refetch } = useQuery({
-    queryKey: ['users'],
-    queryFn: async () => {
-      const response = await API.get('/users');
-      return response.data;
-    }
-  });
+  const [isLoading, setIsLoading] = useState(true);
 
-  const updateRoleMutation = useMutation({
-    mutationFn: async ({ userId, role }: { userId: string, role: 'admin' | 'client' }) => {
-      return API.put(`/users/${userId}`, { role });
-    },
-    onSuccess: () => {
-      toast({
-        title: "Rôle mis à jour",
-        description: `Le statut de l'utilisateur a été mis à jour avec succès`,
-      });
-      setIsDialogOpen(false);
-      refetch();
-    },
-    onError: (error) => {
-      toast({
-        title: "Erreur",
-        description: "Impossible de mettre à jour le rôle",
-        variant: "destructive"
-      });
-    }
-  });
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
-  const setTempPasswordMutation = useMutation({
-    mutationFn: async ({ userId, passwordUnique }: { userId: string, passwordUnique: string }) => {
-      return API.put(`/users/${userId}/temp-password`, { passwordUnique });
-    },
-    onSuccess: () => {
-      toast({
-        title: "Mot de passe temporaire défini",
-        description: `Un mot de passe à usage unique a été défini pour l'utilisateur`,
-      });
-      setIsPasswordDialogOpen(false);
-      setTempPassword('');
-      refetch();
-    },
-    onError: (error) => {
-      toast({
-        title: "Erreur",
-        description: "Impossible de définir le mot de passe temporaire",
-        variant: "destructive"
-      });
+  const fetchUsers = async () => {
+    setIsLoading(true);
+    try {
+      const response = await api.get('/api/users');
+      setUsers(response.data);
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Erreur lors du chargement des utilisateurs:', error);
+      setIsLoading(false);
     }
-  });
+  };
 
-  const handleRoleChange = (user: User) => {
-    // Tous les admins peuvent modifier les rôles maintenant
-    if (currentUser?.role !== 'admin') {
-      toast({
-        title: "Accès refusé",
-        description: "Seuls les administrateurs peuvent modifier les rôles",
-        variant: "destructive"
-      });
-      return;
+  const handleRoleChange = async (userId: string, newRole: string) => {
+    try {
+      await api.put(`/api/users/${userId}/role`, { role: newRole });
+      setUsers((prevUsers) =>
+        prevUsers.map((user) =>
+          user.id === userId ? { ...user, role: newRole } : user
+        )
+      );
+      toast.success('Rôle mis à jour avec succès');
+    } catch (error) {
+      toast.error('Erreur lors de la mise à jour du rôle');
     }
-    
-    // Ne pas permettre la modification du compte Admin principal (id: "1")
-    if (user.id === "1") {
-      toast({
-        title: "Action non autorisée",
-        description: "L'administrateur principal ne peut pas être rétrogradé",
-        variant: "destructive"
-      });
-      return;
-    }
-    
+  };
+
+  const viewUserDetails = (user: User) => {
     setSelectedUser(user);
-    setIsDialogOpen(true);
+    setIsUserDialogOpen(true);
   };
 
-  const confirmRoleChange = () => {
-    if (selectedUser) {
-      const newRole = selectedUser.role === 'admin' ? 'client' : 'admin';
-      updateRoleMutation.mutate({ userId: selectedUser.id, role: newRole });
+  const deleteUser = async (userId: string) => {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) {
+      try {
+        await api.delete(`/api/users/${userId}`);
+        setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
+        toast.success('Utilisateur supprimé avec succès');
+      } catch (error) {
+        toast.error('Erreur lors de la suppression de l\'utilisateur');
+      }
     }
   };
 
-  const handleSetTempPassword = (user: User) => {
-    setSelectedUser(user);
-    setIsPasswordDialogOpen(true);
-  };
+  const filteredUsers = users.filter((user) =>
+    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.prenom.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  const confirmTempPassword = () => {
-    if (selectedUser && tempPassword) {
-      setTempPasswordMutation.mutate({ 
-        userId: selectedUser.id, 
-        passwordUnique: tempPassword 
-      });
-    } else {
-      toast({
-        title: "Erreur",
-        description: "Veuillez saisir un mot de passe temporaire",
-        variant: "destructive"
-      });
+  const getRoleBadgeColor = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return 'bg-red-500 hover:bg-red-600';
+      case 'staff':
+        return 'bg-purple-500 hover:bg-purple-600';
+      default:
+        return 'bg-blue-500 hover:bg-blue-600';
     }
   };
 
   return (
-    <AdminLayout>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Gestion des Utilisateurs</h1>
-      </div>
-      
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nom</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Date d'inscription</TableHead>
-              <TableHead>Rôle</TableHead>
-              <TableHead>Mot de passe</TableHead>
-              <TableHead>Changer le mot de passe</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {users.map((user: User & { password?: string, passwordUnique?: string }) => (
-              <TableRow key={user.id}>
-                <TableCell className="font-medium">{user.nom}</TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>{new Date(user.dateCreation).toLocaleDateString('fr-FR')}</TableCell>
-                <TableCell>
-                  <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs ${
-                    user.role === 'admin' ? 'bg-red-700 text-white' : 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {user.role === 'admin' ? (
-                      <><Shield className="h-3 w-3" /> Administrateur</>
-                    ) : (
-                      <><ShieldX className="h-3 w-3" /> Client</>
-                    )}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  {user.password && (
-                    <div className="flex items-center gap-1">
-                      <LockKeyhole className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm font-mono">{user.password}</span>
-                    </div>
-                  )}
-                  {user.passwordUnique && (
-                    <div className="flex items-center gap-1 mt-1">
-                      <Key className="h-4 w-4 text-amber-500" />
-                      <span className="text-sm font-mono text-amber-600">{user.passwordUnique}</span>
-                    </div>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleSetTempPassword(user)}
-                    className="flex gap-1 items-center"
-                  >
-                    <Edit className="h-4 w-4" /> Modifier
-                  </Button>
-                </TableCell>
-                <TableCell>
-                  {user.id !== "1" && (
-                    <Button 
-                      variant={user.role === 'admin' ? 'destructive' : 'default'}
-                      size="sm" 
-                      onClick={() => handleRoleChange(user)}
-                      disabled={!currentUser || currentUser.role !== 'admin'}
-                    >
-                      {user.role === 'admin' ? 'Rétrograder' : 'Promouvoir'}
-                    </Button>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-      
-      {/* Confirmation Dialog for Role Change */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirmer le changement de rôle</DialogTitle>
-            <DialogDescription>
-              {selectedUser?.role === 'admin'
-                ? `Êtes-vous sûr de vouloir rétrograder ${selectedUser?.nom} au rôle de client ?`
-                : `Êtes-vous sûr de vouloir promouvoir ${selectedUser?.nom} au rôle d'administrateur ?`
-              }
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-              Annuler
-            </Button>
-            <Button 
-              onClick={confirmRoleChange}
-              variant={selectedUser?.role === 'admin' ? 'destructive' : 'default'}
-            >
-              Confirmer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+    <div className="container p-6">
+      <h1 className="text-3xl font-bold mb-6">Gestion des utilisateurs</h1>
 
-      {/* Dialog for Temporary Password */}
-      <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Définir un mot de passe temporaire</DialogTitle>
-            <DialogDescription>
-              {`Créez un mot de passe à usage unique pour ${selectedUser?.nom}. L'utilisateur pourra l'utiliser pour réinitialiser son mot de passe.`}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <Input
-              type="text"
-              value={tempPassword}
-              onChange={(e) => setTempPassword(e.target.value)}
-              placeholder="Mot de passe à usage unique"
-              className="w-full"
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsPasswordDialogOpen(false)}>
-              Annuler
-            </Button>
-            <Button 
-              onClick={confirmTempPassword}
-              disabled={!tempPassword}
-            >
-              Enregistrer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </AdminLayout>
+      <div className="mb-6">
+        <Input
+          placeholder="Rechercher par nom, prénom, email..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="max-w-md"
+        />
+      </div>
+
+      <Card className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="p-2">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nom</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Date d'inscription</TableHead>
+                <TableHead>Rôle</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8">
+                    Chargement...
+                  </TableCell>
+                </TableRow>
+              ) : filteredUsers.length > 0 ? (
+                filteredUsers.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell>
+                      {user.prenom} {user.nom}
+                    </TableCell>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell>
+                      {new Date(user.createdAt).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={getRoleBadgeColor(user.role)}>
+                        {user.role}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => viewUserDetails(user)}
+                        >
+                          Détails
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => deleteUser(user.id)}
+                        >
+                          Supprimer
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8">
+                    Aucun utilisateur trouvé
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </Card>
+
+      {selectedUser && (
+        <Dialog open={isUserDialogOpen} onOpenChange={setIsUserDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                {selectedUser.prenom} {selectedUser.nom}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-gray-500">Email</p>
+                <p>{selectedUser.email}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Date d'inscription</p>
+                <p>{new Date(selectedUser.createdAt).toLocaleDateString()}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Rôle actuel</p>
+                <Badge className={getRoleBadgeColor(selectedUser.role)}>
+                  {selectedUser.role}
+                </Badge>
+              </div>
+              <div className="pt-4">
+                <p className="text-sm text-gray-500 mb-2">Changer le rôle</p>
+                <div className="flex space-x-2">
+                  <Button
+                    size="sm"
+                    variant={selectedUser.role === 'user' ? 'default' : 'outline'}
+                    onClick={() => handleRoleChange(selectedUser.id, 'user')}
+                  >
+                    Utilisateur
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={selectedUser.role === 'staff' ? 'default' : 'outline'}
+                    onClick={() => handleRoleChange(selectedUser.id, 'staff')}
+                  >
+                    Staff
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={selectedUser.role === 'admin' ? 'default' : 'outline'}
+                    onClick={() => handleRoleChange(selectedUser.id, 'admin')}
+                  >
+                    Admin
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+    </div>
   );
 };
 

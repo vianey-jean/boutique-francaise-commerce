@@ -16,7 +16,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNotifications } from '@/contexts/NotificationContext';
 import NotificationBadge from '@/components/ui/notification-badge';
 import { Badge } from '@/components/ui/badge';
-import { toast } from '@/components/ui/sonner';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -109,23 +108,22 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
-      {/* Sidebar */}
+      {/* Sidebar for desktop */}
       <div className={`${mobileMenuOpen ? 'block' : 'hidden'} md:block w-full md:w-64 bg-gray-900 text-white md:min-h-screen z-50 md:z-auto absolute md:relative`}>
         {/* Mobile Header */}
-{mobileMenuOpen && (
-  <div className="md:hidden p-4 bg-gray-900 text-white flex justify-between items-center">
-    <span className="font-bold text-lg">Admin Dashboard</span>
-    <button 
-      className="focus:outline-none"
-      onClick={() => setMobileMenuOpen(false)}
-    >
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-      </svg>
-    </button>
-  </div>
-)}
-
+        {mobileMenuOpen && (
+          <div className="md:hidden p-4 bg-gray-900 text-white flex justify-between items-center">
+            <span className="font-bold text-lg">Admin Dashboard</span>
+            <button 
+              className="focus:outline-none"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        )}
         
         {/* Sidebar Content */}
         <div className="p-4">

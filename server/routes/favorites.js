@@ -3,152 +3,91 @@ const express = require('express');
 const router = express.Router();
 const fs = require('fs');
 const path = require('path');
-const { isAuthenticated } = require('../middlewares/auth');
+const auth = require('../middlewares/auth');
 
 const favoritesFilePath = path.join(__dirname, '../data/favorites.json');
-const productsFilePath = path.join(__dirname, '../data/products.json');
 
-// Obtenir les favoris d'un utilisateur
-router.get('/:userId', isAuthenticated, (req, res) => {
+// Initialize favorites file if it doesn't exist
+if (!fs.existsSync(favoritesFilePath)) {
+  fs.writeFileSync(favoritesFilePath, JSON.stringify({}), 'utf8');
+}
+
+// Middleware to get favorites
+const getFavorites = (req, res, next) => {
   try {
-    // Vérifier que l'utilisateur demande ses propres favoris
-    if (req.user.id !== req.params.userId && req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Accès non autorisé' });
+    const favorites = JSON.parse(fs.readFileSync(favoritesFilePath, 'utf8'));
+    const userId = req.user.id;
+    if (!favorites[userId]) {
+      favorites[userId] = { items: [] };
     }
-    
-    const favorites = JSON.parse(fs.readFileSync(favoritesFilePath));
-    const userFavorites = favorites.filter(f => f.userId === req.params.userId);
-    
-    if (!userFavorites || userFavorites.length === 0) {
-      return res.json({ userId: req.params.userId, items: [] });
-    }
-    
-    // Enrichir les favoris avec les détails des produits
-    const products = JSON.parse(fs.readFileSync(productsFilePath));
-    const favoriteProducts = [];
-    
-    for (const favorite of userFavorites) {
-      const product = products.find(p => p.id === favorite.productId);
-      if (product) {
-        favoriteProducts.push(product);
-      }
-    }
-    
-    res.json({ userId: req.params.userId, items: favoriteProducts });
+    req.favorites = favorites[userId];
+    req.allFavorites = favorites;
+    next();
   } catch (error) {
-    console.error('Erreur lors de la récupération des favoris:', error);
-    res.status(500).json({ message: 'Erreur lors de la récupération des favoris' });
+    console.error('Error reading favorites file:', error);
+    res.status(500).json({ message: 'Error reading favorites data' });
   }
+};
+
+// Get user favorites
+router.get('/', auth, getFavorites, (req, res) => {
+  res.json(req.favorites);
 });
 
-// Ajouter un produit aux favoris
-router.post('/:userId/add', isAuthenticated, (req, res) => {
+// Add item to favorites
+router.post('/', auth, getFavorites, async (req, res) => {
   try {
-    // Vérifier que l'utilisateur modifie ses propres favoris
-    if (req.user.id !== req.params.userId && req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Accès non autorisé' });
-    }
-    
     const { productId } = req.body;
-    
     if (!productId) {
-      return res.status(400).json({ message: 'ID de produit requis' });
+      return res.status(400).json({ message: 'Product ID is required' });
     }
+
+    const userId = req.user.id;
+    const favorites = req.allFavorites;
     
-    // Vérifier que le produit existe
-    const products = JSON.parse(fs.readFileSync(productsFilePath));
+    // Check if product is already in favorites
+    const productExists = req.favorites.items.find(item => item.id === productId);
+    if (productExists) {
+      return res.status(400).json({ message: 'Product already in favorites' });
+    }
+
+    // Get product info from products.json
+    const productsFilePath = path.join(__dirname, '../data/products.json');
+    const products = JSON.parse(fs.readFileSync(productsFilePath, 'utf8'));
     const product = products.find(p => p.id === productId);
     
     if (!product) {
-      return res.status(404).json({ message: 'Produit non trouvé' });
+      return res.status(404).json({ message: 'Product not found' });
     }
+
+    // Add product to favorites
+    req.favorites.items.push(product);
+    favorites[userId] = req.favorites;
     
-    // Ajouter aux favoris
-    const favorites = JSON.parse(fs.readFileSync(favoritesFilePath));
-    
-    // Vérifier si le favori existe déjà
-    const existingFavorite = favorites.find(
-      f => f.userId === req.params.userId && f.productId === productId
-    );
-    
-    if (existingFavorite) {
-      // Le favori existe déjà
-      return res.status(400).json({ message: 'Ce produit est déjà dans vos favoris' });
-    }
-    
-    const newFavorite = {
-      id: `fav-${Date.now()}`,
-      userId: req.params.userId,
-      productId: productId
-    };
-    
-    favorites.push(newFavorite);
-    fs.writeFileSync(favoritesFilePath, JSON.stringify(favorites, null, 2));
-    
-    // Récupérer tous les favoris de l'utilisateur
-    const userFavorites = favorites.filter(f => f.userId === req.params.userId);
-    
-    // Enrichir la réponse avec les détails des produits
-    const favoriteProducts = [];
-    for (const fav of userFavorites) {
-      const p = products.find(p => p.id === fav.productId);
-      if (p) {
-        favoriteProducts.push(p);
-      }
-    }
-    
-    res.json({ 
-      userId: req.params.userId, 
-      items: favoriteProducts 
-    });
+    fs.writeFileSync(favoritesFilePath, JSON.stringify(favorites, null, 2), 'utf8');
+    res.status(200).json(req.favorites);
   } catch (error) {
-    console.error('Erreur lors de l\'ajout aux favoris:', error);
-    res.status(500).json({ message: 'Erreur lors de l\'ajout aux favoris' });
+    console.error('Error adding to favorites:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
-// Supprimer un produit des favoris
-router.delete('/:userId/remove/:productId', isAuthenticated, (req, res) => {
+// Remove item from favorites
+router.delete('/:productId', auth, getFavorites, (req, res) => {
   try {
-    // Vérifier que l'utilisateur modifie ses propres favoris
-    if (req.user.id !== req.params.userId && req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Accès non autorisé' });
-    }
+    const { productId } = req.params;
+    const userId = req.user.id;
+    const favorites = req.allFavorites;
     
-    const favorites = JSON.parse(fs.readFileSync(favoritesFilePath));
+    // Remove product from favorites
+    req.favorites.items = req.favorites.items.filter(item => item.id !== productId);
+    favorites[userId] = req.favorites;
     
-    // Filtrer pour supprimer le favori spécifique
-    const updatedFavorites = favorites.filter(
-      f => !(f.userId === req.params.userId && f.productId === req.params.productId)
-    );
-    
-    if (updatedFavorites.length === favorites.length) {
-      return res.status(404).json({ message: 'Favori non trouvé' });
-    }
-    
-    fs.writeFileSync(favoritesFilePath, JSON.stringify(updatedFavorites, null, 2));
-    
-    // Récupérer tous les favoris restants de l'utilisateur
-    const userFavorites = updatedFavorites.filter(f => f.userId === req.params.userId);
-    
-    // Enrichir la réponse avec les détails des produits
-    const products = JSON.parse(fs.readFileSync(productsFilePath));
-    const favoriteProducts = [];
-    
-    for (const fav of userFavorites) {
-      const product = products.find(p => p.id === fav.productId);
-      if (product) {
-        favoriteProducts.push(product);
-      }
-    }
-    
-    res.json({ 
-      userId: req.params.userId, 
-      items: favoriteProducts 
-    });
+    fs.writeFileSync(favoritesFilePath, JSON.stringify(favorites, null, 2), 'utf8');
+    res.status(200).json(req.favorites);
   } catch (error) {
-    console.error('Erreur lors de la suppression du favori:', error);
-    res.status(500).json({ message: 'Erreur lors de la suppression du favori' });
+    console.error('Error removing from favorites:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 

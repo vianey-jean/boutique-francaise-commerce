@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import Layout from '@/components/layout/Layout';
 import ProductGrid from '@/components/products/ProductGrid';
@@ -6,7 +7,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { Card, CardContent } from '@/components/ui/card';
 import { productsAPI } from '@/services/api';
 import { toast } from '@/components/ui/sonner';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 
 const Index = () => {
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
@@ -124,7 +125,7 @@ const Index = () => {
                       key={product.id}
                       className="md:basis-1/2 lg:basis-1/4"
                     >
-                      <div className="p-1">
+                      <Link to={`/product/${product.id}`} className="block p-1">
                         <Card>
                           <CardContent className="flex aspect-square items-center justify-center p-0">
                             <div className="w-full">
@@ -163,7 +164,7 @@ const Index = () => {
                             </div>
                           </CardContent>
                         </Card>
-                      </div>
+                      </Link>
                     </CarouselItem>
                   ))}
                 </CarouselContent>

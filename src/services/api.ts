@@ -1,11 +1,12 @@
 
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:10000/api';
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:10000/api';
 
 // Créer une instance Axios avec l'URL de base
 const API = axios.create({
-  baseURL: API_URL,
+  baseURL: `${API_URL}/api`,
+  withCredentials: true
 });
 
 // Intercepteur pour gérer le token d'authentification
@@ -18,6 +19,29 @@ API.interceptors.request.use(
     return config;
   },
   (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Intercepteur pour les réponses
+API.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    // Handle 404 errors gracefully for favorites and cart
+    if (error.response && error.response.status === 404) {
+      const url = error.config.url;
+      if (url.includes('/favorites')) {
+        return Promise.resolve({ data: { items: [] } });
+      }
+      if (url.includes('/panier')) {
+        return Promise.resolve({ data: { items: [], total: 0 } });
+      }
+      if (url.includes('/products/most-favorited') || url.includes('/products/new-arrivals')) {
+        return Promise.resolve({ data: [] });
+      }
+    }
     return Promise.reject(error);
   }
 );

@@ -1,3 +1,4 @@
+
 require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -17,7 +18,7 @@ const server = http.createServer(app);
 
 // Configuration de CORS
 const corsOptions = {
-  origin: '*',
+  origin: ['http://localhost:8080', 'https://id-preview--46ad7465-4da3-4945-8740-e17eb3f4cb70.lovable.app'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
@@ -73,6 +74,8 @@ dataFiles.forEach(file => {
       ? { conversations: {}, onlineUsers: {}, autoReplySent: {} } 
       : file === 'notifications.json'
       ? { unreadMessages: {}, unreadContacts: {}, unreadOrders: {}, unreadAdminChats: {}, unreadClientChats: {} }
+      : file === 'panier.json' || file === 'favorites.json'
+      ? {}
       : [];
     fs.writeFileSync(filePath, JSON.stringify(initialData, null, 2));
   }

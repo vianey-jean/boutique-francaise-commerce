@@ -35,7 +35,7 @@ router.get('/', auth.isAuthenticated, getFavorites, (req, res) => {
 });
 
 // Add item to favorites
-router.post('/', auth.isAuthenticated, getFavorites, async (req, res) => {
+router.post('/', auth.isAuthenticated, getFavorites, (req, res) => {
   try {
     const { productId } = req.body;
     if (!productId) {

@@ -50,6 +50,15 @@ export const createAudioAnalyzer = async (stream: MediaStream) => {
   };
 };
 
+/**
+ * Create a URL for an audio blob
+ * @param blob - The audio blob
+ * @returns The URL for the blob
+ */
+export const createAudioBlobUrl = (blob: Blob): string => {
+  return URL.createObjectURL(blob);
+};
+
 // Export types
 export type AudioAnalyzer = {
   audioContext: AudioContext;

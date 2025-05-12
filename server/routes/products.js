@@ -141,7 +141,7 @@ router.get('/new-arrivals', (req, res) => {
 });
 
 // Create product - Admin only
-router.post('/', auth, (req, res) => {
+router.post('/', auth.isAuthenticated, (req, res) => {
   try {
     if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Unauthorized' });
@@ -180,7 +180,7 @@ router.post('/', auth, (req, res) => {
 });
 
 // Update product - Admin only
-router.put('/:id', auth, (req, res) => {
+router.put('/:id', auth.isAuthenticated, (req, res) => {
   try {
     if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Unauthorized' });
@@ -223,7 +223,7 @@ router.put('/:id', auth, (req, res) => {
 });
 
 // Delete product - Admin only
-router.delete('/:id', auth, (req, res) => {
+router.delete('/:id', auth.isAuthenticated, (req, res) => {
   try {
     if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Unauthorized' });
@@ -246,7 +246,7 @@ router.delete('/:id', auth, (req, res) => {
 });
 
 // Update product stock - Admin only
-router.put('/:id/stock', auth, (req, res) => {
+router.put('/:id/stock', auth.isAuthenticated, (req, res) => {
   try {
     if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Unauthorized' });

@@ -30,21 +30,19 @@ export class EventEmitter {
   }
 }
 
-// Util polyfill
+// Util polyfill - des références simples et sécurisées pour le navigateur
 export const util = {
   debuglog: (section: string) => {
     return (...args: any[]) => {
-      if (process.env.NODE_DEBUG && process.env.NODE_DEBUG.includes(section)) {
-        console.log(`${section} ${args.join(' ')}`);
-      }
+      console.log(`${section}:`, ...args);
     };
   },
-  inspect: (obj: any, options?: any) => {
+  inspect: (obj: any) => {
     return JSON.stringify(obj, null, 2);
   }
 };
 
-// Expose these polyfills to the window object
+// Expose these polyfills to the window object with type safety
 declare global {
   interface Window {
     EventEmitter: typeof EventEmitter;

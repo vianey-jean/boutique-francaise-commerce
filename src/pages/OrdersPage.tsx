@@ -61,7 +61,11 @@ const OrdersPage = () => {
   const getImageUrl = (imagePath: string) => {
     if (!imagePath) return '/placeholder.svg';
     if (imagePath.startsWith('http')) return imagePath;
-    return `http://localhost:5000/${imagePath}`;
+    
+    // Correction: s'assurer que l'URL est correctement formée
+    const baseUrl = 'https://riziky-boutic-server.onrender.com';
+    const cleanPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+    return `${baseUrl}${cleanPath}`;
   };
 
   if (loading) {
@@ -232,6 +236,11 @@ const OrdersPage = () => {
                               src={getImageUrl(item.image || '')} 
                               alt={item.name}
                               className="w-full h-full object-cover"
+                              onError={(e) => {
+                                console.log('Image loading error for:', item.image);
+                                const target = e.target as HTMLImageElement;
+                                target.src = '/placeholder.svg';
+                              }}
                             />
                           </div>
                           <div className="flex-1">

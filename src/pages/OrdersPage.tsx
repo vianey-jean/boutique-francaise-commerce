@@ -255,36 +255,6 @@ const OrdersPage: React.FC = () => {
       </div>
     </Layout>
   );
-
-  function getStatusIcon(status: string) {
-    switch (status) {
-      case 'confirmée': return CheckCircle;
-      case 'en préparation': return Package;
-      case 'en livraison': return Truck;
-      case 'livrée': return ShoppingBag;
-      default: return Clock;
-    }
-  }
-
-  function getStatusColor(status: string) {
-    switch (status) {
-      case 'confirmée': return 'from-blue-500 to-blue-600';
-      case 'en préparation': return 'from-yellow-500 to-orange-500';
-      case 'en livraison': return 'from-orange-500 to-red-500';
-      case 'livrée': return 'from-green-500 to-green-600';
-      default: return 'from-gray-500 to-gray-600';
-    }
-  }
-
-  function formatDate(dateString: string) {
-    return format(new Date(dateString), 'dd MMMM yyyy', { locale: fr });
-  }
-
-  function getImageUrl(imagePath: string) {
-    if (!imagePath) return '';
-    if (imagePath.startsWith('http')) return imagePath;
-    return `${AUTH_BASE_URL}${imagePath}`;
-  }
 };
 
 export default OrdersPage;

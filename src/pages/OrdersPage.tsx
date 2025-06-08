@@ -36,20 +36,20 @@ const OrdersPage = () => {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'pending': return <Clock className="h-4 w-4" />;
-      case 'processing': return <Package className="h-4 w-4" />;
-      case 'shipped': return <MapPin className="h-4 w-4" />;
-      case 'delivered': return <Package className="h-4 w-4" />;
+      case 'confirmée': return <Clock className="h-4 w-4" />;
+      case 'en préparation': return <Package className="h-4 w-4" />;
+      case 'en livraison': return <MapPin className="h-4 w-4" />;
+      case 'livrée': return <Package className="h-4 w-4" />;
       default: return <Package className="h-4 w-4" />;
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'bg-gradient-to-r from-yellow-500 to-orange-600';
-      case 'processing': return 'bg-gradient-to-r from-blue-500 to-indigo-600';
-      case 'shipped': return 'bg-gradient-to-r from-purple-500 to-pink-600';
-      case 'delivered': return 'bg-gradient-to-r from-green-500 to-emerald-600';
+      case 'confirmée': return 'bg-gradient-to-r from-yellow-500 to-orange-600';
+      case 'en préparation': return 'bg-gradient-to-r from-blue-500 to-indigo-600';
+      case 'en livraison': return 'bg-gradient-to-r from-purple-500 to-pink-600';
+      case 'livrée': return 'bg-gradient-to-r from-green-500 to-emerald-600';
       default: return 'bg-gradient-to-r from-gray-500 to-slate-600';
     }
   };
@@ -86,8 +86,8 @@ const OrdersPage = () => {
   }
 
   const totalOrders = orders.length;
-  const pendingOrders = orders.filter(o => o.status === 'pending').length;
-  const deliveredOrders = orders.filter(o => o.status === 'delivered').length;
+  const pendingOrders = orders.filter(o => o.status === 'confirmée' || o.status === 'en préparation').length;
+  const deliveredOrders = orders.filter(o => o.status === 'livrée').length;
 
   return (
     <Layout>
@@ -136,7 +136,7 @@ const OrdersPage = () => {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-orange-600 text-sm font-medium">En Attente</p>
+                    <p className="text-orange-600 text-sm font-medium">En cours</p>
                     <p className="text-3xl font-bold text-orange-800 mt-1">{pendingOrders}</p>
                   </div>
                   <div className="bg-gradient-to-br from-orange-500 to-yellow-600 p-3 rounded-2xl shadow-lg group-hover:shadow-xl transition-shadow">
@@ -206,15 +206,15 @@ const OrdersPage = () => {
                           <div className="flex items-center">
                             {getStatusIcon(order.status)}
                             <span className="ml-2 font-medium">
-                              {order.status === 'pending' && 'En attente'}
-                              {order.status === 'processing' && 'En cours'}
-                              {order.status === 'shipped' && 'Expédiée'}
-                              {order.status === 'delivered' && 'Livrée'}
+                              {order.status === 'confirmée' && 'Confirmée'}
+                              {order.status === 'en préparation' && 'En préparation'}
+                              {order.status === 'en livraison' && 'En livraison'}
+                              {order.status === 'livrée' && 'Livrée'}
                             </span>
                           </div>
                         </Badge>
                         <div className="text-right">
-                          <div className="text-2xl font-bold text-gray-800">{order.total.toFixed(2)} €</div>
+                          <div className="text-2xl font-bold text-gray-800">{order.totalAmount.toFixed(2)} €</div>
                           <div className="text-sm text-gray-600 flex items-center">
                             <CreditCard className="h-4 w-4 mr-1" />
                             {order.items.length} article{order.items.length > 1 ? 's' : ''}
@@ -225,11 +225,11 @@ const OrdersPage = () => {
                   </CardHeader>
                   <CardContent className="p-6">
                     <div className="space-y-4">
-                      {order.items.map((item) => (
-                        <div key={item.id} className="flex items-center space-x-4 p-4 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-100">
+                      {order.items.map((item, index) => (
+                        <div key={`${order.id}-${item.productId}-${index}`} className="flex items-center space-x-4 p-4 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-100">
                           <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden shadow-md">
                             <img 
-                              src={getImageUrl(item.images?.[0] || '')} 
+                              src={getImageUrl(item.image || '')} 
                               alt={item.name}
                               className="w-full h-full object-cover"
                             />
@@ -249,7 +249,7 @@ const OrdersPage = () => {
                     <div className="mt-6 flex justify-between items-center">
                       <div className="text-sm text-gray-600 flex items-center">
                         <MapPin className="h-4 w-4 mr-2" />
-                        Livraison: {order.shippingAddress}
+                        Livraison: {order.shippingAddress.prenom} {order.shippingAddress.nom}, {order.shippingAddress.ville}
                       </div>
                       <Button 
                         variant="outline" 

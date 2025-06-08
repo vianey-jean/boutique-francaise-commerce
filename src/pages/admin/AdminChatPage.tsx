@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import AdminLayout from './AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,7 +39,7 @@ const AdminChatPage: React.FC = () => {
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      const initialMessages = [
+      const initialMessages: AdminMessage[] = [
         { id: '1', senderId: 'admin1', senderName: 'Admin Principal', content: 'Bonjour l\'équipe ! Réunion à 14h pour discuter des nouvelles fonctionnalités.', timestamp: '2024-05-03T09:30:00', type: 'message' },
         { id: '2', senderId: 'marie1', senderName: 'Marie Dubois', content: 'Parfait ! J\'ai préparé le rapport des ventes. Je l\'enverrai avant la réunion.', timestamp: '2024-05-03T09:32:00', type: 'message' },
         { id: '3', senderId: 'admin1', senderName: 'Admin Principal', content: 'Excellent ! N\'hésitez pas si vous avez des questions avant la réunion.', timestamp: '2024-05-03T09:35:00', type: 'message' },
@@ -59,7 +60,7 @@ const AdminChatPage: React.FC = () => {
 
   const handleSendMessage = () => {
     if (newMessage.trim() !== '') {
-      const newMsg = {
+      const newMsg: AdminMessage = {
         id: String(messages.length + 1),
         senderId: 'you',
         senderName: 'You',

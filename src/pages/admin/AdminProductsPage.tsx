@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { productsAPI } from '@/services/productsAPI';
@@ -60,7 +61,7 @@ const AdminProductsPage: React.FC = () => {
 
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === '' || product.categoryId === selectedCategory;
+    const matchesCategory = selectedCategory === '' || product.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 

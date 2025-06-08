@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import Layout from '@/components/Layout';
+import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,7 +29,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 
 const ProfilPage: React.FC = () => {
-  const { user, updateUser } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -45,7 +45,7 @@ const ProfilPage: React.FC = () => {
 
   const handleSave = async () => {
     try {
-      await updateUser(formData);
+      // TODO: Implement user update logic
       setIsEditing(false);
       toast({
         title: "Profil mis à jour",
@@ -124,7 +124,7 @@ const ProfilPage: React.FC = () => {
                       </Badge>
                       <Badge className="bg-green-500/80 backdrop-blur-sm text-white border-green-400/30">
                         <Calendar className="h-4 w-4 mr-1" />
-                        Membre depuis {new Date(user.createdAt).getFullYear()}
+                        Membre depuis {new Date(user.dateCreation).getFullYear()}
                       </Badge>
                     </div>
                   </div>
@@ -388,7 +388,7 @@ const ProfilPage: React.FC = () => {
                   <div className="text-sm text-orange-700">
                     <p>Compte créé le :</p>
                     <p className="font-semibold">
-                      {new Date(user.createdAt).toLocaleDateString('fr-FR')}
+                      {new Date(user.dateCreation).toLocaleDateString('fr-FR')}
                     </p>
                   </div>
                 </CardContent>

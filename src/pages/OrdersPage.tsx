@@ -1,75 +1,52 @@
 
-import React, { useEffect, useState } from 'react';
-import Layout from '@/components/layout/Layout';
-import { Button } from '@/components/ui/button';
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { ordersAPI } from '@/services/api';
+import { useAuth } from '@/contexts/AuthContext';
+import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Truck, Package, ShoppingBag, Trash2, RefreshCw, Eye } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { useStore } from '@/contexts/StoreContext';
-import { Separator } from '@/components/ui/separator';
-import { 
-  AlertDialog, 
-  AlertDialogAction, 
-  AlertDialogCancel, 
-  AlertDialogContent, 
-  AlertDialogDescription, 
-  AlertDialogFooter, 
-  AlertDialogHeader, 
-  AlertDialogTitle, 
-  AlertDialogTrigger 
-} from '@/components/ui/alert-dialog';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { toast } from '@/components/ui/sonner';
-import { ordersAPI, remboursementsAPI, type Remboursement } from '@/services/api';
-import RefundForm from '@/components/orders/RefundForm';
-import RefundTracking from '@/components/orders/RefundTracking';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Package, Clock, CheckCircle, Truck, ShoppingBag, Calendar, MapPin, CreditCard } from 'lucide-react';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
-const OrdersPage = () => {
-  const { orders, loadingOrders, fetchOrders } = useStore();
+const OrdersPage: React.FC = () => {
+  const { user } = useAuth();
   const AUTH_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-  const [processingOrder, setProcessingOrder] = useState<string | null>(null);
-  const [refundDialogOpen, setRefundDialogOpen] = useState(false);
-  const [trackingDialogOpen, setTrackingDialogOpen] = useState(false);
-  const [selectedOrderId, setSelectedOrderId] = useState<string>('');
-  const [userRemboursements, setUserRemboursements] = useState<Remboursement[]>([]);
-  const [selectedRemboursement, setSelectedRemboursement] = useState<Remboursement | null>(null);
 
-  useEffect(() => {
-    fetchOrders();
-    fetchUserRemboursements();
-    console.log("Chargement des commandes depuis la page des commandes");
-  }, []);
+  const { data: orders = [], isLoading, error } = useQuery({
+    queryKey: ['user-orders'],
+    queryFn: async () => {
+      if (!user?.id) throw new Error('User not found');
+      const response = await ordersAPI.getUserOrders(user.id);
+      return response.data;
+    },
+    enabled: !!user?.id,
+  });
 
-  const fetchUserRemboursements = async () => {
-    try {
-      const response = await remboursementsAPI.getUserRemboursements();
-      setUserRemboursements(response.data);
-    } catch (error) {
-      console.error('Erreur lors du chargement des remboursements:', error);
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'confirmée': return CheckCircle;
+      case 'en préparation': return Package;
+      case 'en livraison': return Truck;
+      case 'livrée': return ShoppingBag;
+      default: return Clock;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'confirmée': return 'from-blue-500 to-blue-600';
+      case 'en préparation': return 'from-yellow-500 to-orange-500';
+      case 'en livraison': return 'from-orange-500 to-red-500';
+      case 'livrée': return 'from-green-500 to-green-600';
+      default: return 'from-gray-500 to-gray-600';
     }
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('fr-FR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
-
-  const getStatusBadgeClass = (status: string) => {
-    switch (status) {
-      case 'confirmée': return 'bg-blue-100 text-blue-800';
-      case 'en préparation': return 'bg-yellow-100 text-yellow-800';
-      case 'en livraison': return 'bg-orange-100 text-orange-800';
-      case 'livrée': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
+    return format(new Date(dateString), 'dd MMMM yyyy', { locale: fr });
   };
 
   const getImageUrl = (imagePath: string) => {
@@ -78,302 +55,204 @@ const OrdersPage = () => {
     return `${AUTH_BASE_URL}${imagePath}`;
   };
 
-  const handleDeleteOrder = async (orderId: string) => {
-    try {
-      setProcessingOrder(orderId);
-      
-      console.log('Suppression complète de la commande:', orderId);
-      
-      const response = await ordersAPI.cancelOrder(orderId, []);
-      
-      toast.success('Commande supprimée avec succès');
-      
-      await fetchOrders();
-      
-    } catch (error) {
-      console.error('Erreur lors de la suppression:', error);
-      toast.error('Erreur lors de la suppression de la commande');
-    } finally {
-      setProcessingOrder(null);
-    }
-  };
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-center min-h-[400px]">
+              <div className="text-center space-y-6">
+                <div className="relative">
+                  <div className="animate-spin rounded-full h-20 w-20 border-4 border-blue-500 border-t-transparent mx-auto"></div>
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-blue-400 to-purple-500 opacity-20 animate-pulse"></div>
+                </div>
+                <div className="space-y-2">
+                  <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    Chargement de vos commandes
+                  </h2>
+                  <p className="text-gray-600">Veuillez patienter...</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
-  const canDeleteOrder = (order: any) => {
-    return order.status === 'confirmée';
-  };
-
-  const canRequestRefund = (order: any) => {
-    return ['en préparation', 'en livraison', 'livrée'].includes(order.status);
-  };
-
-  const getOrderRemboursement = (orderId: string) => {
-    return userRemboursements.find(r => r.orderId === orderId);
-  };
-
-  const handleRefundRequest = (orderId: string) => {
-    setSelectedOrderId(orderId);
-    setRefundDialogOpen(true);
-  };
-
-  const handleRefundSuccess = () => {
-    setRefundDialogOpen(false);
-    setSelectedOrderId('');
-    fetchUserRemboursements();
-    toast.success('Demande de remboursement envoyée avec succès');
-  };
-
-  const handleTrackRefund = (orderId: string) => {
-    const remboursement = getOrderRemboursement(orderId);
-    if (remboursement) {
-      setSelectedRemboursement(remboursement);
-      setTrackingDialogOpen(true);
-    }
-  };
+  if (error) {
+    return (
+      <Layout>
+        <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-orange-50 py-12">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-center min-h-[400px]">
+              <div className="text-center space-y-6">
+                <div className="bg-gradient-to-br from-red-100 to-orange-200 p-8 rounded-3xl w-fit mx-auto">
+                  <Package className="h-16 w-16 text-red-500 mx-auto" />
+                </div>
+                <div className="space-y-2">
+                  <h2 className="text-2xl font-bold text-red-600">Erreur de chargement</h2>
+                  <p className="text-gray-600">Impossible de charger vos commandes</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
-      <div className="max-w-4xl mx-auto p-4">
-        <h1 className="text-3xl font-bold mb-6">Mes commandes</h1>
-
-        {loadingOrders ? (
-          <div className="text-center py-10">Chargement des commandes...</div>
-        ) : orders.length > 0 ? (
-          <div className="space-y-6">
-            {orders.map((order) => {
-              const remboursement = getOrderRemboursement(order.id);
-              
-              return (
-                <Card key={order.id}>
-                  <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
-                    <div>
-                      <CardTitle>Commande #{order.id.split('-')[1]}</CardTitle>
-                      <p className="text-sm text-muted-foreground">
-                        {formatDate(order.createdAt)}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {order.items.length} produit{order.items.length > 1 ? 's' : ''}
-                      </p>
-                    </div>
-                    <div className="mt-2 sm:mt-0 flex flex-col items-end gap-2">
-                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(order.status)}`}>
-                        {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                      </span>
-                      {remboursement && (
-                        <span className="inline-block px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800">
-                          Remboursement: {remboursement.status}
-                        </span>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-col gap-4 mb-4">
-                      {order.items.slice(0, 3).map((item) => (
-                        <div key={item.productId} className="flex items-center">
-                          <div className="w-12 h-12 rounded overflow-hidden">
-                            {item.image ? (
-                              <img
-                                src={getImageUrl(item.image)}
-                                alt={item.name}
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  const target = e.target as HTMLImageElement;
-                                  target.src = `${AUTH_BASE_URL}/uploads/placeholder.jpg`;
-                                }}
-                              />
-                            ) : (
-                              <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                                <ShoppingBag className="h-6 w-6 text-gray-500" />
-                              </div>
-                            )}
-                          </div>
-                          <div className="ml-3">
-                            <p className="text-sm font-medium">{item.name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {item.quantity} × {item.price.toFixed(2)} €
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-
-                      {order.items.length > 3 && (
-                        <div className="flex items-center">
-                          <div className="w-12 h-12 rounded bg-gray-100 flex items-center justify-center">
-                            <span className="text-sm font-medium">+{order.items.length - 3}</span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Order Status Steps */}
-                    <div className="bg-white border rounded-lg p-4 mb-4">
-                      <div className="flex justify-between">
-                        <div className="flex flex-col items-center relative">
-                          <div className="w-8 h-8 rounded-full flex items-center justify-center bg-brand-blue text-white z-10">
-                            <Check className="h-4 w-4" />
-                          </div>
-                          <span className="text-xs text-center mt-2 max-w-[70px]">Confirmée</span>
-                        </div>
-
-                        <div className="flex flex-col items-center relative">
-                          <div className={`absolute h-1 top-4 transform -translate-x-1/2 -left-1/2 w-full ${
-                            order.status !== 'confirmée' ? 'bg-brand-blue' : 'bg-gray-200'
-                          }`} />
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center z-10 ${
-                            order.status !== 'confirmée' ? 'bg-brand-blue text-white' : 'bg-gray-200 text-gray-400'
-                          }`}>
-                            <Package className="h-4 w-4" />
-                          </div>
-                          <span className="text-xs text-center mt-2 max-w-[70px]">En préparation</span>
-                        </div>
-
-                        <div className="flex flex-col items-center relative">
-                          <div className={`absolute h-1 top-4 transform -translate-x-1/2 -left-1/2 w-full ${
-                            order.status === 'en livraison' || order.status === 'livrée' ? 'bg-brand-blue' : 'bg-gray-200'
-                          }`} />
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center z-10 ${
-                            order.status === 'en livraison' || order.status === 'livrée' ? 'bg-brand-blue text-white' : 'bg-gray-200 text-gray-400'
-                          }`}>
-                            <Truck className="h-4 w-4" />
-                          </div>
-                          <span className="text-xs text-center mt-2 max-w-[70px]">En livraison</span>
-                        </div>
-
-                        <div className="flex flex-col items-center relative">
-                          <div className={`absolute h-1 top-4 transform -translate-x-1/2 -left-1/2 w-full ${
-                            order.status === 'livrée' ? 'bg-brand-blue' : 'bg-gray-200'
-                          }`} />
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center z-10 ${
-                            order.status === 'livrée' ? 'bg-brand-blue text-white' : 'bg-gray-200 text-gray-400'
-                          }`}>
-                            <ShoppingBag className="h-4 w-4" />
-                          </div>
-                          <span className="text-xs text-center mt-2 max-w-[70px]">Livrée</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <Separator className="my-4" />
-
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                      <div>
-                        <p className="text-sm font-medium">Total</p>
-                        <p className="text-xl font-bold">{order.totalAmount.toFixed(2)} €</p>
-                      </div>
-                      
-                      <div className="flex gap-3 flex-wrap">
-                        {/* Bouton Supprimer - visible seulement si confirmée */}
-                        {canDeleteOrder(order) && (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button 
-                                variant="destructive" 
-                                size="sm"
-                                disabled={processingOrder === order.id}
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Supprimer
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent className="max-w-md">
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Supprimer la commande</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Êtes-vous sûr de vouloir supprimer complètement cette commande ? 
-                                  Tous les produits seront remis en stock et la commande sera définitivement supprimée.
-                                  Cette action est irréversible.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Annuler</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleDeleteOrder(order.id)}
-                                  className="bg-red-600 hover:bg-red-700"
-                                >
-                                  {processingOrder === order.id ? 'Suppression...' : 'Confirmer la suppression'}
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        )}
-
-                        {/* Bouton Remboursement ou Suivi remboursement */}
-                        {canRequestRefund(order) && !remboursement && (
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleRefundRequest(order.id)}
-                          >
-                            <RefreshCw className="h-4 w-4 mr-2" />
-                            Remboursement
-                          </Button>
-                        )}
-
-                        {remboursement && (
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleTrackRefund(order.id)}
-                          >
-                            <Eye className="h-4 w-4 mr-2" />
-                            Suivre remboursement
-                          </Button>
-                        )}
-                        
-                        <Button asChild>
-                          <Link to={`/commande/${order.id}`}>
-                            Voir les détails
-                          </Link>
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="text-center py-12 border rounded-lg bg-gray-50">
-            <div className="mb-4">
-              <ShoppingBag className="h-12 w-12 mx-auto text-muted-foreground" />
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12">
+        <div className="container mx-auto px-4 space-y-8">
+          {/* Enhanced Header */}
+          <div className="bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 rounded-3xl p-8 text-white shadow-2xl relative overflow-hidden">
+            <div className="absolute inset-0 bg-black/10"></div>
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-32 translate-x-32"></div>
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24"></div>
+            
+            <div className="relative z-10">
+              <div className="flex items-center space-x-6">
+                <div className="bg-white/20 backdrop-blur-sm p-4 rounded-2xl">
+                  <ShoppingBag className="h-12 w-12 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-4xl font-bold mb-2">Mes Commandes</h1>
+                  <p className="text-blue-100 text-lg">
+                    Suivez l'état de toutes vos commandes ({orders.length})
+                  </p>
+                </div>
+              </div>
             </div>
-            <h2 className="text-xl font-medium mb-2">Vous n'avez pas encore de commandes</h2>
-            <p className="text-muted-foreground mb-6">Commencez vos achats pour créer votre première commande</p>
-            <Button asChild>
-              <Link to="/">Explorer nos produits</Link>
-            </Button>
           </div>
-        )}
 
-        {/* Dialog pour demande de remboursement */}
-        <Dialog open={refundDialogOpen} onOpenChange={setRefundDialogOpen}>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Demande de remboursement</DialogTitle>
-            </DialogHeader>
-            {selectedOrderId && (
-              <RefundForm
-                orderId={selectedOrderId}
-                onSuccess={handleRefundSuccess}
-                onCancel={() => setRefundDialogOpen(false)}
-              />
-            )}
-          </DialogContent>
-        </Dialog>
+          {/* Orders List */}
+          {orders.length === 0 ? (
+            <div className="bg-white rounded-3xl shadow-2xl p-12 text-center">
+              <div className="bg-gradient-to-br from-gray-100 to-gray-200 p-8 rounded-3xl w-fit mx-auto mb-6">
+                <ShoppingBag className="h-20 w-20 text-gray-400 mx-auto" />
+              </div>
+              <h2 className="text-3xl font-bold text-gray-800 mb-4">Aucune commande</h2>
+              <p className="text-gray-600 text-lg mb-8">
+                Vous n'avez pas encore passé de commande
+              </p>
+              <Button 
+                onClick={() => window.location.href = '/products'}
+                size="lg"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 px-8 py-3 rounded-xl font-semibold"
+              >
+                Découvrir nos produits
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {orders.map((order: any) => {
+                const StatusIcon = getStatusIcon(order.status);
+                return (
+                  <Card key={order.id} className="border-0 shadow-2xl bg-white overflow-hidden hover:shadow-3xl transition-all duration-300">
+                    <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 pb-6">
+                      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-4 lg:space-y-0">
+                        <div className="flex items-center space-x-4">
+                          <div className={`bg-gradient-to-r ${getStatusColor(order.status)} p-4 rounded-2xl shadow-lg`}>
+                            <StatusIcon className="h-8 w-8 text-white" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-2xl text-gray-900">
+                              Commande #{order.id.slice(-8).toUpperCase()}
+                            </CardTitle>
+                            <div className="flex items-center space-x-6 text-gray-600 mt-2">
+                              <div className="flex items-center space-x-2">
+                                <Calendar className="h-5 w-5" />
+                                <span className="font-medium">{formatDate(order.createdAt)}</span>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <CreditCard className="h-5 w-5" />
+                                <span className="font-bold text-green-600">{order.totalAmount.toFixed(2)} €</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="text-center lg:text-right">
+                          <Badge className={`bg-gradient-to-r ${getStatusColor(order.status)} text-white border-0 px-4 py-2 text-sm font-semibold rounded-full`}>
+                            <StatusIcon className="h-4 w-4 mr-2" />
+                            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                          </Badge>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    
+                    <CardContent className="p-6 space-y-6">
+                      {/* Products Section */}
+                      <div>
+                        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                          <Package className="h-5 w-5 mr-2 text-blue-600" />
+                          Articles commandés
+                        </h3>
+                        <div className="grid gap-4">
+                          {order.items.map((item: any, index: number) => (
+                            <div key={index} className="flex items-center space-x-4 p-4 bg-gradient-to-r from-gray-50 to-white rounded-2xl border border-gray-100">
+                              <div className="w-20 h-20 bg-gradient-to-br from-gray-200 to-gray-300 rounded-2xl overflow-hidden flex-shrink-0 shadow-lg">
+                                {item.image ? (
+                                  <img 
+                                    src={getImageUrl(item.image)} 
+                                    alt={item.name} 
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      const target = e.target as HTMLImageElement;
+                                      target.src = `${AUTH_BASE_URL}/uploads/placeholder.jpg`;
+                                    }}
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center">
+                                    <ShoppingBag className="h-8 w-8 text-gray-500" />
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex-1">
+                                <h4 className="font-bold text-gray-900 text-lg">{item.name}</h4>
+                                <p className="text-gray-600">
+                                  Quantité: <span className="font-semibold">{item.quantity}</span> × 
+                                  <span className="font-semibold text-green-600"> {item.price.toFixed(2)} €</span>
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-xl font-bold text-gray-900">
+                                  {(item.quantity * item.price).toFixed(2)} €
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
 
-        {/* Dialog pour suivi de remboursement */}
-        <Dialog open={trackingDialogOpen} onOpenChange={setTrackingDialogOpen}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Suivi de remboursement</DialogTitle>
-            </DialogHeader>
-            {selectedRemboursement && (
-              <RefundTracking
-                remboursement={selectedRemboursement}
-                order={orders.find(o => o.id === selectedRemboursement.orderId)}
-              />
-            )}
-          </DialogContent>
-        </Dialog>
+                      {/* Shipping Address */}
+                      <div>
+                        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                          <MapPin className="h-5 w-5 mr-2 text-green-600" />
+                          Adresse de livraison
+                        </h3>
+                        <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-2xl p-6 border border-green-100">
+                          <div className="space-y-2">
+                            <p className="font-bold text-gray-900 text-lg">
+                              {order.shippingAddress.prenom} {order.shippingAddress.nom}
+                            </p>
+                            <p className="text-gray-700">{order.shippingAddress.adresse}</p>
+                            <p className="text-gray-700">
+                              {order.shippingAddress.codePostal} {order.shippingAddress.ville}
+                            </p>
+                            <p className="text-gray-700 font-medium">{order.shippingAddress.pays}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </Layout>
   );

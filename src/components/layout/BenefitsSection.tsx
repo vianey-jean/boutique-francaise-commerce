@@ -1,13 +1,8 @@
+
 import React from 'react';
 import { Truck, Shield, RotateCcw, Headphones, Clock, Award } from 'lucide-react';
 
-interface BenefitsSectionProps {
-  hidePrompts?: boolean;
-}
-
-const BenefitsSection: React.FC<BenefitsSectionProps> = ({ hidePrompts = false }) => {
-  if (hidePrompts) return null;
-
+const BenefitsSection = () => {
   const benefits = [
     {
       icon: Truck,

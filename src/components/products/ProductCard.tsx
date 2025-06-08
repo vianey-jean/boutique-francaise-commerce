@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, Heart, Clock, Star, Eye, Zap } from 'lucide-react';
+import { ShoppingCart, Heart, Clock, Star, Eye } from 'lucide-react';
 import { Product, useStore } from '@/contexts/StoreContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { getSecureId } from '@/services/secureIds';
@@ -144,16 +143,16 @@ const ProductCard: React.FC<ProductCardProps> = ({
   }, [isHovered, displayImages.length]);
 
   const heightClasses = {
-    small: 'h-[320px]',
-    medium: 'h-[420px]',
-    large: 'h-[480px]'
+    small: 'h-[300px]',
+    medium: 'h-[380px]',
+    large: 'h-[450px]'
   };
 
   return (
     <>
       <motion.div 
-        whileHover={{ y: -8 }}
-        transition={{ duration: 0.3, ease: "easeOut" }}
+        whileHover={{ y: -5 }}
+        transition={{ duration: 0.2 }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => {
           setIsHovered(false);
@@ -161,16 +160,14 @@ const ProductCard: React.FC<ProductCardProps> = ({
         }}
         className={featured ? 'z-10 scale-105' : ''}
       >
-        <Card className={`group overflow-hidden ${heightClasses[size]} flex flex-col border-0 shadow-lg hover:shadow-2xl transition-all duration-500 rounded-2xl bg-gradient-to-br from-white via-white to-neutral-50 dark:from-neutral-800 dark:via-neutral-800 dark:to-neutral-900 ${featured ? 'ring-2 ring-red-200 dark:ring-red-900 shadow-xl' : ''}`}>
-          
-          {/* Image Container */}
-          <div className="relative h-[65%] bg-gradient-to-br from-neutral-50 to-neutral-100 dark:from-neutral-800 dark:to-neutral-900 overflow-hidden rounded-t-2xl">
+        <Card className={`overflow-hidden ${heightClasses[size]} flex flex-col border border-neutral-200 hover:border-neutral-300 dark:border-neutral-800 dark:hover:border-neutral-700 rounded-xl hover:shadow-lg transition-all duration-300 ${featured ? 'shadow-md ring-1 ring-red-200 dark:ring-red-900' : ''}`}>
+          <div className="relative h-[60%] bg-neutral-50 dark:bg-neutral-900 overflow-hidden">
             <Link to={`/${secureId}`} className="block h-full">
               {displayImages.length > 0 ? (
                 <motion.img 
                   src={getImageUrl(displayImages[currentImageIndex])} 
                   alt={`Photo de ${product.name}`} 
-                  className="w-full h-full object-contain transition-all duration-500 group-hover:scale-110"
+                  className="w-full h-full object-contain transition-opacity duration-300"
                   loading="lazy"
                   onError={(e) => {
                     console.log("Erreur de chargement d'image, utilisation du placeholder");
@@ -183,149 +180,120 @@ const ProductCard: React.FC<ProductCardProps> = ({
                   key={currentImageIndex}
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-neutral-100 to-neutral-200 dark:from-neutral-700 dark:to-neutral-800">
-                  <ShoppingCart className="h-16 w-16 text-neutral-400" />
+                <div className="w-full h-full flex items-center justify-center bg-neutral-100 dark:bg-neutral-800">
+                  <ShoppingCart className="h-12 w-12 text-neutral-400" />
                 </div>
               )}
-              
-              {/* Gradient overlay on hover */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             </Link>
             
-            {/* Badges */}
-            <div className="absolute top-0 left-0 right-0 flex items-start justify-between p-4">
-              <div className="flex flex-col space-y-2">
-                {isPromotionActive && (
-                  <Badge className="bg-gradient-to-r from-red-600 to-pink-600 text-white px-3 py-1 text-sm font-bold shadow-lg animate-pulse">
-                    <Zap className="h-3 w-3 mr-1" />
-                    -{product.promotion}%
-                  </Badge>
-                )}
-                
-                {product.dateAjout && new Date().getTime() - new Date(product.dateAjout).getTime() < 7 * 24 * 60 * 60 * 1000 && (
-                  <Badge className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg">
-                    Nouveau
-                  </Badge>
-                )}
-                
-                {featured && (
-                  <Badge className="bg-gradient-to-r from-amber-500 to-yellow-500 text-white shadow-lg">
-                    ⭐ Recommandé
-                  </Badge>
+            {isPromotionActive && (
+              <div className="absolute top-0 left-0 right-0 flex items-center justify-between">
+                <Badge className="m-2 bg-red-600 text-white px-2 py-1 text-xs font-bold">
+                  -{product.promotion}%
+                </Badge>
+                {product.promotionEnd && (
+                  <div className="m-2 bg-black/70 text-white px-2 py-1 rounded-full text-xs flex items-center">
+                    <Clock className="h-3 w-3 mr-1" /> {getPromotionTimeLeft(product.promotionEnd)}
+                  </div>
                 )}
               </div>
-              
-              {product.promotion && product.promotionEnd && (
-                <div className="bg-black/80 backdrop-blur-sm text-white px-3 py-2 rounded-full text-xs font-medium shadow-lg">
-                  <Clock className="h-3 w-3 mr-1 inline" />
-                  {getPromotionTimeLeft(product.promotionEnd)}
-                </div>
-              )}
-            </div>
+            )}
             
-            {/* Action buttons overlay */}
-            <div className={`absolute bottom-4 left-4 right-4 flex justify-center space-x-3 transition-all duration-300 ${isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
+            {product.dateAjout && new Date().getTime() - new Date(product.dateAjout).getTime() < 7 * 24 * 60 * 60 * 1000 && (
+              <Badge className="absolute top-2 left-2 bg-blue-600 text-white">Nouveau</Badge>
+            )}
+            
+            {featured && (
+              <Badge className="absolute top-2 right-2 bg-amber-500 text-white">Recommandé</Badge>
+            )}
+            
+            <div className={`absolute bottom-0 left-0 right-0 p-2 flex justify-between bg-gradient-to-t from-black/70 to-transparent transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
+              <Button 
+                variant="ghost" 
+                size="icon" 
                 onClick={handleFavoriteToggle}
-                className="p-3 bg-white/95 dark:bg-neutral-800/95 backdrop-blur-sm rounded-full shadow-lg hover:shadow-xl transition-all duration-300 border border-white/20"
+                className="rounded-full bg-white/90 hover:bg-white text-neutral-700 hover:text-red-600 backdrop-blur-sm"
                 title={isProductFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
               >
-                <Heart className={`h-5 w-5 transition-colors ${isProductFavorite ? 'fill-red-500 text-red-500' : 'text-neutral-600 hover:text-red-500'}`} />
-              </motion.button>
+                <Heart className={`h-4 w-4 ${isProductFavorite ? 'fill-red-500 text-red-500' : ''}`} />
+              </Button>
               
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={handleQuickView}
-                className="p-3 bg-white/95 dark:bg-neutral-800/95 backdrop-blur-sm rounded-full shadow-lg hover:shadow-xl transition-all duration-300 border border-white/20"
+                className="rounded-full bg-white/90 hover:bg-white text-neutral-700 hover:text-blue-600 backdrop-blur-sm"
                 title="Vue rapide"
               >
-                <Eye className="h-5 w-5 text-neutral-600 hover:text-blue-500 transition-colors" />
-              </motion.button>
+                <Eye className="h-4 w-4" />
+              </Button>
               
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={handleQuickAdd}
                 disabled={!product.isSold || (product.stock !== undefined && product.stock <= 0)}
-                className="p-3 bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="rounded-full bg-white/90 hover:bg-white text-neutral-700 hover:text-green-600 backdrop-blur-sm"
                 title="Ajouter au panier"
               >
-                <ShoppingCart className="h-5 w-5" />
-              </motion.button>
+                <ShoppingCart className="h-4 w-4" />
+              </Button>
             </div>
           </div>
           
-          {/* Content Section */}
-          <CardContent className="p-6 flex flex-col flex-grow bg-gradient-to-br from-white to-neutral-50 dark:from-neutral-800 dark:to-neutral-900">
+          <CardContent className="p-4 flex flex-col flex-grow">
             <Link to={`/${secureId}`} className="block">
-              <h3 className="font-bold text-lg mb-2 hover:text-red-600 transition-colors line-clamp-2 text-left group-hover:text-red-600">
-                {product.name}
-              </h3>
+              <h3 className="font-medium text-lg mb-1 hover:text-red-600 transition-colors line-clamp-2 text-left">{product.name}</h3>
             </Link>
             
-            {/* Rating */}
-            <div className="flex items-center mb-3">
-              <StarRating rating={averageRating} size={16} />
-              <span className="text-sm text-neutral-500 ml-2">({reviewCount})</span>
-              {averageRating >= 4.5 && (
-                <Badge className="ml-2 bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5">
-                  Top note
-                </Badge>
-              )}
+            <div className="flex items-center mt-1 mb-2">
+              <StarRating rating={averageRating} size={14} />
+              <span className="text-xs text-neutral-500 ml-1">({reviewCount})</span>
             </div>
             
-            <p className="text-neutral-600 dark:text-neutral-400 text-sm mb-4 line-clamp-2 text-left leading-relaxed">{product.description}</p>
-            
+            <p className="text-neutral-500 dark:text-neutral-400 text-sm mb-3 line-clamp-2 text-left">{product.description}</p>
             <div className="flex-grow"></div>
             
-            {/* Price and Action Section */}
-            <div className="space-y-4">
-              <div className="text-left">
+            <div className="flex justify-between items-end mt-2 text-left">
+              <div>
                 {isPromotionActive ? (
-                  <div className="space-y-1">
-                    <div className="flex items-center space-x-3">
-                      <span className="text-2xl font-bold text-red-600">
-                        {product.price.toFixed(2)} €
-                      </span>
-                      <span className="text-lg text-neutral-500 line-through">
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm text-gray-500 line-through">
                         {typeof product.originalPrice === 'number'
                           ? product.originalPrice.toFixed(2)
-                          : product.price.toFixed(2)} €
-                      </span>
-                    </div>
-                    <div className="inline-flex items-center bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-1 rounded-lg text-xs font-medium">
-                      💰 Économisez {((typeof product.originalPrice === 'number' ? product.originalPrice : product.price) - product.price).toFixed(2)} €
+                          : product.price.toFixed(2)}{' '}
+                        €
+                      </p>
+                      <p className="font-bold text-red-600">{product.price.toFixed(2)} €</p>
                     </div>
                   </div>
                 ) : (
-                  <p className="text-2xl font-bold text-neutral-800 dark:text-white">{product.price.toFixed(2)} €</p>
+                  <p className="font-bold">{product.price.toFixed(2)} €</p>
                 )}
                 
-                {/* Stock indicator */}
                 {product.stock !== undefined && (
-                  <div className="mt-2">
+                  <div className="mt-1">
                     {product.stock === 0 || !product.isSold ? (
-                      <p className="text-red-500 text-sm font-medium">❌ En rupture de stock</p>
+                      <p className="text-red-500 text-xs">En rupture de stock</p>
                     ) : product.stock <= 5 ? (
-                      <p className="text-orange-500 text-sm font-medium">⚡ Plus que {product.stock} en stock</p>
+                      <p className="text-orange-500 text-xs">Plus que {product.stock} en stock</p>
                     ) : (
-                      <p className="text-green-500 text-sm font-medium">✅ En stock ({product.stock} disponibles)</p>
+                      <p className="text-orange-500 text-xs">Plus que {product.stock} en stock</p>
                     )}
                   </div>
                 )}
               </div>
               
-              {/* Add to cart button */}
               <Button
-                className="w-full h-12 bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                size="sm"
+                variant="outline"
+                className="h-8 bg-red-50 text-red-700 hover:bg-red-100 border-red-200 hover:border-red-300 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30 dark:border-red-900/50"
                 onClick={handleQuickAdd}
                 disabled={!product.isSold || (product.stock !== undefined && product.stock <= 0)}
               >
-                <ShoppingCart className="h-5 w-5 mr-2" />
-                <span>Ajouter au panier</span>
+                <ShoppingCart className="h-3.5 w-3.5 mr-1" />
+                <span>Ajouter</span>
               </Button>
             </div>
           </CardContent>

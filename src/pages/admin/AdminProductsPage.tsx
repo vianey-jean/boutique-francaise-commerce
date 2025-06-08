@@ -12,13 +12,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Table,
   TableBody,
   TableCell,
@@ -32,6 +25,8 @@ import { Edit, Trash2, Plus, Percent, X, ArrowUp, ArrowDown } from 'lucide-react
 import { toast } from '@/components/ui/sonner';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import API from '@/services/api';
+import CategorySelector from '@/components/admin/CategorySelector';
+import PromotionManager from '@/components/admin/PromotionManager';
 
 interface ExtendedProduct extends Product {
   originalPrice?: number;
@@ -470,14 +465,7 @@ const AUTH_BASE_URL = import.meta.env.VITE_API_BASE_URL;
                 </TableCell>
                 <TableCell>
                   {isPromotionActive(product) ? (
-                    <div>
-                      <span className="inline-block px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-medium">
-                        -{product.promotion}%
-                      </span>
-                      <p className="text-xs mt-1">
-                        Expire dans: {getTimeRemaining(product.promotionEnd!)}
-                      </p>
-                    </div>
+                    <PromotionManager product={product} />
                   ) : (
                     <Button 
                       size="sm" 
@@ -691,21 +679,13 @@ const AUTH_BASE_URL = import.meta.env.VITE_API_BASE_URL;
               <label htmlFor="category" className="text-right">
                 Catégorie
               </label>
-              <Select 
-                value={formData.category} 
-                onValueChange={(value) => handleSelectChange('category', value)}
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Sélectionnez une catégorie" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Perruques">Perruques</SelectItem>
-                  <SelectItem value="Tissages">Tissages</SelectItem>
-                  <SelectItem value="Queue de cheval">Queue de cheval</SelectItem>
-                  <SelectItem value="Peigne chauffance">Peigne chauffance</SelectItem>
-                  <SelectItem value="Colle - dissolvant">Colle - dissolvant</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="col-span-3">
+                <CategorySelector
+                  value={formData.category || ''}
+                  onChange={(value) => handleSelectChange('category', value)}
+                  required
+                />
+              </div>
             </div>
             
             <div className="grid grid-cols-4 items-center gap-4">

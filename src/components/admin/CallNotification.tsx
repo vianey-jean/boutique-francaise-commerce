@@ -9,115 +9,112 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
-import { createAudioBlobUrl } from '@/utils/audio-utils';
+import { playNotificationSound, vibrateDevice } from '@/utils/audio-utils';
 
 const CallNotification = () => {
   const { incomingCall, acceptCall, rejectCall } = useVideoCall();
   const ringtoneRef = useRef<HTMLAudioElement | null>(null);
-  const [ringtoneBlobUrl, setRingtoneBlobUrl] = useState<string | null>(null);
+  const [ringtonePlaying, setRingtonePlaying] = useState(false);
   
-  // Créer le blob URL pour le son au chargement du composant
+  // Initialize audio element when component loads
   useEffect(() => {
-    const setupRingtone = async () => {
-      try {
-        // Créer un élément audio simple avec une fréquence comme solution de secours
-        const audio = new Audio();
-        audio.loop = true;
-        audio.preload = 'auto';
-        audio.volume = 0.7;
-        
-        // Essayer de créer un blob URL pour la sonnerie
-        const blobUrl = createAudioBlobUrl();
-        if (blobUrl) {
-          setRingtoneBlobUrl(blobUrl);
-          audio.src = blobUrl;
-        } else {
-          // Solution de secours: utiliser un fichier statique
-          audio.src = `${import.meta.env.BASE_URL || ''}/sounds/ringtone.mp3`;
-        }
-        
-        // Gérer les erreurs
-        audio.addEventListener('error', (e) => {
-          console.error("Ringtone error:", e);
-          // Utiliser une notification comme solution de secours
-          if ("Notification" in window && Notification.permission === "granted") {
-            new Notification("Appel entrant", {
-              icon: "/favicon.ico",
-              silent: false
-            });
-          }
-        });
-        
-        ringtoneRef.current = audio;
-      } catch (err) {
-        console.error("Error setting up ringtone:", err);
-      }
-    };
+    // Clean up previous audio element if it exists
+    if (ringtoneRef.current) {
+      ringtoneRef.current.pause();
+      ringtoneRef.current = null;
+    }
     
-    setupRingtone();
+    try {
+      // Utiliser une chaîne audio encodée en base64 au lieu d'un fichier externe
+      // Cela contourne les problèmes de chargement du fichier son
+      const audioBase64 = 'data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCYXNlNjQgZW5jb2RlZCBhdWRpbyBmb3IgcmluZ3RvbmUAAFRDT04AAAAHAAADaVR1bmVzAE1UQ09NAAAAGwAAA2VuY29kZXIAUHJvIFRvb2xzIDEwLjYuNgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQxAADwAABpAAAACAAADSAAAAETEFNRTMuOTkuNVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVQ==';
+      
+      // Créer un nouvel élément audio avec cette source
+      const audio = new Audio(audioBase64);
+      audio.loop = true;
+      audio.preload = 'auto';
+      
+      // Add event listeners to track playback status
+      audio.addEventListener('play', () => {
+        console.log('Ringtone started playing');
+        setRingtonePlaying(true);
+      });
+      
+      audio.addEventListener('pause', () => {
+        console.log('Ringtone paused');
+        setRingtonePlaying(false);
+      });
+      
+      // Add error event listener
+      audio.addEventListener('error', (e) => {
+       // console.error("Ringtone error:", e);
+        // Use fallback notification mechanism
+        fallbackNotification();
+      });
+      
+      // Load audio
+      audio.load();
+      ringtoneRef.current = audio;
+      
+    } catch (err) {
+      console.error("Could not create audio element:", err);
+      fallbackNotification();
+    }
     
-    // Nettoyer le blob URL à la destruction du composant
+    // Cleanup on unmount
     return () => {
       if (ringtoneRef.current) {
         ringtoneRef.current.pause();
         ringtoneRef.current.src = '';
-      }
-      
-      if (ringtoneBlobUrl) {
-        URL.revokeObjectURL(ringtoneBlobUrl);
+        ringtoneRef.current = null;
       }
     };
   }, []);
   
-  // Jouer/arrêter la sonnerie quand incomingCall change
+  // Play or stop the ringtone based on incomingCall
   useEffect(() => {
     if (incomingCall && ringtoneRef.current) {
       console.log("Playing ringtone for incoming call from:", incomingCall.name);
       
-      const playPromise = ringtoneRef.current.play();
-      
-      if (playPromise !== undefined) {
-        playPromise.catch(err => {
-          console.error("Could not play ringtone:", err);
-          
-          // Demander la permission pour les notifications comme solution de secours
-          if ("Notification" in window && Notification.permission !== "denied") {
-            Notification.requestPermission().then(permission => {
-              if (permission === "granted") {
-                new Notification("Appel entrant de " + incomingCall.name, {
-                  icon: "/favicon.ico"
-                });
-              }
-            });
-          }
-        });
-      }
+      // Use try/catch for play to handle autoplay policy issues
+      ringtoneRef.current.play().catch(err => {
+        console.error("Could not play ringtone:", err);
+        fallbackNotification();
+      });
     } else if (ringtoneRef.current) {
-      // Arrêter la sonnerie
+      // Stop the ringtone
       ringtoneRef.current.pause();
       ringtoneRef.current.currentTime = 0;
     }
-    
-    // Nettoyage
-    return () => {
-      if (ringtoneRef.current) {
-        ringtoneRef.current.pause();
-        ringtoneRef.current.currentTime = 0;
-      }
-    };
   }, [incomingCall]);
   
-  // Gérer l'acceptation de l'appel avec gestion des erreurs
+  // Fallback notification function
+  const fallbackNotification = () => {
+    // Fallbacks if audio playback fails
+    if (navigator.vibrate) {
+      vibrateDevice();
+    }
+    
+    if ("Notification" in window && Notification.permission !== "denied") {
+      Notification.requestPermission().then(permission => {
+        if (permission === "granted" && incomingCall) {
+          new Notification("Appel entrant de " + (incomingCall?.name || "inconnu"), {
+            icon: "/favicon.ico"
+          });
+        }
+      });
+    }
+    
+    // Visual fallback - flash the notification
+    if (incomingCall) {
+      toast.info(`Appel entrant de ${incomingCall.name}`);
+    }
+  };
+  
+  // Handle call acceptance with error handling
   const handleAcceptCall = async () => {
     try {
       console.log("Accepting call from:", incomingCall?.name);
-      
-      // Arrêter la sonnerie avant d'accepter l'appel
-      if (ringtoneRef.current) {
-        ringtoneRef.current.pause();
-        ringtoneRef.current.currentTime = 0;
-      }
-      
       await acceptCall();
     } catch (error) {
       console.error("Error accepting call:", error);

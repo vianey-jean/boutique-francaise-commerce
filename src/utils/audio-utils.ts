@@ -1,67 +1,74 @@
 
-// File for audio utilities
+/**
+ * Audio utilities for the application
+ * Functions for managing audio playback in the application
+ */
 
 /**
- * Play a sound file
- * @param soundFile - Path to the sound file
- * @param loop - Whether to loop the sound (default: false)
- * @returns The audio element
+ * Play a notification sound from a static file
+ * @param soundFile Path to the audio file in the public folder
+ * @returns Audio element or null in case of error
  */
-export const playSound = (soundFile: string, loop = false): HTMLAudioElement => {
-  const audio = new Audio(soundFile);
-  audio.loop = loop;
-  
-  const playPromise = audio.play();
-  
-  if (playPromise !== undefined) {
-    playPromise.catch((error) => {
-      console.error("Error playing sound:", error);
+export const playNotificationSound = (soundFile: string = '/ringtone.mp3'): HTMLAudioElement | null => {
+  try {
+    const audio = new Audio(soundFile);
+    
+    // Add error listener before playing
+    audio.addEventListener('error', (err) => {
+      console.error("Could not play notification sound:", err);
     });
+    
+    // Force load the audio first
+    audio.load();
+    
+    // Play with error handling
+    audio.play().catch(err => {
+      console.error("Could not play notification sound:", err);
+      
+      // Try fallback approaches
+      vibrateDevice();
+      createSystemNotification("Notification", { body: "New notification" });
+    });
+    
+    return audio;
+  } catch (error) {
+    console.error("Error playing notification sound:", error);
+    return null;
   }
-  
-  return audio;
 };
 
 /**
- * Stop an audio element from playing
- * @param audio - The audio element to stop
+ * Create a system notification with sound if possible
+ * @param title Title of the notification
+ * @param options Options for the notification
+ * @returns true if the notification was created, false otherwise
  */
-export const stopSound = (audio: HTMLAudioElement | null) => {
-  if (audio) {
-    audio.pause();
-    audio.currentTime = 0;
+export const createSystemNotification = (title: string, options?: NotificationOptions): boolean => {
+  if ("Notification" in window) {
+    if (Notification.permission === "granted") {
+      new Notification(title, options);
+      return true;
+    } else if (Notification.permission !== "denied") {
+      Notification.requestPermission().then(permission => {
+        if (permission === "granted") {
+          new Notification(title, options);
+          return true;
+        }
+      });
+    }
   }
+  return false;
 };
 
 /**
- * Create an audio context to analyze audio
+ * Trigger device vibration if available
+ * @param pattern Vibration pattern
+ * @returns true if vibration was triggered, false otherwise
  */
-export const createAudioAnalyzer = async (stream: MediaStream) => {
-  const audioContext = new AudioContext();
-  const audioSource = audioContext.createMediaStreamSource(stream);
-  const analyser = audioContext.createAnalyser();
-  
-  audioSource.connect(analyser);
-  
-  return {
-    audioContext,
-    audioSource,
-    analyser
-  };
-};
-
-/**
- * Create a URL for an audio blob
- * @param blob - The audio blob
- * @returns The URL for the blob
- */
-export const createAudioBlobUrl = (blob: Blob): string => {
-  return URL.createObjectURL(blob);
-};
-
-// Export types
-export type AudioAnalyzer = {
-  audioContext: AudioContext;
-  audioSource: MediaStreamAudioSourceNode;
-  analyser: AnalyserNode;
+export const vibrateDevice = (pattern: number[] = [200, 100, 200]): boolean => {
+  if (navigator.vibrate) {
+    navigator.vibrate(pattern);
+    return true;
+  }
+  return false;
 };

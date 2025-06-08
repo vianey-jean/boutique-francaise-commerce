@@ -1,30 +1,29 @@
 
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
 
-export interface ProtectedRouteProps {
+interface ProtectedRouteProps {
   children: React.ReactNode;
-  allowedRoles?: string[];
+  requireAdmin?: boolean;
+  adminOnly?: boolean;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles = [] }) => {
-  const { isAuthenticated, user } = useAuth();
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireAdmin = false, adminOnly = false }) => {
+  const { isAuthenticated, isAdmin, loading } = useAuth();
 
-  // Si l'utilisateur n'est pas authentifié, le rediriger vers la page de connexion
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-screen">Chargement...</div>;
+  }
+
   if (!isAuthenticated) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/login" replace />;
   }
 
-  // Vérifier les rôles si des rôles sont spécifiés
-  if (allowedRoles.length > 0 && user) {
-    if (!allowedRoles.includes(user.role)) {
-      // Rediriger les utilisateurs non autorisés
-      return <Navigate to="/" />;
-    }
+  if ((requireAdmin || adminOnly) && !isAdmin) {
+    return <Navigate to="/" replace />;
   }
 
-  // Si l'utilisateur est authentifié et a les rôles requis, afficher les enfants
   return <>{children}</>;
 };
 

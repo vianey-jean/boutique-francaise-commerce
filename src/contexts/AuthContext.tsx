@@ -1,8 +1,8 @@
 
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import { authAPI, User, UpdateProfileData } from '../services/api';
-import { toast } from '@/components/ui/sonner';
-import { useNavigate, NavigateFunction } from 'react-router-dom';
+import { authAPI, User } from '../services/api';
+import { UpdateProfileData } from '@/types/auth';
+import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextType {
   user: User | null;
@@ -20,24 +20,10 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Création d'un hook de navigation qui est sûr à utiliser
-const NavigationContext = createContext<NavigateFunction | null>(null);
-
-export const useAuthNavigate = () => {
-  const navigate = useContext(NavigationContext);
-  if (!navigate) {
-    // Fallback pour les cas où useNavigate n'est pas disponible
-    return (path: string) => {
-      window.location.href = path;
-    };
-  }
-  return navigate;
-};
-
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
+  const { toast } = useToast();
 
   const validateToken = async () => {
     const token = localStorage.getItem('authToken');
@@ -72,22 +58,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const login = async (email: string, password: string): Promise<void> => {
     try {
-      console.log("Tentative de connexion avec:", { email, password });
-      const response = await authAPI.login(email, password);
+      console.log("Tentative de connexion avec:", { email });
+      const response = await authAPI.login({ email, password });
       localStorage.setItem('authToken', response.data.token);
       setUser(response.data.user);
-      toast.success('Connexion réussie', {
-        style: { backgroundColor: 'green', color: 'white' },
+      toast({
+        title: 'Connexion réussie',
+        variant: 'default',
       });
 
-      navigate('/');
+      // Navigation via window.location pour éviter les problèmes de hooks
+      window.location.href = '/';
     } catch (error: any) {
       console.error("Erreur de connexion:", error);
       
-      // Vérifier si l'erreur vient de l'API et contient un message
       const errorMessage = error.response?.data?.message || "Erreur de connexion";
-      toast.error(errorMessage, {
-        style: { backgroundColor: 'red', color: 'white' },
+      toast({
+        title: errorMessage,
+        variant: 'destructive',
       });
 
       throw error;
@@ -97,26 +85,33 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const logout = () => {
     localStorage.removeItem('authToken');
     setUser(null);
-    toast.info('Vous êtes déconnecté', {
-      style: { backgroundColor: 'red', color: 'white' },
+    toast({
+      title: 'Vous êtes déconnecté',
+      variant: 'destructive',
     });
 
-    navigate('/login');
+    // Navigation via window.location pour éviter les problèmes de hooks
+    window.location.href = '/login';
   };
 
   const register = async (nom: string, email: string, password: string) => {
     try {
-      const response = await authAPI.register(email, password, nom, email); // We'll fix params order here
+      const response = await authAPI.register({ nom, email, password });
       localStorage.setItem('authToken', response.data.token);
       setUser(response.data.user);
-      toast.success('Inscription réussie', {
-        style: { backgroundColor: 'green', color: 'white' },
+      toast({
+        title: 'Inscription réussie',
+        variant: 'default',
       });
 
-      navigate('/');
+      // Navigation via window.location pour éviter les problèmes de hooks
+      window.location.href = '/';
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || 'Erreur lors de l\'inscription';
-      toast.error(errorMessage);
+      toast({
+        title: errorMessage,
+        variant: 'destructive',
+      });
       throw error;
     }
   };
@@ -124,26 +119,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const forgotPassword = async (email: string) => {
     try {
       await authAPI.forgotPassword(email);
-      // Le message de confirmation est géré par le composant
     } catch (error) {
       console.error("Erreur de demande de réinitialisation:", error);
-      toast.error('Une erreur est survenue', {
-        style: { backgroundColor: 'red', color: 'white' },
+      toast({
+        title: 'Une erreur est survenue',
+        variant: 'destructive',
       });
      
-
       throw error;
     }
   };
 
   const resetPassword = async (email: string, code: string, newPassword: string) => {
     try {
-      await authAPI.resetPassword(code, newPassword);
-      // Le message de confirmation est géré par le composant
+      await authAPI.resetPassword({ email, passwordUnique: code, newPassword });
     } catch (error) {
       console.error("Erreur de réinitialisation de mot de passe:", error);
-      toast.error('Une erreur est survenue', {
-        style: { backgroundColor: 'red', color: 'white' },
+      toast({
+        title: 'Une erreur est survenue',
+        variant: 'destructive',
       });
       
       throw error;
@@ -154,26 +148,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       if (!user) throw new Error('Utilisateur non connecté');
       
-      // Vérifier la validité du token avant la mise à jour du profil
       const isTokenValid = await validateToken();
       if (!isTokenValid) {
-        toast.error('Votre session a expiré, veuillez vous reconnecter', {
-          style: { backgroundColor: 'red', color: 'white' },
+        toast({
+          title: 'Votre session a expiré, veuillez vous reconnecter',
+          variant: 'destructive',
         });
-        navigate('/login');
+        window.location.href = '/login';
         throw new Error('Session expirée');
       }
       
-      const response = await authAPI.updateProfile(data);
+      const response = await authAPI.updateProfile(user.id, data);
       setUser(prev => prev ? { ...prev, ...response.data } : null);
-      toast.success('Profil mis à jour avec succès', {
-        style: { backgroundColor: 'green', color: 'white' },
+      toast({
+        title: 'Profil mis à jour avec succès',
+        variant: 'default',
       });
      
     } catch (error: any) {
       console.error("Erreur de mise à jour du profil:", error);
-      toast.error(error.response?.data?.message || 'Erreur lors de la mise à jour du profil', {
-        style: { backgroundColor: 'red', color: 'white' },
+      toast({
+        title: error.response?.data?.message || 'Erreur lors de la mise à jour du profil',
+        variant: 'destructive',
       });
      
       throw error;
@@ -184,25 +180,27 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       if (!user) throw new Error('Utilisateur non connecté');
       
-      // Vérifier la validité du token avant la mise à jour du mot de passe
       const isTokenValid = await validateToken();
       if (!isTokenValid) {
-        toast.error('Votre session a expiré, veuillez vous reconnecter', {
-          style: { backgroundColor: 'red', color: 'white' },
+        toast({
+          title: 'Votre session a expiré, veuillez vous reconnecter',
+          variant: 'destructive',
         });
-        navigate('/login');
+        window.location.href = '/login';
         throw new Error('Session expirée');
       }
       
-      await authAPI.updatePassword(currentPassword, newPassword);
-      toast.success('Mot de passe mis à jour avec succès', {
-        style: { backgroundColor: 'green', color: 'white' },
+      await authAPI.updatePassword(user.id, currentPassword, newPassword);
+      toast({
+        title: 'Mot de passe mis à jour avec succès',
+        variant: 'default',
       });
       
     } catch (error: any) {
       console.error("Erreur de mise à jour du mot de passe:", error);
-      toast.error(error.response?.data?.message || 'Erreur lors de la mise à jour du mot de passe', {
-        style: { backgroundColor: 'red', color: 'white' },
+      toast({
+        title: error.response?.data?.message || 'Erreur lors de la mise à jour du mot de passe',
+        variant: 'destructive',
       });
      
       throw error;
@@ -227,9 +225,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <NavigationContext.Provider value={navigate}>
-      <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
-    </NavigationContext.Provider>
+    <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
   );
 };
 

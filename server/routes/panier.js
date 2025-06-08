@@ -3,167 +3,168 @@ const express = require('express');
 const router = express.Router();
 const fs = require('fs');
 const path = require('path');
-const auth = require('../middlewares/auth');
+const { isAuthenticated } = require('../middlewares/auth');
 
 const panierFilePath = path.join(__dirname, '../data/panier.json');
+const productsFilePath = path.join(__dirname, '../data/products.json');
 
-// Initialize panier file if it doesn't exist
-if (!fs.existsSync(panierFilePath)) {
-  fs.writeFileSync(panierFilePath, JSON.stringify({}), 'utf8');
-}
-
-// Middleware to get cart
-const getCart = (req, res, next) => {
+// Obtenir le panier d'un utilisateur
+router.get('/:userId', isAuthenticated, (req, res) => {
   try {
-    const carts = JSON.parse(fs.readFileSync(panierFilePath, 'utf8'));
-    const userId = req.user.id;
-    if (!carts[userId]) {
-      carts[userId] = { items: [], total: 0 };
+    // Vérifier que l'utilisateur demande son propre panier
+    if (req.user.id !== req.params.userId && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Accès non autorisé' });
     }
-    req.cart = carts[userId];
-    req.allCarts = carts;
-    next();
+    
+    const paniers = JSON.parse(fs.readFileSync(panierFilePath));
+    const panier = paniers.find(p => p.userId === req.params.userId) || { userId: req.params.userId, items: [] };
+    
+    res.json(panier);
   } catch (error) {
-    console.error('Error reading cart file:', error);
-    res.status(500).json({ message: 'Error reading cart data' });
+    res.status(500).json({ message: 'Erreur lors de la récupération du panier' });
   }
-};
-
-// Get user cart
-router.get('/', auth.isAuthenticated, getCart, (req, res) => {
-  res.json(req.cart);
 });
 
-// Add item to cart
-router.post('/items', auth.isAuthenticated, getCart, async (req, res) => {
+// Ajouter un produit au panier
+router.post('/:userId/add', isAuthenticated, (req, res) => {
   try {
-    const { productId, quantity } = req.body;
-    if (!productId || !quantity) {
-      return res.status(400).json({ message: 'Product ID and quantity are required' });
+    // Vérifier que l'utilisateur modifie son propre panier
+    if (req.user.id !== req.params.userId && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Accès non autorisé' });
     }
-
-    const userId = req.user.id;
-    const carts = req.allCarts;
     
-    // Get product info from products.json
-    const productsFilePath = path.join(__dirname, '../data/products.json');
-    const products = JSON.parse(fs.readFileSync(productsFilePath, 'utf8'));
+    const { productId, quantity } = req.body;
+    
+    // Vérifier que le produit existe
+    const products = JSON.parse(fs.readFileSync(productsFilePath));
     const product = products.find(p => p.id === productId);
     
     if (!product) {
-      return res.status(404).json({ message: 'Product not found' });
+      return res.status(404).json({ message: 'Produit non trouvé' });
     }
-
-    // Check if product is already in cart
-    const existingItem = req.cart.items.find(item => item.productId === productId);
     
-    if (existingItem) {
-      // Update quantity if product exists
-      existingItem.quantity += parseInt(quantity);
-    } else {
-      // Add new item if product doesn't exist
-      req.cart.items.push({
-        productId,
-        quantity: parseInt(quantity),
-        name: product.name,
-        price: product.price,
-        image: product.image
+    // Ajouter au panier
+    const paniers = JSON.parse(fs.readFileSync(panierFilePath));
+    const panierIndex = paniers.findIndex(p => p.userId === req.params.userId);
+    
+    if (panierIndex === -1) {
+      // Créer un nouveau panier
+      paniers.push({
+        userId: req.params.userId,
+        items: [{ productId, quantity: parseInt(quantity) || 1, price: product.price }]
       });
+    } else {
+      // Mettre à jour le panier existant
+      const itemIndex = paniers[panierIndex].items.findIndex(i => i.productId === productId);
+      
+      if (itemIndex === -1) {
+        // Ajouter un nouvel item
+        paniers[panierIndex].items.push({ 
+          productId, 
+          quantity: parseInt(quantity) || 1,
+          price: product.price
+        });
+      } else {
+        // Mettre à jour la quantité
+        paniers[panierIndex].items[itemIndex].quantity += parseInt(quantity) || 1;
+      }
     }
     
-    // Update total
-    req.cart.total = req.cart.items.reduce((total, item) => {
-      return total + (item.price * item.quantity);
-    }, 0);
+    fs.writeFileSync(panierFilePath, JSON.stringify(paniers, null, 2));
     
-    carts[userId] = req.cart;
-    
-    fs.writeFileSync(panierFilePath, JSON.stringify(carts, null, 2), 'utf8');
-    res.status(200).json(req.cart);
+    const updatedPanier = paniers.find(p => p.userId === req.params.userId);
+    res.json(updatedPanier);
   } catch (error) {
-    console.error('Error adding to cart:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Erreur lors de l\'ajout au panier' });
   }
 });
 
-// Update cart item
-router.put('/items', auth.isAuthenticated, getCart, (req, res) => {
+// Mettre à jour la quantité d'un produit dans le panier
+router.put('/:userId/update', isAuthenticated, (req, res) => {
   try {
-    const { productId, quantity } = req.body;
-    if (!productId || !quantity) {
-      return res.status(400).json({ message: 'Product ID and quantity are required' });
+    // Vérifier que l'utilisateur modifie son propre panier
+    if (req.user.id !== req.params.userId && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Accès non autorisé' });
     }
-
-    const userId = req.user.id;
-    const carts = req.allCarts;
     
-    // Find item in cart
-    const itemIndex = req.cart.items.findIndex(item => item.productId === productId);
+    const { productId, quantity } = req.body;
+    
+    const paniers = JSON.parse(fs.readFileSync(panierFilePath));
+    const panierIndex = paniers.findIndex(p => p.userId === req.params.userId);
+    
+    if (panierIndex === -1) {
+      return res.status(404).json({ message: 'Panier non trouvé' });
+    }
+    
+    const itemIndex = paniers[panierIndex].items.findIndex(i => i.productId === productId);
     
     if (itemIndex === -1) {
-      return res.status(404).json({ message: 'Item not found in cart' });
+      return res.status(404).json({ message: 'Produit non trouvé dans le panier' });
     }
     
-    // Update quantity
-    req.cart.items[itemIndex].quantity = parseInt(quantity);
+    if (quantity <= 0) {
+      // Supprimer l'item si la quantité est 0 ou moins
+      paniers[panierIndex].items = paniers[panierIndex].items.filter(i => i.productId !== productId);
+    } else {
+      // Mettre à jour la quantité
+      paniers[panierIndex].items[itemIndex].quantity = parseInt(quantity);
+    }
     
-    // Update total
-    req.cart.total = req.cart.items.reduce((total, item) => {
-      return total + (item.price * item.quantity);
-    }, 0);
+    fs.writeFileSync(panierFilePath, JSON.stringify(paniers, null, 2));
     
-    carts[userId] = req.cart;
-    
-    fs.writeFileSync(panierFilePath, JSON.stringify(carts, null, 2), 'utf8');
-    res.status(200).json(req.cart);
+    res.json(paniers[panierIndex]);
   } catch (error) {
-    console.error('Error updating cart:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Erreur lors de la mise à jour du panier' });
   }
 });
 
-// Remove item from cart
-router.delete('/items/:productId', auth.isAuthenticated, getCart, (req, res) => {
+// Supprimer un produit du panier
+router.delete('/:userId/remove/:productId', isAuthenticated, (req, res) => {
   try {
-    const { productId } = req.params;
-    const userId = req.user.id;
-    const carts = req.allCarts;
+    // Vérifier que l'utilisateur modifie son propre panier
+    if (req.user.id !== req.params.userId && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Accès non autorisé' });
+    }
     
-    // Remove item from cart
-    req.cart.items = req.cart.items.filter(item => item.productId !== productId);
+    const paniers = JSON.parse(fs.readFileSync(panierFilePath));
+    const panierIndex = paniers.findIndex(p => p.userId === req.params.userId);
     
-    // Update total
-    req.cart.total = req.cart.items.reduce((total, item) => {
-      return total + (item.price * item.quantity);
-    }, 0);
+    if (panierIndex === -1) {
+      return res.status(404).json({ message: 'Panier non trouvé' });
+    }
     
-    carts[userId] = req.cart;
+    paniers[panierIndex].items = paniers[panierIndex].items.filter(i => i.productId !== req.params.productId);
     
-    fs.writeFileSync(panierFilePath, JSON.stringify(carts, null, 2), 'utf8');
-    res.status(200).json(req.cart);
+    fs.writeFileSync(panierFilePath, JSON.stringify(paniers, null, 2));
+    
+    res.json(paniers[panierIndex]);
   } catch (error) {
-    console.error('Error removing from cart:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Erreur lors de la suppression du produit du panier' });
   }
 });
 
-// Clear cart
-router.delete('/', auth.isAuthenticated, getCart, (req, res) => {
+// Vider le panier
+router.delete('/:userId/clear', isAuthenticated, (req, res) => {
   try {
-    const userId = req.user.id;
-    const carts = req.allCarts;
+    // Vérifier que l'utilisateur modifie son propre panier
+    if (req.user.id !== req.params.userId && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Accès non autorisé' });
+    }
     
-    // Clear cart
-    req.cart.items = [];
-    req.cart.total = 0;
+    const paniers = JSON.parse(fs.readFileSync(panierFilePath));
+    const panierIndex = paniers.findIndex(p => p.userId === req.params.userId);
     
-    carts[userId] = req.cart;
+    if (panierIndex === -1) {
+      return res.status(404).json({ message: 'Panier non trouvé' });
+    }
     
-    fs.writeFileSync(panierFilePath, JSON.stringify(carts, null, 2), 'utf8');
-    res.status(200).json(req.cart);
+    paniers[panierIndex].items = [];
+    
+    fs.writeFileSync(panierFilePath, JSON.stringify(paniers, null, 2));
+    
+    res.json(paniers[panierIndex]);
   } catch (error) {
-    console.error('Error clearing cart:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Erreur lors du vidage du panier' });
   }
 });
 

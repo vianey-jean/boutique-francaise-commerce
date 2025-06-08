@@ -1,6 +1,6 @@
 
 import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+import react from '@vitejs/plugin-react-swc';
 import path from 'path';
 
 // https://vitejs.dev/config/
@@ -9,27 +9,25 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@emoji-mart/data': path.resolve(__dirname, 'node_modules/@emoji-mart/data'),
+      '@emoji-mart/react': path.resolve(__dirname, 'node_modules/@emoji-mart/react')
     },
-  },
-  optimizeDeps: {
-    esbuildOptions: {
-      define: {
-        global: 'globalThis'
-      }
-    }
-  },
-  define: {
-    global: 'globalThis',
-    'process.env': process.env
   },
   build: {
-    commonjsOptions: {
-      transformMixedEsModules: true,
-    },
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'emoji-mart': ['@emoji-mart/data', '@emoji-mart/react', 'emoji-mart'],
+          'three': ['three']
+        }
+      },
+      external: []
+    }
+  },
+  optimizeDeps: {
+    include: ['three', '@emoji-mart/data', '@emoji-mart/react', 'emoji-mart']
   },
   server: {
-    host: true,
     port: 8080,
-    cors: true,
-  }
+  },
 });

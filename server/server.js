@@ -1,245 +1,66 @@
 
 require('dotenv').config();
 const express = require('express');
-const bodyParser = require('body-parser');
 const cors = require('cors');
-const fs = require('fs');
+const bodyParser = require('body-parser');
 const path = require('path');
-const multer = require('multer');
-const nodemailer = require('nodemailer');
-const http = require('http');
-const socketIo = require('socket.io');
+const { createServer } = require('http');
 
+// Importation des modules de configuration
+const corsOptions = require('./config/cors');
+const { securityMiddlewares, additionalCorsHeaders, sanitizeMiddleware } = require('./config/security');
+const { initializeDataFiles } = require('./config/dataFiles');
+const { authenticateToken } = require('./config/auth');
+const setupRoutes = require('./config/routes');
+const { notFoundHandler, globalErrorHandler } = require('./config/errorHandlers');
+const initializeSocket = require('./socket/socketConfig');
+
+// Initialiser l'application Express
 const app = express();
-const PORT = process.env.PORT || 10000;
+const server = createServer(app);
 
-// Création du serveur HTTP
-const server = http.createServer(app);
+// Middleware de sécurité
+securityMiddlewares.forEach(middleware => app.use(middleware));
 
 // Configuration de CORS
-const corsOptions = {
-  origin: ['http://localhost:8080', 'https://id-preview--46ad7465-4da3-4945-8740-e17eb3f4cb70.lovable.app'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
-};
-
-// Middleware
 app.use(cors(corsOptions));
+
+// Middleware additionnels pour les en-têtes CORS
+app.use(additionalCorsHeaders);
+
+// Middleware pour parser le corps des requêtes
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Initialisation de Socket.io avec les mêmes options CORS
-const io = socketIo(server, {
-  cors: corsOptions,
-  pingTimeout: 60000,
+// Middleware pour vérifier et créer les fichiers de données s'ils n'existent pas
+app.use(initializeDataFiles);
+
+// Middleware pour servir les fichiers statiques avec des en-têtes CORS appropriés
+app.use('/uploads', (req, res, next) => {
+  res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+  express.static(path.join(__dirname, 'uploads'))(req, res, next);
 });
 
-// Configuration pour les uploads d'images
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/');
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
-  }
-});
-const upload = multer({ storage });
+// Protection contre les injections
+app.use(sanitizeMiddleware);
 
-// Création du dossier uploads s'il n'existe pas
-if (!fs.existsSync('uploads')) {
-  fs.mkdirSync('uploads');
-}
+// Configuration des routes
+setupRoutes(app);
 
-// Création des fichiers JSON s'ils n'existent pas
-const dataFiles = [
-  'users.json', 
-  'products.json', 
-  'panier.json', 
-  'favorites.json', 
-  'contacts.json',
-  'commandes.json',
-  'admin-chat.json',
-  'client-chat.json',
-  'notifications.json'
-];
+// Initialiser Socket.io
+const io = initializeSocket(server);
 
-dataFiles.forEach(file => {
-  const filePath = path.join(__dirname, 'data', file);
-  if (!fs.existsSync(path.dirname(filePath))) {
-    fs.mkdirSync(path.dirname(filePath), { recursive: true });
-  }
-  if (!fs.existsSync(filePath)) {
-    const initialData = file === 'admin-chat.json' || file === 'client-chat.json' 
-      ? { conversations: {}, onlineUsers: {}, autoReplySent: {} } 
-      : file === 'notifications.json'
-      ? { unreadMessages: {}, unreadContacts: {}, unreadOrders: {}, unreadAdminChats: {}, unreadClientChats: {} }
-      : file === 'panier.json' || file === 'favorites.json'
-      ? {}
-      : [];
-    fs.writeFileSync(filePath, JSON.stringify(initialData, null, 2));
-  }
+// Route pour tester le serveur
+app.get('/', (req, res) => {
+  res.send('API de l\'application e-commerce Riziky-Boutic est active!');
 });
 
-// Stocker les connexions des utilisateurs
-const connectedUsers = {};
+// Middleware pour la gestion des erreurs
+app.use(notFoundHandler);
+app.use(globalErrorHandler);
 
-// Gestion des événements Socket.io
-io.on('connection', (socket) => {
-  console.log('Nouvelle connexion Socket.io:', socket.id);
-
-  // Authentification de l'utilisateur
-  socket.on('authenticate', (userData) => {
-    if (userData && userData.id) {
-      console.log(`Utilisateur authentifié: ${userData.id}`);
-      
-      // Associer l'ID utilisateur au socket
-      socket.userId = userData.id;
-      connectedUsers[userData.id] = socket.id;
-      
-      // Informer les autres de la connexion
-      socket.broadcast.emit('userStatusChange', { 
-        userId: userData.id, 
-        isOnline: true 
-      });
-    }
-  });
-
-  // Gestion des appels
-  socket.on('callUser', (data) => {
-    const { userToCall, signal, isVideo } = data;
-    const from = socket.userId;
-    
-    console.log(`Appel de ${from} vers ${userToCall} (${isVideo ? 'vidéo' : 'audio'})`);
-
-    // Vérifier si le destinataire est connecté
-    if (connectedUsers[userToCall]) {
-      // Récupérer les informations de l'utilisateur appelant
-      const usersFilePath = path.join(__dirname, 'data', 'users.json');
-      const users = JSON.parse(fs.readFileSync(usersFilePath));
-      const caller = users.find(user => user.id === from);
-      
-      if (caller) {
-        // Transmettre l'appel au destinataire
-        io.to(connectedUsers[userToCall]).emit('callIncoming', {
-          from: from,
-          name: caller.nom || "Utilisateur",
-          isVideo: isVideo,
-          signal: signal
-        });
-        
-        console.log(`Notification d'appel envoyée à ${userToCall}`);
-      }
-    } else {
-      console.log(`Utilisateur ${userToCall} non connecté`);
-      socket.emit('callFailed', { reason: 'user-offline' });
-    }
-  });
-
-  // Acceptation d'un appel
-  socket.on('acceptCall', (data) => {
-    const { to, signal } = data;
-    console.log(`Appel accepté par ${socket.userId} pour ${to}`);
-    
-    if (connectedUsers[to]) {
-      io.to(connectedUsers[to]).emit('callAccepted', signal);
-    }
-  });
-
-  // Récupération du signal de l'appelant
-  socket.on('getCallerSignal', (data) => {
-    const { from } = data;
-    console.log(`Demande de signal pour l'appelant ${from}`);
-    
-    if (connectedUsers[from] && socket.userId) {
-      io.to(connectedUsers[from]).emit('sendSignalRequest', { 
-        to: socket.userId 
-      });
-    }
-  });
-
-  // Réception du signal pour l'appelant
-  socket.on('sendSignalResponse', (data) => {
-    const { to, signal } = data;
-    console.log(`Envoi du signal à ${to}`);
-    
-    if (connectedUsers[to]) {
-      io.to(connectedUsers[to]).emit('peerSignal', signal);
-    }
-  });
-
-  // Rejet d'un appel
-  socket.on('rejectCall', (data) => {
-    const { to } = data;
-    console.log(`Appel rejeté par ${socket.userId} pour ${to}`);
-    
-    if (connectedUsers[to]) {
-      io.to(connectedUsers[to]).emit('callRejected');
-    }
-  });
-
-  // Fin d'un appel
-  socket.on('endCall', (data) => {
-    const { to } = data;
-    console.log(`Appel terminé par ${socket.userId} pour ${to}`);
-    
-    if (to && connectedUsers[to]) {
-      io.to(connectedUsers[to]).emit('callEnded');
-    }
-  });
-
-  // Envoyer une notification
-  socket.on('sendNotification', (data) => {
-    const { recipientId, type, content } = data;
-    
-    // Vérifier si le destinataire est connecté
-    if (connectedUsers[recipientId]) {
-      // Envoyer la notification
-      io.to(connectedUsers[recipientId]).emit('notification', {
-        type,
-        content
-      });
-    }
-  });
-
-  // Déconnexion
-  socket.on('disconnect', () => {
-    console.log('Déconnexion Socket.io:', socket.id);
-    
-    if (socket.userId) {
-      // Supprimer le mapping utilisateur-socket
-      delete connectedUsers[socket.userId];
-      
-      // Informer les autres de la déconnexion
-      socket.broadcast.emit('userStatusChange', { 
-        userId: socket.userId, 
-        isOnline: false 
-      });
-      
-      console.log(`Utilisateur déconnecté: ${socket.userId}`);
-    }
-  });
-});
-
-// Routes
-app.use('/api/users', require('./routes/users'));
-app.use('/api/products', require('./routes/products'));
-app.use('/api/panier', require('./routes/panier'));
-app.use('/api/favorites', require('./routes/favorites'));
-app.use('/api/contacts', require('./routes/contacts'));
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/orders', require('./routes/orders'));
-app.use('/api/admin-chat', require('./routes/admin-chat'));
-app.use('/api/client-chat', require('./routes/client-chat'));
-app.use('/api/notifications', require('./routes/notifications'));
-
-// Route pour les images uploadées
-app.use('/uploads', express.static('uploads'));
-
-// Route pour les sons
-app.use('/sounds', express.static(path.join(__dirname, '..', 'public', 'sounds')));
-
-// Démarrage du serveur
+// Démarrer le serveur
+const PORT = process.env.PORT || 10000;
 server.listen(PORT, () => {
   console.log(`Serveur démarré sur le port ${PORT}`);
 });

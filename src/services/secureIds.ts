@@ -1,3 +1,4 @@
+
 import { v4 as uuidv4 } from 'uuid';
 
 // Fonction pour générer un identifiant sécurisé unique
@@ -7,6 +8,12 @@ const generateSecureId = () => {
 
 // Map pour stocker les routes sécurisées et leurs identifiants uniques
 const secureRoutes = new Map<string, string>();
+
+// Map pour stocker les IDs sécurisés des produits
+const secureProductIds = new Map<string, string>();
+
+// Map pour stocker la correspondance inverse (secure ID -> real ID)
+const reverseSecureIds = new Map<string, string>();
 
 export const initSecureRoutes = () => {
   const routes = new Map([
@@ -58,3 +65,78 @@ export const getSecureRoute = (route: string): string | undefined => {
   return secureRoutes.get(route);
 };
 
+// Fonction pour obtenir la route réelle à partir d'un ID sécurisé
+export const getRealRoute = (secureId: string): string | undefined => {
+  for (const [route, id] of secureRoutes.entries()) {
+    if (id === secureId) {
+      return route;
+    }
+  }
+  return undefined;
+};
+
+// Fonction pour valider un ID sécurisé
+export const isValidSecureId = (secureId: string): boolean => {
+  // Vérifier si c'est un UUID valide
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(secureId)) {
+    return false;
+  }
+  
+  // Vérifier si l'ID existe dans nos routes ou produits
+  for (const [, id] of secureRoutes.entries()) {
+    if (id === secureId) {
+      return true;
+    }
+  }
+  
+  for (const [, id] of secureProductIds.entries()) {
+    if (id === secureId) {
+      return true;
+    }
+  }
+  
+  return false;
+};
+
+// Fonction pour obtenir le type d'entité d'un ID sécurisé
+export const getEntityType = (secureId: string): 'route' | 'product' | 'unknown' => {
+  for (const [, id] of secureRoutes.entries()) {
+    if (id === secureId) {
+      return 'route';
+    }
+  }
+  
+  for (const [, id] of secureProductIds.entries()) {
+    if (id === secureId) {
+      return 'product';
+    }
+  }
+  
+  return 'unknown';
+};
+
+// Fonction pour générer un ID sécurisé pour un produit
+export const getSecureProductId = (productId: string): string => {
+  if (secureProductIds.has(productId)) {
+    return secureProductIds.get(productId)!;
+  }
+  
+  const secureId = generateSecureId();
+  secureProductIds.set(productId, secureId);
+  reverseSecureIds.set(secureId, productId);
+  return secureId;
+};
+
+// Fonction pour obtenir l'ID réel à partir d'un ID sécurisé
+export const getRealId = (secureId: string): string | undefined => {
+  return reverseSecureIds.get(secureId);
+};
+
+// Fonction générique pour obtenir un ID sécurisé
+export const getSecureId = (entityId: string): string => {
+  return getSecureProductId(entityId);
+};
+
+// Exporter la map des routes sécurisées pour l'utiliser dans d'autres fichiers
+export { secureRoutes };

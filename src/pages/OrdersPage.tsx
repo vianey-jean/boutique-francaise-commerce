@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import Layout from '@/components/layout/Layout';
 import { useStore } from '@/contexts/StoreContext';
@@ -9,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import PageDataLoader from '@/components/layout/PageDataLoader';
 import { Package, MapPin, Calendar, CreditCard, Eye, ShoppingBag, TrendingUp, Clock, Sparkles } from 'lucide-react';
+import { getSecureRoute } from '@/services/secureIds';
 
 const OrdersPage = () => {
   const { orders, fetchOrders } = useStore();
@@ -264,10 +264,10 @@ const OrdersPage = () => {
                       <Button 
                         variant="outline" 
                         onClick={() => {
-                          const secureOrderRoute = secureRoutes.get('/order/:orderId');
+                          const secureOrderRoute = getSecureRoute('/order/:orderId');
                           if (secureOrderRoute) {
                             const finalRoute = secureOrderRoute.replace(':orderId', order.id);
-                            navigate(finalRoute);
+                            navigate(`/${finalRoute}`);
                           }
                         }}
                         className="border-blue-200 text-blue-600 hover:bg-blue-50 transition-colors font-medium"

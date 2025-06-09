@@ -197,11 +197,15 @@ function AppRoutes() {
         } />
         <Route path="/commandes" element={<Navigate to={secureRoutes.get('/commandes') || '/'} replace />} />
         
-        <Route path="/commande/:orderId" element={
-          <ProtectedRoute>
-            <OrderPage />
-          </ProtectedRoute>
+        {/* Route sécurisée pour les détails de commande */}
+        <Route path={secureRoutes.get('/order/:orderId')?.substring(1)} element={
+          <SecureRoute>
+            <ProtectedRoute>
+              <OrderPage />
+            </ProtectedRoute>
+          </SecureRoute>
         } />
+        <Route path="/order/:orderId" element={<Navigate to={secureRoutes.get('/order/:orderId') || '/'} replace />} />
         
         <Route path={secureRoutes.get('/profil')?.substring(1)} element={
           <SecureRoute>

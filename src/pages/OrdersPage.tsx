@@ -263,7 +263,13 @@ const OrdersPage = () => {
                       </div>
                       <Button 
                         variant="outline" 
-                        onClick={() => navigate(`/order/${order.id}`)}
+                        onClick={() => {
+                          const secureOrderRoute = secureRoutes.get('/order/:orderId');
+                          if (secureOrderRoute) {
+                            const finalRoute = secureOrderRoute.replace(':orderId', order.id);
+                            navigate(finalRoute);
+                          }
+                        }}
                         className="border-blue-200 text-blue-600 hover:bg-blue-50 transition-colors font-medium"
                       >
                         <Eye className="h-4 w-4 mr-2" />

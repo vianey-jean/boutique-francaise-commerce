@@ -204,7 +204,6 @@ export const initSecureRoutes = () => {
     '/panier',
     '/favoris',
     '/paiement',
-    '/order/:orderId',
     // Ajout des routes d'authentification
     '/login',
     '/register',

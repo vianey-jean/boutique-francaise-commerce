@@ -116,8 +116,8 @@ export const getEntityType = (secureId: string): 'route' | 'product' | 'unknown'
   return 'unknown';
 };
 
-// Fonction pour générer un ID sécurisé pour un produit
-export const getSecureProductId = (productId: string): string => {
+// Fonction pour générer un ID sécurisé pour un produit - accepte 2 paramètres
+export const getSecureProductId = (productId: string, type?: string): string => {
   if (secureProductIds.has(productId)) {
     return secureProductIds.get(productId)!;
   }
@@ -133,9 +133,9 @@ export const getRealId = (secureId: string): string | undefined => {
   return reverseSecureIds.get(secureId);
 };
 
-// Fonction générique pour obtenir un ID sécurisé
-export const getSecureId = (entityId: string): string => {
-  return getSecureProductId(entityId);
+// Fonction générique pour obtenir un ID sécurisé - accepte 2 paramètres
+export const getSecureId = (entityId: string, type?: string): string => {
+  return getSecureProductId(entityId, type);
 };
 
 // Exporter la map des routes sécurisées pour l'utiliser dans d'autres fichiers

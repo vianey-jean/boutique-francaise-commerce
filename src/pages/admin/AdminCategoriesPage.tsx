@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import PageDataLoader from '@/components/layout/PageDataLoader';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -155,7 +156,21 @@ const AdminCategoriesPage: React.FC = () => {
   if (loading) {
     return (
       <AdminLayout>
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50">
+
+
+        <PageDataLoader
+       
+          loadingMessage="Chargement de votre boutique..."
+          loadingSubmessage="Préparation de votre expérience shopping premium..."
+          errorMessage="Erreur de chargement des produits" fetchFunction={function (): Promise<any> {
+            throw new Error('Function not implemented.');
+          } } onSuccess={function (data: any): void {
+            throw new Error('Function not implemented.');
+          } } children={''}        >
+
+        </PageDataLoader>
+
+        {/* <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50">
           <div className="text-center space-y-6">
             <div className="relative">
               <div className="animate-spin rounded-full h-20 w-20 border-4 border-blue-500 border-t-transparent mx-auto"></div>
@@ -168,7 +183,7 @@ const AdminCategoriesPage: React.FC = () => {
               <p className="text-gray-600">Veuillez patienter...</p>
             </div>
           </div>
-        </div>
+        </div> */}
       </AdminLayout>
     );
   }
@@ -210,7 +225,85 @@ const AdminCategoriesPage: React.FC = () => {
                     Ajouter une catégorie
                   </Button>
                 </DialogTrigger>
-                {/* Dialog content will be rendered below */}
+                
+                <DialogContent className="sm:max-w-[500px] border-0 shadow-2xl">
+                  <form onSubmit={handleSubmit}>
+                    <DialogHeader className="space-y-4">
+                      <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                        {editingCategory ? 'Modifier la catégorie' : 'Ajouter une catégorie'}
+                      </DialogTitle>
+                      <DialogDescription className="text-gray-600">
+                        {editingCategory 
+                          ? 'Modifiez les informations de la catégorie'
+                          : 'Ajoutez une nouvelle catégorie de produits'
+                        }
+                      </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="grid gap-6 py-6">
+                      <div className="grid gap-3">
+                        <Label htmlFor="name" className="text-gray-700 font-medium">Nom *</Label>
+                        <Input
+                          id="name"
+                          value={formData.name}
+                          onChange={(e) => setFormData({...formData, name: e.target.value})}
+                          placeholder="Ex: perruques"
+                          required
+                          className="border-2 border-gray-200 focus:border-blue-500 transition-colors"
+                        />
+                      </div>
+                      
+                      <div className="grid gap-3">
+                        <Label htmlFor="description" className="text-gray-700 font-medium">Description</Label>
+                        <Textarea
+                          id="description"
+                          value={formData.description}
+                          onChange={(e) => setFormData({...formData, description: e.target.value})}
+                          placeholder="Description de la catégorie"
+                          className="border-2 border-gray-200 focus:border-blue-500 transition-colors"
+                        />
+                      </div>
+                      
+                      <div className="grid gap-3">
+                        <Label htmlFor="order" className="text-gray-700 font-medium">Ordre d'affichage</Label>
+                        <Input
+                          id="order"
+                          type="number"
+                          min="1"
+                          value={formData.order}
+                          onChange={(e) => setFormData({...formData, order: parseInt(e.target.value) || 1})}
+                          className="border-2 border-gray-200 focus:border-blue-500 transition-colors"
+                        />
+                      </div>
+                      
+                      <div className="flex items-center space-x-3 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl">
+                        <Switch
+                          id="isActive"
+                          checked={formData.isActive}
+                          onCheckedChange={(checked) => setFormData({...formData, isActive: checked})}
+                        />
+                        <Label htmlFor="isActive" className="text-gray-700 font-medium">Catégorie active</Label>
+                      </div>
+                    </div>
+                    
+                    <DialogFooter className="gap-3">
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={handleCloseDialog}
+                        className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                      >
+                        Annuler
+                      </Button>
+                      <Button 
+                        type="submit" 
+                        className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 font-medium"
+                      >
+                        {editingCategory ? 'Modifier' : 'Ajouter'}
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
               </Dialog>
             </div>
           </div>
@@ -379,86 +472,6 @@ const AdminCategoriesPage: React.FC = () => {
             </div>
           </CardContent>
         </Card>
-
-        {/* Enhanced Dialog Content */}
-        <DialogContent className="sm:max-w-[500px] border-0 shadow-2xl">
-          <form onSubmit={handleSubmit}>
-            <DialogHeader className="space-y-4">
-              <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                {editingCategory ? 'Modifier la catégorie' : 'Ajouter une catégorie'}
-              </DialogTitle>
-              <DialogDescription className="text-gray-600">
-                {editingCategory 
-                  ? 'Modifiez les informations de la catégorie'
-                  : 'Ajoutez une nouvelle catégorie de produits'
-                }
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="grid gap-6 py-6">
-              <div className="grid gap-3">
-                <Label htmlFor="name" className="text-gray-700 font-medium">Nom *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  placeholder="Ex: perruques"
-                  required
-                  className="border-2 border-gray-200 focus:border-blue-500 transition-colors"
-                />
-              </div>
-              
-              <div className="grid gap-3">
-                <Label htmlFor="description" className="text-gray-700 font-medium">Description</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  placeholder="Description de la catégorie"
-                  className="border-2 border-gray-200 focus:border-blue-500 transition-colors"
-                />
-              </div>
-              
-              <div className="grid gap-3">
-                <Label htmlFor="order" className="text-gray-700 font-medium">Ordre d'affichage</Label>
-                <Input
-                  id="order"
-                  type="number"
-                  min="1"
-                  value={formData.order}
-                  onChange={(e) => setFormData({...formData, order: parseInt(e.target.value) || 1})}
-                  className="border-2 border-gray-200 focus:border-blue-500 transition-colors"
-                />
-              </div>
-              
-              <div className="flex items-center space-x-3 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl">
-                <Switch
-                  id="isActive"
-                  checked={formData.isActive}
-                  onCheckedChange={(checked) => setFormData({...formData, isActive: checked})}
-                />
-                <Label htmlFor="isActive" className="text-gray-700 font-medium">Catégorie active</Label>
-              </div>
-            </div>
-            
-            <DialogFooter className="gap-3">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={handleCloseDialog}
-                className="border-gray-300 text-gray-700 hover:bg-gray-50"
-              >
-                Annuler
-              </Button>
-              <Button 
-                type="submit" 
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 font-medium"
-              >
-                {editingCategory ? 'Modifier' : 'Ajouter'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
       </div>
     </AdminLayout>
   );

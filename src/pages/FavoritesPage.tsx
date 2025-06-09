@@ -1,7 +1,8 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import ProductGrid from '@/components/products/ProductGrid';
+import PageDataLoader from '@/components/layout/PageDataLoader';
 import { useStore } from '@/contexts/StoreContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Heart, ShoppingBag, Sparkles, Star } from 'lucide-react';
@@ -11,7 +12,22 @@ import { Link } from 'react-router-dom';
 const FavoritesPage = () => {
   const { favorites, loadingFavorites } = useStore();
   const { isAuthenticated } = useAuth();
+  const [dataLoaded, setDataLoaded] = useState(false);
   
+  const loadFavoritesData = async () => {
+    // Simuler le chargement des favoris
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    return favorites;
+  };
+
+  const handleDataSuccess = () => {
+    setDataLoaded(true);
+  };
+
+  const handleMaxRetriesReached = () => {
+    setDataLoaded(true);
+  };
+
   return (
     <Layout>
       <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-white to-neutral-50 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950">
@@ -73,64 +89,62 @@ const FavoritesPage = () => {
                 <Link to="/login">Se connecter</Link>
               </Button>
             </div>
-          ) : loadingFavorites ? (
-            <div className="text-center py-16">
-              <div className="relative mb-6">
-                <div className="animate-spin rounded-full h-16 w-16 border-4 border-gradient-to-r from-rose-500 to-pink-500 border-t-transparent mx-auto"></div>
-                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-rose-500/20 to-pink-500/20 animate-pulse"></div>
-              </div>
-              <h2 className="text-xl font-semibold mb-2 text-neutral-900 dark:text-neutral-100">
-                Chargement de vos favoris...
-              </h2>
-              <p className="text-neutral-600 dark:text-neutral-400">
-                Récupération de votre sélection personnalisée
-              </p>
-            </div>
-          ) : favorites.length > 0 ? (
-            <div className="bg-white dark:bg-neutral-900 rounded-xl shadow-sm border border-neutral-200 dark:border-neutral-800 p-8">
-              <div className="flex items-center justify-between mb-8">
-                <div>
-                  <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-2">
-                    Vos produits favoris
-                  </h2>
-                  <p className="text-neutral-600 dark:text-neutral-400">
-                    {favorites.length} produit{favorites.length > 1 ? 's' : ''} dans votre sélection
-                  </p>
-                </div>
-                
-                <div className="hidden md:flex items-center space-x-4 text-sm">
-                  <div className="flex items-center space-x-2 px-3 py-2 bg-rose-50 dark:bg-rose-950/20 rounded-full">
-                    <Heart className="h-4 w-4 text-rose-500" />
-                    <span className="text-rose-700 dark:text-rose-400">Favoris</span>
-                  </div>
-                </div>
-              </div>
-              
-              <ProductGrid products={favorites} />
-            </div>
           ) : (
-            <div className="text-center py-16 px-6 bg-gradient-to-br from-neutral-50 to-neutral-100 dark:from-neutral-900 dark:to-neutral-800 rounded-xl shadow-sm border border-neutral-200 dark:border-neutral-700">
-              <div className="mb-6">
-                <div className="bg-gradient-to-r from-rose-500 to-pink-500 p-4 rounded-full mx-auto w-fit mb-4">
-                  <Heart className="h-12 w-12 text-white" />
+            <PageDataLoader
+              fetchFunction={loadFavoritesData}
+              onSuccess={handleDataSuccess}
+              onMaxRetriesReached={handleMaxRetriesReached}
+              loadingMessage="Chargement de vos favoris..."
+              loadingSubmessage="Récupération de votre sélection personnalisée..."
+              errorMessage="Erreur de chargement des favoris"
+            >
+              {favorites.length > 0 ? (
+                <div className="bg-white dark:bg-neutral-900 rounded-xl shadow-sm border border-neutral-200 dark:border-neutral-800 p-8">
+                  <div className="flex items-center justify-between mb-8">
+                    <div>
+                      <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-2">
+                        Vos produits favoris
+                      </h2>
+                      <p className="text-neutral-600 dark:text-neutral-400">
+                        {favorites.length} produit{favorites.length > 1 ? 's' : ''} dans votre sélection
+                      </p>
+                    </div>
+                    
+                    <div className="hidden md:flex items-center space-x-4 text-sm">
+                      <div className="flex items-center space-x-2 px-3 py-2 bg-rose-50 dark:bg-rose-950/20 rounded-full">
+                        <Heart className="h-4 w-4 text-rose-500" />
+                        <span className="text-rose-700 dark:text-rose-400">Favoris</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <ProductGrid products={favorites} />
                 </div>
-              </div>
-              <h2 className="text-2xl font-bold mb-3 text-neutral-900 dark:text-neutral-100">
-                Votre liste de favoris est vide
-              </h2>
-              <p className="text-neutral-600 dark:text-neutral-400 mb-8 max-w-md mx-auto">
-                Ajoutez des produits à vos favoris pour les retrouver ici facilement
-              </p>
-              <Button 
-                asChild 
-                className="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white shadow-lg px-8 py-3 rounded-full"
-              >
-                <Link to="/">
-                  <ShoppingBag className="h-5 w-5 mr-2" />
-                  Explorer nos produits
-                </Link>
-              </Button>
-            </div>
+              ) : (
+                <div className="text-center py-16 px-6 bg-gradient-to-br from-neutral-50 to-neutral-100 dark:from-neutral-900 dark:to-neutral-800 rounded-xl shadow-sm border border-neutral-200 dark:border-neutral-700">
+                  <div className="mb-6">
+                    <div className="bg-gradient-to-r from-rose-500 to-pink-500 p-4 rounded-full mx-auto w-fit mb-4">
+                      <Heart className="h-12 w-12 text-white" />
+                    </div>
+                  </div>
+                  <h2 className="text-2xl font-bold mb-3 text-neutral-900 dark:text-neutral-100">
+                    Votre liste de favoris est vide
+                  </h2>
+                  <p className="text-neutral-600 dark:text-neutral-400 mb-8 max-w-md mx-auto">
+                    Ajoutez des produits à vos favoris pour les retrouver ici facilement
+                  </p>
+                  <Button 
+                    asChild 
+                    className="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white shadow-lg px-8 py-3 rounded-full"
+                  >
+                    <Link to="/">
+                      <ShoppingBag className="h-5 w-5 mr-2" />
+                      Explorer nos produits
+                    </Link>
+                  </Button>
+                </div>
+              )}
+            </PageDataLoader>
           )}
         </div>
       </div>

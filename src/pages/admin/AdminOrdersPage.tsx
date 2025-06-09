@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
@@ -14,10 +13,12 @@ import { ordersAPI, Order } from '@/services/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import PageDataLoader from '@/components/layout/PageDataLoader';
 import { Check, Package, Truck, ShoppingBag, MapPin, User, Calendar, CreditCard } from 'lucide-react';
 import AdminLayout from './AdminLayout';
 
 const AdminOrdersPage = () => {
+  const [dataLoaded, setDataLoaded] = useState(false);
   const queryClient = useQueryClient();
   const AUTH_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   
@@ -26,8 +27,22 @@ const AdminOrdersPage = () => {
     queryFn: async () => {
       const response = await ordersAPI.getAll();
       return response.data;
-    }
+    },
+    enabled: dataLoaded,
   });
+
+  const loadOrdersData = async () => {
+    const response = await ordersAPI.getAll();
+    return response.data;
+  };
+
+  const handleDataSuccess = () => {
+    setDataLoaded(true);
+  };
+
+  const handleMaxRetriesReached = () => {
+    toast.error('Impossible de charger les commandes');
+  };
 
   const updateOrderStatus = useMutation({
     mutationFn: async ({ orderId, status }: { orderId: string, status: string }) => {
@@ -76,12 +91,18 @@ const AdminOrdersPage = () => {
     }
   };
 
-  if (isLoading) {
+  if (!dataLoaded) {
     return (
       <AdminLayout>
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
-        </div>
+        <PageDataLoader
+          fetchFunction={loadOrdersData}
+          onSuccess={handleDataSuccess}
+          onMaxRetriesReached={handleMaxRetriesReached}
+          loadingMessage="Chargement des commandes..."
+          loadingSubmessage="Récupération des données de commandes..."
+          errorMessage="Erreur de chargement des commandes"
+        >
+        </PageDataLoader>
       </AdminLayout>
     );
   }

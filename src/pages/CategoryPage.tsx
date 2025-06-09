@@ -7,6 +7,7 @@ import HeroSection from '@/components/layout/HeroSection';
 import DesktopFilters from '@/components/filters/DesktopFilters';
 import FilterBadges from '@/components/filters/FilterBadges';
 import ProductsPageHeader from '@/components/products/ProductsPageHeader';
+import PageDataLoader from '@/components/layout/PageDataLoader';
 import { Product } from '@/contexts/StoreContext';
 import { productsAPI } from '@/services/api';
 import { toast } from '@/components/ui/sonner';
@@ -48,28 +49,31 @@ const CategoryPage = () => {
     categoryFilter: realCategoryName 
   });
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      setIsLoading(true);
-      try {
-        const response = await productsAPI.getAll();
-        
-        if (!response.data || !Array.isArray(response.data)) {
-          throw new Error('Format de données incorrect');
-        }
-        
-        setProducts(response.data);
-      } catch (error) {
-        console.error("Erreur lors du chargement des produits:", error);
-        toast.error("Impossible de charger les produits");
-        setProducts([]);
-      } finally {
-        setIsLoading(false);
+  const fetchCategoryProducts = async () => {
+    try {
+      const response = await productsAPI.getAll();
+      
+      if (!response.data || !Array.isArray(response.data)) {
+        throw new Error('Format de données incorrect');
       }
-    };
-    
-    fetchProducts();
-  }, [realCategoryName]);
+      
+      return response.data;
+    } catch (error) {
+      console.error("Erreur lors du chargement des produits:", error);
+      toast.error("Impossible de charger les produits");
+      throw error;
+    }
+  };
+
+  const handleDataSuccess = (data: Product[]) => {
+    setProducts(data);
+    setIsLoading(false);
+  };
+
+  const handleMaxRetriesReached = () => {
+    setProducts([]);
+    setIsLoading(false);
+  };
 
   const mobileFiltersProps = {
     filtersOpen,
@@ -131,70 +135,79 @@ const CategoryPage = () => {
         </div>
 
         <div className="container mx-auto px-4 py-8">
-          <ProductsPageHeader
-            title={categoryTitle}
-            productCount={sortedProducts.length}
-            sortOption={sortOption}
-            setSortOption={setSortOption}
-            mobileFiltersProps={mobileFiltersProps}
-          />
-          
-          <FilterBadges 
-            badges={getFilterBadges()} 
-            onClearAll={resetFilters}
-          />
-          
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="bg-white dark:bg-neutral-900 rounded-xl shadow-sm border border-neutral-200 dark:border-neutral-800 p-6">
-              <DesktopFilters
-                searchTerm={searchTerm}
-                setSearchTerm={setSearchTerm}
-                priceRange={priceRange}
-                setPriceRange={setPriceRange}
-                maxPrice={maxPrice}
-                showInStock={showInStock}
-                setShowInStock={setShowInStock}
-                showOutOfStock={showOutOfStock}
-                setShowOutOfStock={setShowOutOfStock}
-                showPromoOnly={showPromoOnly}
-                setShowPromoOnly={setShowPromoOnly}
-                resetFilters={resetFilters}
-              />
-            </div>
+          <PageDataLoader
+            fetchFunction={fetchCategoryProducts}
+            onSuccess={handleDataSuccess}
+            onMaxRetriesReached={handleMaxRetriesReached}
+            loadingMessage={`Chargement des ${categoryTitle.toLowerCase()}...`}
+            loadingSubmessage="Récupération de notre sélection premium..."
+            errorMessage={`Erreur de chargement des ${categoryTitle.toLowerCase()}`}
+          >
+            <ProductsPageHeader
+              title={categoryTitle}
+              productCount={sortedProducts.length}
+              sortOption={sortOption}
+              setSortOption={setSortOption}
+              mobileFiltersProps={mobileFiltersProps}
+            />
             
-            <div className="md:col-span-3">
-              {isLoading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {[...Array(6)].map((_, i) => (
-                    <div key={i} className="border rounded-xl p-4 h-[300px] animate-pulse bg-white dark:bg-neutral-900">
-                      <div className="w-full h-40 bg-gradient-to-r from-neutral-200 to-neutral-300 dark:from-neutral-700 dark:to-neutral-600 rounded-lg mb-4"></div>
-                      <div className="h-4 bg-gradient-to-r from-neutral-200 to-neutral-300 dark:from-neutral-700 dark:to-neutral-600 rounded w-3/4 mb-2"></div>
-                      <div className="h-4 bg-gradient-to-r from-neutral-200 to-neutral-300 dark:from-neutral-700 dark:to-neutral-600 rounded w-1/2"></div>
-                    </div>
-                  ))}
-                </div>
-              ) : sortedProducts.length > 0 ? (
-                <ProductGrid products={sortedProducts} />
-              ) : (
-                <div className="flex flex-col items-center justify-center py-16 px-6 bg-gradient-to-br from-neutral-50 to-neutral-100 dark:from-neutral-900 dark:to-neutral-800 rounded-xl text-center border border-neutral-200 dark:border-neutral-700">
-                  <div className="bg-gradient-to-r from-red-500 to-rose-500 p-4 rounded-full mb-6">
-                    <ShoppingBag className="h-12 w-12 text-white" />
+            <FilterBadges 
+              badges={getFilterBadges()} 
+              onClearAll={resetFilters}
+            />
+            
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+              <div className="bg-white dark:bg-neutral-900 rounded-xl shadow-sm border border-neutral-200 dark:border-neutral-800 p-6">
+                <DesktopFilters
+                  searchTerm={searchTerm}
+                  setSearchTerm={setSearchTerm}
+                  priceRange={priceRange}
+                  setPriceRange={setPriceRange}
+                  maxPrice={maxPrice}
+                  showInStock={showInStock}
+                  setShowInStock={setShowInStock}
+                  showOutOfStock={showOutOfStock}
+                  setShowOutOfStock={setShowOutOfStock}
+                  showPromoOnly={showPromoOnly}
+                  setShowPromoOnly={setShowPromoOnly}
+                  resetFilters={resetFilters}
+                />
+              </div>
+              
+              <div className="md:col-span-3">
+                {isLoading ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[...Array(6)].map((_, i) => (
+                      <div key={i} className="border rounded-xl p-4 h-[300px] animate-pulse bg-white dark:bg-neutral-900">
+                        <div className="w-full h-40 bg-gradient-to-r from-neutral-200 to-neutral-300 dark:from-neutral-700 dark:to-neutral-600 rounded-lg mb-4"></div>
+                        <div className="h-4 bg-gradient-to-r from-neutral-200 to-neutral-300 dark:from-neutral-700 dark:to-neutral-600 rounded w-3/4 mb-2"></div>
+                        <div className="h-4 bg-gradient-to-r from-neutral-200 to-neutral-300 dark:from-neutral-700 dark:to-neutral-600 rounded w-1/2"></div>
+                      </div>
+                    ))}
                   </div>
-                  <h2 className="text-2xl font-bold mb-3 text-neutral-900 dark:text-neutral-100">Aucun produit trouvé</h2>
-                  <p className="text-neutral-600 dark:text-neutral-400 mb-6 max-w-md">
-                    Nous n'avons trouvé aucun produit correspondant à vos critères de recherche. 
-                    Essayez d'ajuster vos filtres ou de parcourir d'autres catégories.
-                  </p>
-                  <Button 
-                    onClick={resetFilters}
-                    className="bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 text-white shadow-lg"
-                  >
-                    Réinitialiser tous les filtres
-                  </Button>
-                </div>
-              )}
+                ) : sortedProducts.length > 0 ? (
+                  <ProductGrid products={sortedProducts} />
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-16 px-6 bg-gradient-to-br from-neutral-50 to-neutral-100 dark:from-neutral-900 dark:to-neutral-800 rounded-xl text-center border border-neutral-200 dark:border-neutral-700">
+                    <div className="bg-gradient-to-r from-red-500 to-rose-500 p-4 rounded-full mb-6">
+                      <ShoppingBag className="h-12 w-12 text-white" />
+                    </div>
+                    <h2 className="text-2xl font-bold mb-3 text-neutral-900 dark:text-neutral-100">Aucun produit trouvé</h2>
+                    <p className="text-neutral-600 dark:text-neutral-400 mb-6 max-w-md">
+                      Nous n'avons trouvé aucun produit correspondant à vos critères de recherche. 
+                      Essayez d'ajuster vos filtres ou de parcourir d'autres catégories.
+                    </p>
+                    <Button 
+                      onClick={resetFilters}
+                      className="bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 text-white shadow-lg"
+                    >
+                      Réinitialiser tous les filtres
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          </PageDataLoader>
         </div>
       </div>
     </Layout>

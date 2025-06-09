@@ -18,6 +18,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { toast } from '@/components/ui/sonner';
+import PageDataLoader from '@/components/layout/PageDataLoader';
 import { remboursementsAPI, ordersAPI, type Remboursement } from '@/services/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
@@ -129,7 +130,22 @@ const AdminRemboursementsPage = () => {
   if (isLoading) {
     return (
       <AdminLayout>
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50">
+
+
+                    <PageDataLoader
+               
+                  loadingMessage="Chargement de votre boutique..."
+                  loadingSubmessage="Préparation de votre expérience shopping premium..."
+                  errorMessage="Erreur de chargement des produits" fetchFunction={function (): Promise<any> {
+                    throw new Error('Function not implemented.');
+                  } } onSuccess={function (data: any): void {
+                    throw new Error('Function not implemented.');
+                  } } children={''}        >
+        
+                </PageDataLoader>
+
+
+        {/* <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50">
           <div className="text-center space-y-6">
             <div className="relative">
               <div className="animate-spin rounded-full h-20 w-20 border-4 border-blue-500 border-t-transparent mx-auto"></div>
@@ -142,7 +158,7 @@ const AdminRemboursementsPage = () => {
               <p className="text-gray-600">Veuillez patienter...</p>
             </div>
           </div>
-        </div>
+        </div> */}
       </AdminLayout>
     );
   }

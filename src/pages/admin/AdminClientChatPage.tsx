@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import AdminLayout from './AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +10,7 @@ import { MessageSquare, Send, Users, Clock, Search, Filter, Sparkles, MessageCir
 import { clientChatAPI } from '@/services/chatAPI';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import PageDataLoader from '@/components/layout/PageDataLoader';
 
 interface Message {
   id: string;
@@ -36,10 +36,50 @@ const AdminClientChatPage: React.FC = () => {
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [selectedSession, setSelectedSession] = useState<ChatSession | null>(null);
   const [newMessage, setNewMessage] = useState('');
+  const [dataLoaded, setDataLoaded] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
+  const loadChatSessions = async () => {
+    try {
+      // Mock data for now since the API might not be available
+      const mockSessions: ChatSession[] = [
+        {
+          id: '1',
+          userId: 'user1',
+          userName: 'Jean Dupont',
+          status: 'active',
+          unreadCount: 2,
+          createdAt: new Date().toISOString(),
+          messages: [
+            {
+              id: '1',
+              senderId: 'user1',
+              senderName: 'Jean Dupont',
+              content: 'Bonjour, j\'ai un problème avec ma commande',
+              timestamp: new Date().toISOString(),
+              type: 'user'
+            }
+          ]
+        }
+      ];
+      return mockSessions;
+    } catch (error) {
+      console.error('Erreur lors du chargement des sessions de chat:', error);
+      throw error;
+    }
+  };
+
+  const handleDataSuccess = (data: ChatSession[]) => {
+    setChatSessions(data);
+    setDataLoaded(true);
+  };
+
+  const handleMaxRetriesReached = () => {
+    console.error('Impossible de charger les conversations');
+  };
+
   useEffect(() => {
-    loadChatSessions();
+    loadChatSessionsData();
   }, []);
 
   useEffect(() => {
@@ -48,9 +88,8 @@ const AdminClientChatPage: React.FC = () => {
     }
   }, [selectedSession?.messages]);
 
-  const loadChatSessions = async () => {
+  const loadChatSessionsData = async () => {
     try {
-      // Mock data for now since the API might not be available
       const mockSessions: ChatSession[] = [
         {
           id: '1',
@@ -116,6 +155,22 @@ const AdminClientChatPage: React.FC = () => {
     const date = new Date(dateString);
     return format(date, 'HH:mm', { locale: fr });
   };
+
+  if (!dataLoaded) {
+    return (
+      <AdminLayout>
+        <PageDataLoader
+          fetchFunction={loadChatSessions}
+          onSuccess={handleDataSuccess}
+          onMaxRetriesReached={handleMaxRetriesReached}
+          loadingMessage="Chargement des conversations..."
+          loadingSubmessage="Récupération des messages clients..."
+          errorMessage="Erreur de chargement des conversations"
+        >
+        </PageDataLoader>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>

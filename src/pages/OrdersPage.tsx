@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import PageDataLoader from '@/components/layout/PageDataLoader';
 import { Package, MapPin, Calendar, CreditCard, Eye, ShoppingBag, TrendingUp, Clock, Sparkles } from 'lucide-react';
 
 const OrdersPage = () => {
@@ -20,19 +21,25 @@ const OrdersPage = () => {
       navigate('/login');
       return;
     }
+  }, [isAuthenticated, navigate]);
 
-    const loadOrders = async () => {
-      try {
-        await fetchOrders();
-      } catch (error) {
-        console.error('Erreur lors du chargement des commandes:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const loadOrders = async () => {
+    try {
+      await fetchOrders();
+      setLoading(false);
+    } catch (error) {
+      console.error('Erreur lors du chargement des commandes:', error);
+      setLoading(false);
+    }
+  };
 
-    loadOrders();
-  }, [isAuthenticated, fetchOrders, navigate]);
+  const handleDataSuccess = () => {
+    setLoading(false);
+  };
+
+  const handleMaxRetriesReached = () => {
+    setLoading(false);
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -71,20 +78,14 @@ const OrdersPage = () => {
   if (loading) {
     return (
       <Layout>
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50">
-          <div className="text-center space-y-6">
-            <div className="relative">
-              <div className="animate-spin rounded-full h-20 w-20 border-4 border-blue-500 border-t-transparent mx-auto"></div>
-              <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-blue-400 to-purple-500 opacity-20 animate-pulse"></div>
-            </div>
-            <div className="space-y-2">
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Chargement de vos commandes
-              </h2>
-              <p className="text-gray-600">Veuillez patienter...</p>
-            </div>
-          </div>
-        </div>
+        <PageDataLoader
+          fetchFunction={loadOrders}
+          onSuccess={handleDataSuccess}
+          onMaxRetriesReached={handleMaxRetriesReached}
+          loadingMessage="Chargement de vos commandes..."
+          loadingSubmessage="Récupération de votre historique d'achats..."
+          errorMessage="Erreur de chargement des commandes"
+        />
       </Layout>
     );
   }

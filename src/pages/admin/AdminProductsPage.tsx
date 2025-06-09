@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { productsAPI } from '@/services/productsAPI';
@@ -11,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Search, Edit, Trash2, Package, TrendingUp, Eye, Star, DollarSign } from 'lucide-react';
 import { ProductForm } from '@/components/admin/ProductForm';
 import { ProductList } from '@/components/admin/ProductList';
+import PageDataLoader from '@/components/layout/PageDataLoader';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
@@ -19,6 +19,7 @@ const AdminProductsPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -28,6 +29,7 @@ const AdminProductsPage: React.FC = () => {
       const response = await productsAPI.getAll();
       return response.data;
     },
+    enabled: dataLoaded,
   });
 
   const { data: categories = [] } = useQuery({
@@ -36,7 +38,24 @@ const AdminProductsPage: React.FC = () => {
       const response = await categoriesAPI.getAll();
       return response.data;
     },
+    enabled: dataLoaded,
   });
+
+  const loadProductsData = async () => {
+    const [productsResponse, categoriesResponse] = await Promise.all([
+      productsAPI.getAll(),
+      categoriesAPI.getAll()
+    ]);
+    return { products: productsResponse.data, categories: categoriesResponse.data };
+  };
+
+  const handleDataSuccess = () => {
+    setDataLoaded(true);
+  };
+
+  const handleMaxRetriesReached = () => {
+    toast({ title: 'Erreur de connexion', description: 'Impossible de charger les produits', variant: 'destructive' });
+  };
 
   const deleteMutation = useMutation({
     mutationFn: productsAPI.delete,
@@ -70,23 +89,18 @@ const AdminProductsPage: React.FC = () => {
   const lowStockProducts = products.filter(product => (product.stock || 0) < 10).length;
   const averagePrice = products.length > 0 ? products.reduce((sum, product) => sum + product.price, 0) / products.length : 0;
 
-  if (isLoading) {
+  if (!dataLoaded) {
     return (
       <AdminLayout>
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50">
-          <div className="text-center space-y-6">
-            <div className="relative">
-              <div className="animate-spin rounded-full h-20 w-20 border-4 border-blue-500 border-t-transparent mx-auto"></div>
-              <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-blue-400 to-purple-500 opacity-20 animate-pulse"></div>
-            </div>
-            <div className="space-y-2">
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Chargement des produits
-              </h2>
-              <p className="text-gray-600">Veuillez patienter...</p>
-            </div>
-          </div>
-        </div>
+        <PageDataLoader
+          fetchFunction={loadProductsData}
+          onSuccess={handleDataSuccess}
+          onMaxRetriesReached={handleMaxRetriesReached}
+          loadingMessage="Chargement des produits..."
+          loadingSubmessage="Préparation de votre catalogue..."
+          errorMessage="Erreur de chargement des produits"
+        >
+        </PageDataLoader>
       </AdminLayout>
     );
   }

@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import ProductCatalogGrid from '@/components/products/ProductGrid';
 import CustomerTestimonialSection from '@/components/reviews/TestimonialSection';
-import DataRetryLoader from '@/components/data-loading/DataRetryLoader';
+import PageDataLoader from '@/components/layout/PageDataLoader';
 import HomeHeader from '@/components/home/HomeHeader';
 import FeaturedProductsCarousel from '@/components/home/FeaturedProductsCarousel';
 import PromotionalProductsGrid from '@/components/home/PromotionalProductsGrid';
@@ -51,67 +51,49 @@ const HomePage = () => {
   return (
     <Layout>
       <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-white to-neutral-50 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950">
-        {/* Hero Section moderne */}
-        <div className="relative overflow-hidden bg-gradient-to-r from-red-500/10 via-rose-500/10 to-pink-500/10 dark:from-red-500/5 dark:via-rose-500/5 dark:to-pink-500/5">
-          <div className="absolute inset-0 bg-grid-neutral-100/50 dark:bg-grid-neutral-800/50" />
-          <div className="container mx-auto px-4 py-12 relative">
-            <HomeHeader />
-            
-            {/* Section de bienvenue avec animation */}
-            <div className="text-center max-w-4xl mx-auto mb-12">
-              <div className="flex items-center justify-center mb-6">
-                <div className="bg-gradient-to-r from-red-500 to-rose-500 p-3 rounded-2xl shadow-lg animate-pulse">
-                  <Sparkles className="h-8 w-8 text-white" />
-                </div>
-              </div>
+        <PageDataLoader
+          fetchFunction={loadEcommerceProductData}
+          onSuccess={handleDataLoadingSuccess}
+          onMaxRetriesReached={handleMaxRetriesReached}
+          loadingMessage="Chargement de votre boutique..."
+          loadingSubmessage="Préparation de votre expérience shopping premium..."
+          errorMessage="Erreur de chargement des produits"
+        >
+          {/* Hero Section moderne */}
+          <div className="relative overflow-hidden bg-gradient-to-r from-red-500/10 via-rose-500/10 to-pink-500/10 dark:from-red-500/5 dark:via-rose-500/5 dark:to-pink-500/5">
+            <div className="absolute inset-0 bg-grid-neutral-100/50 dark:bg-grid-neutral-800/50" />
+            <div className="container mx-auto px-4 py-6 relative">
+              <HomeHeader />
               
-              <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-red-600 via-rose-600 to-pink-600 bg-clip-text text-transparent mb-6 animate-fade-in">
-                Découvrez l'Excellence
-              </h1>
-              
-              <p className="text-lg md:text-xl text-neutral-600 dark:text-neutral-300 mb-8 leading-relaxed animate-fade-in">
-                Votre destination beauté pour des produits de qualité premium qui subliment votre style naturel.
-              </p>
-              
-              <div className="flex items-center justify-center space-x-8 text-sm text-neutral-500 dark:text-neutral-400">
-                <div className="flex items-center space-x-2 animate-fade-in">
-                  <Star className="h-5 w-5 text-yellow-500" />
-                  <span>Qualité Premium</span>
-                </div>
-                <div className="flex items-center space-x-2 animate-fade-in">
-                  <TrendingUp className="h-5 w-5 text-green-500" />
-                  <span>Tendances 2025</span>
-                </div>
-                <div className="flex items-center space-x-2 animate-fade-in">
-                  <ShoppingBag className="h-5 w-5 text-blue-500" />
-                  <span>Livraison Offerte</span>
+              {/* Section de bienvenue avec animation */}
+              <div className="text-center max-w-4xl mx-auto mb-8 h-[100px]">
+                <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-red-600 via-rose-600 to-pink-600 bg-clip-text text-transparent mb-3 animate-fade-in">
+                  Découvrez l'Excellence
+                </h1>
+
+                <p className="text-md md:text-lg text-neutral-600 dark:text-neutral-300 mb-4 leading-relaxed animate-fade-in">
+                  Votre destination beauté pour des produits de qualité premium qui subliment votre style naturel.
+                </p>
+
+                <div className="flex items-center justify-center space-x-6 text-sm text-neutral-500 dark:text-neutral-400">
+                  <div className="flex items-center space-x-1 animate-fade-in">
+                    <Star className="h-4 w-4 text-yellow-500" />
+                    <span>Qualité Premium</span>
+                  </div>
+                  <div className="flex items-center space-x-1 animate-fade-in">
+                    <TrendingUp className="h-4 w-4 text-green-500" />
+                    <span>Tendances 2025</span>
+                  </div>
+                  <div className="flex items-center space-x-1 animate-fade-in">
+                    <ShoppingBag className="h-4 w-4 text-blue-500" />
+                    <span>Livraison Offerte</span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="container mx-auto px-4 py-8">
-          <DataRetryLoader
-            fetchFunction={loadEcommerceProductData}
-            onSuccess={handleDataLoadingSuccess}
-            onMaxRetriesReached={handleMaxRetriesReached}
-            maxRetries={6}
-            retryInterval={5000}
-            errorMessage="Erreur de chargement des produits"
-            loadingComponent={
-              <div className="text-center py-20">
-                <div className="relative">
-                  <div className="animate-spin rounded-full h-16 w-16 border-4 border-gradient-to-r from-red-500 to-rose-500 border-t-transparent mx-auto mb-6"></div>
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-red-500/20 to-rose-500/20 animate-pulse"></div>
-                </div>
-                <h2 className="text-2xl font-bold mb-3 bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent">
-                  Chargement de votre boutique...
-                </h2>
-                <p className="text-neutral-600 dark:text-neutral-400">Connexion au serveur en cours...</p>
-              </div>
-            }
-          >
+          <div className="container mx-auto px-4 py-8">
             {searchParams.get('q') && (
               <div className="mb-12 bg-white dark:bg-neutral-900 rounded-xl shadow-sm border border-neutral-200 dark:border-neutral-800 p-8">
                 <ProductCatalogGrid
@@ -184,8 +166,8 @@ const HomePage = () => {
             <div className="bg-gradient-to-r from-neutral-50 to-neutral-100 dark:from-neutral-900 dark:to-neutral-800 rounded-xl shadow-sm border border-neutral-200 dark:border-neutral-700 p-8 animate-fade-in">
               <CustomerTestimonialSection />
             </div>
-          </DataRetryLoader>
-        </div>
+          </div>
+        </PageDataLoader>
 
         {/* Composants pour les administrateurs uniquement */}
         <SalesNotification />

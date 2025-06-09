@@ -23,8 +23,8 @@
   },
   "onlineUsers": {
     "3": {
-      "isOnline": true,
-      "lastSeen": "2025-06-02T14:01:40.859Z"
+      "isOnline": false,
+      "lastSeen": "2025-06-09T08:19:09.948Z"
     }
   },
   "autoReplySent": {},

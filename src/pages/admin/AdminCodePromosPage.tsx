@@ -26,6 +26,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import PageDataLoader from '@/components/layout/PageDataLoader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -152,7 +153,20 @@ const AdminCodePromosPage: React.FC = () => {
   if (isLoading) {
     return (
       <AdminLayout>
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-white to-pink-50">
+
+                            <PageDataLoader
+               
+                  loadingMessage="Chargement de votre boutique..."
+                  loadingSubmessage="Préparation de votre expérience shopping premium..."
+                  errorMessage="Erreur de chargement des produits" fetchFunction={function (): Promise<any> {
+                    throw new Error('Function not implemented.');
+                  } } onSuccess={function (data: any): void {
+                    throw new Error('Function not implemented.');
+                  } } children={''}        >
+        
+                </PageDataLoader>
+                
+        {/* <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-white to-pink-50">
           <div className="text-center space-y-6">
             <div className="relative">
               <div className="animate-spin rounded-full h-20 w-20 border-4 border-purple-500 border-t-transparent mx-auto"></div>
@@ -165,7 +179,7 @@ const AdminCodePromosPage: React.FC = () => {
               <p className="text-gray-600">Veuillez patienter...</p>
             </div>
           </div>
-        </div>
+        </div> */}
       </AdminLayout>
     );
   }

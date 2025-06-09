@@ -197,7 +197,7 @@ function AppRoutes() {
         } />
         <Route path="/commandes" element={<Navigate to={secureRoutes.get('/commandes') || '/'} replace />} />
         
-        <Route path="/commande/:orderId" element={
+        <Route path={`/commande/:orderId`} element={
           <ProtectedRoute>
             <OrderPage />
           </ProtectedRoute>

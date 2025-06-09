@@ -263,7 +263,7 @@ const OrdersPage = () => {
                       </div>
                       <Button 
                         variant="outline" 
-                        onClick={() => navigate(`/order/${order.id}`)}
+                        onClick={() => navigate(`/commande/${order.id}`)}
                         className="border-blue-200 text-blue-600 hover:bg-blue-50 transition-colors font-medium"
                       >
                         <Eye className="h-4 w-4 mr-2" />

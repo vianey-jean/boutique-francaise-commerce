@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import Layout from '@/components/layout/Layout';
 import { useStore } from '@/contexts/StoreContext';
@@ -9,12 +8,16 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import PageDataLoader from '@/components/layout/PageDataLoader';
 import { Package, MapPin, Calendar, CreditCard, Eye, ShoppingBag, TrendingUp, Clock, Sparkles } from 'lucide-react';
+import { initSecureRoutes } from '@/services/secureIds';
 
 const OrdersPage = () => {
   const { orders, fetchOrders } = useStore();
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  
+  // Obtenir les routes sécurisées
+  const secureRoutes = initSecureRoutes();
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -73,6 +76,14 @@ const OrdersPage = () => {
     const baseUrl = 'https://riziky-boutic-server.onrender.com';
     const cleanPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
     return `${baseUrl}${cleanPath}`;
+  };
+
+  const getSecureOrderUrl = (orderId: string) => {
+    const secureOrderRoute = secureRoutes.get('/order/:orderId');
+    if (secureOrderRoute) {
+      return secureOrderRoute.replace(':orderId', orderId);
+    }
+    return `/order/${orderId}`;
   };
 
   if (loading) {
@@ -263,7 +274,7 @@ const OrdersPage = () => {
                       </div>
                       <Button 
                         variant="outline" 
-                        onClick={() => navigate(`/order/${order.id}`)}
+                        onClick={() => navigate(getSecureOrderUrl(order.id))}
                         className="border-blue-200 text-blue-600 hover:bg-blue-50 transition-colors font-medium"
                       >
                         <Eye className="h-4 w-4 mr-2" />

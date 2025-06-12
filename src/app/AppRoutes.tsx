@@ -1,6 +1,6 @@
 
 import React, { Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import RegistrationChecker from './RegistrationChecker';
 import SecureRoute from '@/components/SecureRoute';
@@ -52,7 +52,7 @@ const AppRoutes = () => {
   const handleMaxRetriesReached = () => {};
 
   return (
-    <Router>
+    <>
       <Routes>
         {/* Route d'accueil */}
         <Route 
@@ -469,7 +469,7 @@ const AppRoutes = () => {
         />
       </Routes>
       <Toaster />
-    </Router>
+    </>
   );
 };
 

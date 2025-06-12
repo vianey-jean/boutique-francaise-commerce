@@ -39,7 +39,7 @@ const saveMappings = () => {
 };
 
 // Type d'entité pour identifier les différentes sections sécurisées
-export type EntityType = 'product' | 'admin' | 'profile' | 'orders';
+export type EntityType = 'product' | 'admin' | 'profile' | 'orders' | 'order';
 
 /**
  * Génère un ID sécurisé pour un ID réel donné
@@ -48,6 +48,20 @@ export type EntityType = 'product' | 'admin' | 'profile' | 'orders';
  * @returns Un ID sécurisé unique
  */
 export const generateSecureId = (realId: string, type: EntityType = 'product'): string => {
+  // Pour les commandes, générer un ID complètement aléatoire sans préfixe
+  if (type === 'order') {
+    const secureId = nanoid(32);
+    
+    // Stocker la correspondance dans les maps
+    secureIdMap.set(realId, secureId);
+    reverseMap.set(secureId, realId);
+    
+    // Sauvegarder les mappings
+    saveMappings();
+    
+    return secureId;
+  }
+  
   // Générer un ID sécurisé aléatoire avec un préfixe pour le type
   const secureId = `${type}_${nanoid(16)}_${Date.now().toString(36)}`;
   
@@ -81,6 +95,11 @@ export const getSecureId = (realId: string, type: EntityType = 'product'): strin
   // Vérifier si l'ID réel existe déjà
   const existingId = secureIdMap.get(realId);
   
+  // Pour les commandes, toujours vérifier que l'ID existant est bien de type order
+  if (type === 'order' && existingId && !existingId.includes('_')) {
+    return existingId;
+  }
+  
   // Si l'ID existe et a le bon type, le réutiliser
   if (existingId && existingId.startsWith(`${type}_`)) {
     return existingId;
@@ -98,6 +117,15 @@ export const getSecureId = (realId: string, type: EntityType = 'product'): strin
  */
 export const getSecureProductId = (productId: string, type: EntityType = 'product'): string => {
   return getSecureId(productId, type);
+};
+
+/**
+ * Obtient un ID sécurisé spécifiquement pour une commande
+ * @param orderId L'ID de la commande
+ * @returns L'ID sécurisé de la commande
+ */
+export const getSecureOrderId = (orderId: string): string => {
+  return getSecureId(orderId, 'order');
 };
 
 /**
@@ -204,7 +232,7 @@ export const initSecureRoutes = () => {
     '/panier',
     '/favoris',
     '/paiement',
-    '/order/:orderId',
+    '/commande/:orderId',
     // Ajout des routes d'authentification
     '/login',
     '/register',
@@ -214,7 +242,9 @@ export const initSecureRoutes = () => {
     // Ajout des nouvelles routes
     '/promotions',
     '/nouveautes',
-    '/populaires'
+    '/populaires',
+    // Ajout de la route maintenance-login sécurisée
+    '/maintenance-login'
   ];
   
   let hasNewRoutes = false;

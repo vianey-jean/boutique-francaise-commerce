@@ -381,7 +381,7 @@ const AdminChatContent = () => {
                 </UserStatusCard>
               </div>
               
-              <ScrollArea className="flex-1 p-4 bg-gradient-to-b from-gray-50 to-white">
+              <ScrollArea className="flex-1 p-4 bg-gradient-to-b from-gray-50 to-white max-h-[70vh] overflow-y-auto">
                 {isLoadingConversation ? (
                   <div className="text-center p-8">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>

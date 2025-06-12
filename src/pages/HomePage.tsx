@@ -13,6 +13,12 @@ import { useHomePageData } from '@/hooks/useHomePageData';
 import { useCarouselAutoplay } from '@/hooks/useCarouselAutoplay';
 import SalesNotification from '@/components/engagement/SalesNotification';
 import LiveVisitorCounter from '@/components/engagement/LiveVisitorCounter';
+import TrustBadges from '@/components/luxury/TrustBadges';
+import SecurityIndicator from '@/components/luxury/SecurityIndicator';
+import SecurityNotifications from '@/components/luxury/SecurityNotifications';
+import CertificationBadges from '@/components/luxury/CertificationBadges';
+import LuxuryTestimonials from '@/components/luxury/LuxuryTestimonials';
+import PremiumGuarantee from '@/components/luxury/PremiumGuarantee';
 import { Sparkles, TrendingUp, Star, ShoppingBag } from 'lucide-react';
 
 const HomePage = () => {

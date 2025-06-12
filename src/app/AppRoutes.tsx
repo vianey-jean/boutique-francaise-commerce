@@ -1,7 +1,7 @@
 
 import React, { Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
+import { Toaster } from 'sonner';
 import RegistrationChecker from './RegistrationChecker';
 import SecureRoute from '@/components/SecureRoute';
 import LoadingFallback from './LoadingFallback';
@@ -15,7 +15,6 @@ const ProductDetailPage = React.lazy(() => import('@/pages/ProductDetailPage'));
 const CartPage = React.lazy(() => import('@/pages/CartPage'));
 const FavoritesPage = React.lazy(() => import('@/pages/FavoritesPage'));
 const CheckoutPage = React.lazy(() => import('@/pages/CheckoutPage'));
-const OrderConfirmationPage = React.lazy(() => import('@/pages/OrderConfirmationPage'));
 const OrderDetailsPage = React.lazy(() => import('@/pages/OrderDetailsPage'));
 const OrdersPage = React.lazy(() => import('@/pages/OrdersPage'));
 const FlashSalePage = React.lazy(() => import('@/pages/FlashSalePage'));
@@ -33,15 +32,15 @@ const ResetPasswordPage = React.lazy(() => import('@/pages/ResetPasswordPage'));
 const NotFound = React.lazy(() => import('@/pages/NotFound'));
 const RegisterBlockPage = React.lazy(() => import('@/pages/RegisterBlockPage'));
 
-// Pages administrateur
-const AdminDashboard = React.lazy(() => import('@/pages/admin/AdminDashboard'));
-const AdminProducts = React.lazy(() => import('@/pages/admin/AdminProducts'));
-const AdminCategories = React.lazy(() => import('@/pages/admin/AdminCategories'));
-const AdminOrders = React.lazy(() => import('@/pages/admin/AdminOrders'));
-const AdminUsers = React.lazy(() => import('@/pages/admin/AdminUsers'));
-const AdminSettings = React.lazy(() => import('@/pages/admin/AdminSettings'));
-const AdminPromoCodes = React.lazy(() => import('@/pages/admin/AdminPromoCodes'));
-const AdminFlashSales = React.lazy(() => import('@/pages/admin/AdminFlashSales'));
+// Pages administrateur existantes
+const AdminChatPage = React.lazy(() => import('@/pages/admin/AdminChatPage'));
+const AdminProductsPage = React.lazy(() => import('@/pages/admin/AdminProductsPage'));
+const AdminCategoriesPage = React.lazy(() => import('@/pages/admin/AdminCategoriesPage'));
+const AdminOrdersPage = React.lazy(() => import('@/pages/admin/AdminOrdersPage'));
+const AdminUsersPage = React.lazy(() => import('@/pages/admin/AdminUsersPage'));
+const AdminSettingsPage = React.lazy(() => import('@/pages/admin/AdminSettingsPage'));
+const AdminCodePromosPage = React.lazy(() => import('@/pages/admin/AdminCodePromosPage'));
+const AdminFlashSalesPage = React.lazy(() => import('@/pages/admin/AdminFlashSalesPage'));
 
 const AppRoutes = () => {
   const loadPageData = async () => {
@@ -298,18 +297,18 @@ const AppRoutes = () => {
 
         {/* Routes administrateur */}
         <Route 
-          path="/admin/dashboard" 
+          path="/admin/chat" 
           element={
             <Suspense fallback={<LoadingFallback />}>
               <PageDataLoader
                 fetchFunction={loadPageData}
                 onSuccess={handleDataSuccess}
                 onMaxRetriesReached={handleMaxRetriesReached}
-                loadingMessage="Chargement du tableau de bord..."
-                loadingSubmessage="Préparation des statistiques..."
-                errorMessage="Erreur de chargement du dashboard"
+                loadingMessage="Chargement du chat admin..."
+                loadingSubmessage="Préparation de l'interface..."
+                errorMessage="Erreur de chargement du chat"
               >
-                <AdminDashboard />
+                <AdminChatPage />
               </PageDataLoader>
             </Suspense>
           } 
@@ -327,7 +326,7 @@ const AppRoutes = () => {
                 loadingSubmessage="Préparation de la gestion..."
                 errorMessage="Erreur de chargement des produits"
               >
-                <AdminProducts />
+                <AdminProductsPage />
               </PageDataLoader>
             </Suspense>
           } 
@@ -345,7 +344,7 @@ const AppRoutes = () => {
                 loadingSubmessage="Préparation de la gestion..."
                 errorMessage="Erreur de chargement des catégories"
               >
-                <AdminCategories />
+                <AdminCategoriesPage />
               </PageDataLoader>
             </Suspense>
           } 
@@ -363,7 +362,7 @@ const AppRoutes = () => {
                 loadingSubmessage="Préparation de la gestion..."
                 errorMessage="Erreur de chargement des commandes"
               >
-                <AdminOrders />
+                <AdminOrdersPage />
               </PageDataLoader>
             </Suspense>
           } 
@@ -381,7 +380,7 @@ const AppRoutes = () => {
                 loadingSubmessage="Préparation de la gestion..."
                 errorMessage="Erreur de chargement des utilisateurs"
               >
-                <AdminUsers />
+                <AdminUsersPage />
               </PageDataLoader>
             </Suspense>
           } 
@@ -399,7 +398,7 @@ const AppRoutes = () => {
                 loadingSubmessage="Préparation de la configuration..."
                 errorMessage="Erreur de chargement des paramètres"
               >
-                <AdminSettings />
+                <AdminSettingsPage />
               </PageDataLoader>
             </Suspense>
           } 
@@ -417,7 +416,7 @@ const AppRoutes = () => {
                 loadingSubmessage="Préparation de la gestion..."
                 errorMessage="Erreur de chargement des codes promo"
               >
-                <AdminPromoCodes />
+                <AdminCodePromosPage />
               </PageDataLoader>
             </Suspense>
           } 
@@ -435,29 +434,8 @@ const AppRoutes = () => {
                 loadingSubmessage="Préparation de la gestion..."
                 errorMessage="Erreur de chargement des ventes flash"
               >
-                <AdminFlashSales />
+                <AdminFlashSalesPage />
               </PageDataLoader>
-            </Suspense>
-          } 
-        />
-
-        {/* Confirmation de commande sécurisée */}
-        <Route 
-          path="/:secureId" 
-          element={
-            <Suspense fallback={<LoadingFallback />}>
-              <SecureRoute>
-                <PageDataLoader
-                  fetchFunction={loadPageData}
-                  onSuccess={handleDataSuccess}
-                  onMaxRetriesReached={handleMaxRetriesReached}
-                  loadingMessage="Chargement sécurisé..."
-                  loadingSubmessage="Vérification des accès..."
-                  errorMessage="Erreur de chargement sécurisé"
-                >
-                  <OrderConfirmationPage />
-                </PageDataLoader>
-              </SecureRoute>
             </Suspense>
           } 
         />

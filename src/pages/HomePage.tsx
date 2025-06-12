@@ -13,12 +13,6 @@ import { useHomePageData } from '@/hooks/useHomePageData';
 import { useCarouselAutoplay } from '@/hooks/useCarouselAutoplay';
 import SalesNotification from '@/components/engagement/SalesNotification';
 import LiveVisitorCounter from '@/components/engagement/LiveVisitorCounter';
-import TrustBadges from '@/components/luxury/TrustBadges';
-import SecurityIndicator from '@/components/luxury/SecurityIndicator';
-import SecurityNotifications from '@/components/luxury/SecurityNotifications';
-import CertificationBadges from '@/components/luxury/CertificationBadges';
-import LuxuryTestimonials from '@/components/luxury/LuxuryTestimonials';
-import PremiumGuarantee from '@/components/luxury/PremiumGuarantee';
 import { Sparkles, TrendingUp, Star, ShoppingBag } from 'lucide-react';
 
 const HomePage = () => {
@@ -99,12 +93,6 @@ const HomePage = () => {
             </div>
           </div>
 
-          {/* Nouveaux composants de luxe et sécurité */}
-          <TrustBadges />
-          <SecurityIndicator />
-          <SecurityNotifications />
-          <CertificationBadges />
-
           <div className="container mx-auto px-4 py-8">
             {searchParams.get('q') && (
               <div className="mb-12 bg-white dark:bg-neutral-900 rounded-xl shadow-sm border border-neutral-200 dark:border-neutral-800 p-8">
@@ -127,10 +115,6 @@ const HomePage = () => {
               </div>
             )}
 
-            {/* Composants de luxe intégrés */}
-            <LuxuryTestimonials />
-            <PremiumGuarantee />
-
             {!searchParams.get('q') && (
               <div className="mb-12 bg-white dark:bg-neutral-900 rounded-xl shadow-sm border border-neutral-200 dark:border-neutral-800 p-8 animate-fade-in" data-section="promotional">
                 <div className="text-center mb-8">
@@ -147,7 +131,6 @@ const HomePage = () => {
               </div>
             )}
 
-            {/* Sections produits existantes */}
             <div className="mb-12 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-xl shadow-sm border border-blue-200 dark:border-blue-800 p-8 animate-fade-in" data-section="new-arrivals">
               <div className="text-center mb-8">
                 <div className="flex items-center justify-center mb-4">

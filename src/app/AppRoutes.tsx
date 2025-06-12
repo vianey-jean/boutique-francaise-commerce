@@ -1,409 +1,497 @@
 
-import React, { useEffect, lazy, Suspense } from 'react';
-import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import ProtectedRoute from '@/components/ProtectedRoute';
-import SecureRoute from '@/components/SecureRoute';
-import { initSecureRoutes, getSecureRoute } from '@/services/secureIds';
-import MaintenanceChecker from './MaintenanceChecker';
+import React, { Suspense } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import RegistrationChecker from './RegistrationChecker';
+import SecureRoute from '@/components/SecureRoute';
 import LoadingFallback from './LoadingFallback';
+import PageDataLoader from '@/components/layout/PageDataLoader';
 
-// Chargement paresseux des pages pour optimiser les performances
-const HomePage = lazy(() => import('@/pages/HomePage'));
-const MaintenancePage = lazy(() => import('@/pages/MaintenancePage'));
-const MaintenanceLoginPage = lazy(() => import('@/pages/MaintenanceLoginPage'));
-const RegisterBlockPage = lazy(() => import('@/pages/RegisterBlockPage'));
-const LoginPage = lazy(() => import('@/pages/LoginPage'));
-const RegisterPage = lazy(() => import('@/pages/RegisterPage'));
-const ForgotPasswordPage = lazy(() => import('@/pages/ForgotPasswordPage'));
-const ProductDetail = lazy(() => import('@/pages/ProductDetail'));
-const CategoryPage = lazy(() => import('@/pages/CategoryPage'));
-const DeliveryPage = lazy(() => import('@/pages/DeliveryPage'));
-const ReturnsPage = lazy(() => import('@/pages/ReturnsPage'));
-const AllProductsPage = lazy(() => import('@/pages/AllProductsPage'));
-const Promotions = lazy(() => import('@/pages/PromotionalProductsPage'));
-const Nouveautes = lazy(() => import('@/pages/NewArrivalsPage'));
-const Populaires = lazy(() => import('@/pages/PopularityPage'));
-const CustomerServicePage = lazy(() => import('@/pages/CustomerServicePage'));
-const ContactPage = lazy(() => import('@/pages/ContactPage'));
-const BlogPage = lazy(() => import('@/pages/BlogPage'));
-const CarriersPage = lazy(() => import('@/pages/CarriersPage'));
-const HistoryPage = lazy(() => import('@/pages/HistoryPage'));
-const TermsPage = lazy(() => import('@/pages/TermsPage'));
-const PrivacyPage = lazy(() => import('@/pages/PrivacyPage'));
-const CookiesPage = lazy(() => import('@/pages/CookiesPage'));
-const FAQPage = lazy(() => import('@/pages/FAQPage'));
-const ChatPage = lazy(() => import('@/pages/ChatPage'));
-const CartPage = lazy(() => import('@/pages/CartPage'));
-const FavoritesPage = lazy(() => import('@/pages/FavoritesPage'));
-const CheckoutPage = lazy(() => import('@/pages/CheckoutPage'));
-const OrdersPage = lazy(() => import('@/pages/OrdersPage'));
-const OrderPage = lazy(() => import('@/pages/OrderPage'));
-const ProfilePage = lazy(() => import('@/pages/ProfilePage'));
-const FlashSalePage = lazy(() => import('@/pages/FlashSalePage'));
-const NotFound = lazy(() => import('@/pages/NotFound'));
+// Pages principales
+const HomePage = React.lazy(() => import('@/pages/HomePage'));
+const AllProductsPage = React.lazy(() => import('@/pages/AllProductsPage'));
+const CategoryPage = React.lazy(() => import('@/pages/CategoryPage'));
+const ProductDetailPage = React.lazy(() => import('@/pages/ProductDetailPage'));
+const CartPage = React.lazy(() => import('@/pages/CartPage'));
+const FavoritesPage = React.lazy(() => import('@/pages/FavoritesPage'));
+const CheckoutPage = React.lazy(() => import('@/pages/CheckoutPage'));
+const OrderConfirmationPage = React.lazy(() => import('@/pages/OrderConfirmationPage'));
+const OrderDetailsPage = React.lazy(() => import('@/pages/OrderDetailsPage'));
+const OrdersPage = React.lazy(() => import('@/pages/OrdersPage'));
+const FlashSalePage = React.lazy(() => import('@/pages/FlashSalePage'));
+const BlogPage = React.lazy(() => import('@/pages/BlogPage'));
+const DeliveryPage = React.lazy(() => import('@/pages/DeliveryPage'));
+const CustomerServicePage = React.lazy(() => import('@/pages/CustomerServicePage'));
 
-// Pages Admin
-const AdminProductsPage = lazy(() => import('@/pages/admin/AdminProductsPage'));
-const AdminUsersPage = lazy(() => import('@/pages/admin/AdminUsersPage'));
-const AdminMessagesPage = lazy(() => import('@/pages/admin/AdminMessagesPage'));
-const AdminSettingsPage = lazy(() => import('@/pages/admin/AdminSettingsPage'));
-const AdminChatPage = lazy(() => import('@/pages/admin/AdminChatPage'));
-const AdminOrdersPage = lazy(() => import('@/pages/admin/AdminOrdersPage'));
-const AdminClientChatPage = lazy(() => import('@/pages/admin/AdminClientChatPage'));
-const AdminCodePromosPage = lazy(() => import('@/pages/admin/AdminCodePromosPage'));
-const AdminPubLayoutPage = lazy(() => import('@/pages/admin/AdminPubLayoutPage'));
-const AdminRemboursementsPage = lazy(() => import('@/pages/admin/AdminRemboursementsPage'));
-const AdminFlashSalesPage = lazy(() => import('@/pages/admin/AdminFlashSalesPage'));
-const AdminCategoriesPage = lazy(() => import('@/pages/admin/AdminCategoriesPage'));
+// Pages d'authentification
+const LoginPage = React.lazy(() => import('@/pages/LoginPage'));
+const RegisterPage = React.lazy(() => import('@/pages/RegisterPage'));
+const ForgotPasswordPage = React.lazy(() => import('@/pages/ForgotPasswordPage'));
+const ResetPasswordPage = React.lazy(() => import('@/pages/ResetPasswordPage'));
 
-// Initialiser les routes sécurisées
-const secureRoutes = initSecureRoutes();
+// Pages d'erreur
+const NotFound = React.lazy(() => import('@/pages/NotFound'));
+const RegisterBlockPage = React.lazy(() => import('@/pages/RegisterBlockPage'));
 
-const AppRoutes: React.FC = () => {
-  const location = useLocation();
-  
-  // Remonter la page au changement de route
-  useEffect(() => {
-    window.scrollTo(0, 0);
-    console.log("Navigation vers:", location.pathname);
-  }, [location.pathname]);
-  
+// Pages administrateur
+const AdminDashboard = React.lazy(() => import('@/pages/admin/AdminDashboard'));
+const AdminProducts = React.lazy(() => import('@/pages/admin/AdminProducts'));
+const AdminCategories = React.lazy(() => import('@/pages/admin/AdminCategories'));
+const AdminOrders = React.lazy(() => import('@/pages/admin/AdminOrders'));
+const AdminUsers = React.lazy(() => import('@/pages/admin/AdminUsers'));
+const AdminSettings = React.lazy(() => import('@/pages/admin/AdminSettings'));
+const AdminPromoCodes = React.lazy(() => import('@/pages/admin/AdminPromoCodes'));
+const AdminFlashSales = React.lazy(() => import('@/pages/admin/AdminFlashSales'));
+
+const AppRoutes = () => {
+  const loadPageData = async () => {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return { loaded: true };
+  };
+
+  const handleDataSuccess = () => {};
+  const handleMaxRetriesReached = () => {};
+
   return (
-    <Suspense fallback={<LoadingFallback />}>
+    <Router>
       <Routes>
-        {/* Route sécurisée pour la page de maintenance-login */}
-        <Route path={secureRoutes.get('/maintenance-login')?.substring(1)} element={<MaintenanceLoginPage />} />
-        <Route path="/maintenance-login" element={<Navigate to={secureRoutes.get('/maintenance-login') || '/'} replace />} />
-        
-        {/* Route principale avec vérification de maintenance */}
-        <Route path="/" element={
-          <MaintenanceChecker>
-            <HomePage />
-          </MaintenanceChecker>
-        } />
-        
-        {/* Routes d'authentification sécurisées */}
-        <Route path={secureRoutes.get('/login')?.substring(1)} element={
-          <MaintenanceChecker>
-            <LoginPage />
-          </MaintenanceChecker>
-        } />
-        <Route path="/login" element={<Navigate to={secureRoutes.get('/login') || '/'} replace />} />
-        
-        <Route path={secureRoutes.get('/register')?.substring(1)} element={
-          <MaintenanceChecker>
-            <RegistrationChecker>
-              <RegisterPage />
-            </RegistrationChecker>
-          </MaintenanceChecker>
-        } />
-        <Route path="/register" element={<Navigate to={secureRoutes.get('/register') || '/'} replace />} />
-        
-        <Route path={secureRoutes.get('/forgot-password')?.substring(1)} element={
-          <MaintenanceChecker>
-            <ForgotPasswordPage />
-          </MaintenanceChecker>
-        } />
-        <Route path="/forgot-password" element={<Navigate to={secureRoutes.get('/forgot-password') || '/'} replace />} />
-        
-        <Route path="/categorie/:categoryName" element={
-          <MaintenanceChecker>
-            <CategoryPage />
-          </MaintenanceChecker>
-        } />
-        
-        <Route path="/livraison" element={
-          <MaintenanceChecker>
-            <DeliveryPage />
-          </MaintenanceChecker>
-        } />
-        <Route path="/mentions-legales" element={
-          <MaintenanceChecker>
-            <ReturnsPage />
-          </MaintenanceChecker>
-        } />
-        <Route path="/retours" element={
-          <MaintenanceChecker>
-            <ReturnsPage />
-          </MaintenanceChecker>
-        } />
+        {/* Route d'accueil */}
+        <Route 
+          path="/" 
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <HomePage />
+            </Suspense>
+          } 
+        />
 
-        <Route path={secureRoutes.get('/tous-les-produits')?.substring(1)} element={
-          <MaintenanceChecker>
-            <AllProductsPage />
-          </MaintenanceChecker>
-        } />
-        <Route path="/tous-les-produits" element={<Navigate to={secureRoutes.get('/tous-les-produits') || '/'} replace />} />
-        
+        {/* Pages principales */}
+        <Route 
+          path="/produits" 
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <PageDataLoader
+                fetchFunction={loadPageData}
+                onSuccess={handleDataSuccess}
+                onMaxRetriesReached={handleMaxRetriesReached}
+                loadingMessage="Chargement des produits..."
+                loadingSubmessage="Préparation de votre catalogue premium..."
+                errorMessage="Erreur de chargement des produits"
+              >
+                <AllProductsPage />
+              </PageDataLoader>
+            </Suspense>
+          } 
+        />
 
-        <Route path={secureRoutes.get('/promotions')?.substring(1)} element={
-          <MaintenanceChecker>
-            <Promotions />
-          </MaintenanceChecker>
-        } />
-        <Route path="/promotions" element={<Navigate to={secureRoutes.get('/promotions') || '/'} replace />} />
+        <Route 
+          path="/categorie/:categoryName" 
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <PageDataLoader
+                fetchFunction={loadPageData}
+                onSuccess={handleDataSuccess}
+                onMaxRetriesReached={handleMaxRetriesReached}
+                loadingMessage="Chargement de la catégorie..."
+                loadingSubmessage="Préparation de votre sélection premium..."
+                errorMessage="Erreur de chargement de la catégorie"
+              >
+                <CategoryPage />
+              </PageDataLoader>
+            </Suspense>
+          } 
+        />
 
-        <Route path={secureRoutes.get('/nouveautes')?.substring(1)} element={
-          <MaintenanceChecker>
-            <Nouveautes />
-          </MaintenanceChecker>
-        } />
-        <Route path="/nouveautes" element={<Navigate to={secureRoutes.get('/nouveautes') || '/'} replace />} />
+        <Route 
+          path="/produit/:productId" 
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <PageDataLoader
+                fetchFunction={loadPageData}
+                onSuccess={handleDataSuccess}
+                onMaxRetriesReached={handleMaxRetriesReached}
+                loadingMessage="Chargement du produit..."
+                loadingSubmessage="Préparation des détails premium..."
+                errorMessage="Erreur de chargement du produit"
+              >
+                <ProductDetailPage />
+              </PageDataLoader>
+            </Suspense>
+          } 
+        />
 
-         <Route path={secureRoutes.get('/populaires')?.substring(1)} element={
-          <MaintenanceChecker>
-            <Populaires />
-          </MaintenanceChecker>
-        } />
-        <Route path="/populaires" element={<Navigate to={secureRoutes.get('/populaires') || '/'} replace />} />
+        <Route 
+          path="/panier" 
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <CartPage />
+            </Suspense>
+          } 
+        />
 
-        
-        <Route path={secureRoutes.get('/flash-sale/:id')?.substring(1)} element={
-          <MaintenanceChecker>
-            <FlashSalePage />
-          </MaintenanceChecker>
-        } />
-        <Route path="/flash-sale/:id" element={<Navigate to={secureRoutes.get('/flash-sale/:id') || '/'} replace />} />
-        
-        <Route path="/service-client" element={
-          <MaintenanceChecker>
-            <CustomerServicePage />
-          </MaintenanceChecker>
-        } />
-        <Route path="/contact" element={
-          <MaintenanceChecker>
-            <ContactPage />
-          </MaintenanceChecker>
-        } />
-        <Route path="/blog" element={
-          <MaintenanceChecker>
-            <BlogPage />
-          </MaintenanceChecker>
-        } />
-        <Route path="/carrieres" element={
-          <MaintenanceChecker>
-            <CarriersPage />
-          </MaintenanceChecker>
-        } />
-        <Route path="/notre-histoire" element={
-          <MaintenanceChecker>
-            <HistoryPage />
-          </MaintenanceChecker>
-        } />
-        <Route path="/conditions-utilisation" element={
-          <MaintenanceChecker>
-            <TermsPage />
-          </MaintenanceChecker>
-        } />
-        <Route path="/politique-confidentialite" element={
-          <MaintenanceChecker>
-            <PrivacyPage />
-          </MaintenanceChecker>
-        } />
-        <Route path="/politique-cookies" element={
-          <MaintenanceChecker>
-            <CookiesPage />
-          </MaintenanceChecker>
-        } />
-        <Route path="/faq" element={
-          <MaintenanceChecker>
-            <FAQPage />
-          </MaintenanceChecker>
-        } />
+        <Route 
+          path="/favoris" 
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <FavoritesPage />
+            </Suspense>
+          } 
+        />
 
-        <Route path="/chat" element={
-          <MaintenanceChecker>
-            <ProtectedRoute>
-              <ChatPage />
-            </ProtectedRoute>
-          </MaintenanceChecker>
-        } />
-        
-        <Route path={secureRoutes.get('/panier')?.substring(1)} element={
-          <MaintenanceChecker>
-            <SecureRoute>
-              <ProtectedRoute>
-                <CartPage />
-              </ProtectedRoute>
-            </SecureRoute>
-          </MaintenanceChecker>
-        } />
-        <Route path="/panier" element={<Navigate to={secureRoutes.get('/panier') || '/'} replace />} />
-        
-        <Route path={secureRoutes.get('/favoris')?.substring(1)} element={
-          <MaintenanceChecker>
-            <SecureRoute>
-              <ProtectedRoute>
-                <FavoritesPage />
-              </ProtectedRoute>
-            </SecureRoute>
-          </MaintenanceChecker>
-        } />
-        <Route path="/favoris" element={<Navigate to={secureRoutes.get('/favoris') || '/'} replace />} />
-        
-        <Route path={secureRoutes.get('/paiement')?.substring(1)} element={
-          <MaintenanceChecker>
-            <SecureRoute>
-              <ProtectedRoute>
+        <Route 
+          path="/paiement" 
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <PageDataLoader
+                fetchFunction={loadPageData}
+                onSuccess={handleDataSuccess}
+                onMaxRetriesReached={handleMaxRetriesReached}
+                loadingMessage="Chargement du paiement..."
+                loadingSubmessage="Sécurisation de votre transaction..."
+                errorMessage="Erreur de chargement du paiement"
+              >
                 <CheckoutPage />
-              </ProtectedRoute>
-            </SecureRoute>
-          </MaintenanceChecker>
-        } />
-        <Route path="/paiement" element={<Navigate to={secureRoutes.get('/paiement') || '/'} replace />} />
-        
-        <Route path={secureRoutes.get('/commandes')?.substring(1)} element={
-          <MaintenanceChecker>
-            <SecureRoute>
-              <ProtectedRoute>
-                <OrdersPage />
-              </ProtectedRoute>
-            </SecureRoute>
-          </MaintenanceChecker>
-        } />
-        <Route path="/commandes" element={<Navigate to={secureRoutes.get('/commandes') || '/'} replace />} />
-        
-        <Route path={secureRoutes.get('/profil')?.substring(1)} element={
-          <MaintenanceChecker>
-            <SecureRoute>
-              <ProtectedRoute>
-                <ProfilePage />
-              </ProtectedRoute>
-            </SecureRoute>
-          </MaintenanceChecker>
-        } />
-        <Route path="/profil" element={<Navigate to={secureRoutes.get('/profil') || '/'} replace />} />
-        
-        <Route path={secureRoutes.get('/admin/produits')?.substring(1)} element={
-          <SecureRoute>
-            <ProtectedRoute requireAdmin>
-              <AdminProductsPage />
-            </ProtectedRoute>
-          </SecureRoute>
-        } />
-        <Route path="/admin/produits" element={<Navigate to={secureRoutes.get('/admin/produits') || '/'} replace />} />
-        
-        <Route path={secureRoutes.get('/admin/categories')?.substring(1)} element={
-          <SecureRoute>
-            <ProtectedRoute requireAdmin>
-              <AdminCategoriesPage />
-            </ProtectedRoute>
-          </SecureRoute>
-        } />
-        <Route path="/admin/categories" element={<Navigate to={secureRoutes.get('/admin/categories') || '/'} replace />} />
-        
-        <Route path={secureRoutes.get('/admin/utilisateurs')?.substring(1)} element={
-          <SecureRoute>
-            <ProtectedRoute requireAdmin>
-              <AdminUsersPage />
-            </ProtectedRoute>
-          </SecureRoute>
-        } />
-        <Route path="/admin/utilisateurs" element={<Navigate to={secureRoutes.get('/admin/utilisateurs') || '/'} replace />} />
-        
-        <Route path={secureRoutes.get('/admin/messages')?.substring(1)} element={
-          <SecureRoute>
-            <ProtectedRoute requireAdmin>
-              <AdminMessagesPage />
-            </ProtectedRoute>
-          </SecureRoute>
-        } />
-        <Route path="/admin/messages" element={<Navigate to={secureRoutes.get('/admin/messages') || '/'} replace />} />
-        
-        <Route path={secureRoutes.get('/admin/parametres')?.substring(1)} element={
-          <SecureRoute>
-            <ProtectedRoute requireAdmin>
-              <AdminSettingsPage />
-            </ProtectedRoute>
-          </SecureRoute>
-        } />
-        <Route path="/admin/parametres" element={<Navigate to={secureRoutes.get('/admin/parametres') || '/'} replace />} />
-        
-        <Route path={`${secureRoutes.get('/admin')?.substring(1)}/:adminId?`} element={
-          <SecureRoute>
-            <ProtectedRoute requireAdmin>
-              <AdminChatPage />
-            </ProtectedRoute>
-          </SecureRoute>
-        } />
-        <Route path="/admin/:adminId?" element={<Navigate to={secureRoutes.get('/admin') || '/'} replace />} />
-        
-        <Route path={secureRoutes.get('/admin/commandes')?.substring(1)} element={
-          <SecureRoute>
-            <ProtectedRoute requireAdmin>
-              <AdminOrdersPage />
-            </ProtectedRoute>
-          </SecureRoute>
-        } />
-        <Route path="/admin/commandes" element={<Navigate to={secureRoutes.get('/admin/commandes') || '/'} replace />} />
-        
-        <Route path={secureRoutes.get('/admin/service-client')?.substring(1)} element={
-          <SecureRoute>
-            <ProtectedRoute requireAdmin>
-              <AdminClientChatPage />
-            </ProtectedRoute>
-          </SecureRoute>
-        } />
+              </PageDataLoader>
+            </Suspense>
+          } 
+        />
 
-        <Route path={getSecureRoute('/admin/code-promos')} element={
-          <SecureRoute>
-            <ProtectedRoute requireAdmin>
-              <AdminCodePromosPage />
-            </ProtectedRoute>
-          </SecureRoute>
-        } />
-        <Route path="/admin/service-client" element={<Navigate to={secureRoutes.get('/admin/service-client') || '/'} replace />} />
-        
-        <Route path={secureRoutes.get('/admin/pub-layout')?.substring(1)} element={
-          <SecureRoute>
-            <ProtectedRoute requireAdmin>
-              <AdminPubLayoutPage />
-            </ProtectedRoute>
-          </SecureRoute>
-        } />
-        <Route path="/admin/pub-layout" element={<Navigate to={secureRoutes.get('/admin/pub-layout') || '/'} replace />} />
-        
-        <Route path={secureRoutes.get('/admin/remboursements')?.substring(1)} element={
-          <SecureRoute>
-            <ProtectedRoute requireAdmin>
-              <AdminRemboursementsPage />
-            </ProtectedRoute>
-          </SecureRoute>
-        } />
-        <Route path="/admin/remboursements" element={<Navigate to={secureRoutes.get('/admin/remboursements') || '/'} replace />} />
-        
-        <Route path={secureRoutes.get('/admin/flash-sales')?.substring(1)} element={
-          <SecureRoute>
-            <ProtectedRoute requireAdmin>
-              <AdminFlashSalesPage />
-            </ProtectedRoute>
-          </SecureRoute>
-        } />
-        <Route path="/admin/flash-sales" element={<Navigate to={secureRoutes.get('/admin/flash-sales') || '/'} replace />} />
-        
-        <Route path="/page/notfound" element={<NotFound />} />
-        
-        <Route path="/:secureOrderId" element={
-          <MaintenanceChecker>
-            <SecureRoute>
-              <ProtectedRoute>
-                <OrderPage />
-              </ProtectedRoute>
-            </SecureRoute>
-          </MaintenanceChecker>
-        } />
-        
-        <Route path="/produit/:productId" element={
-          <MaintenanceChecker>
-            <ProductDetail />
-          </MaintenanceChecker>
-        } />
-        
-        <Route path="*" element={<NotFound />} />
+        <Route 
+          path="/commande/:orderId" 
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <SecureRoute>
+                <PageDataLoader
+                  fetchFunction={loadPageData}
+                  onSuccess={handleDataSuccess}
+                  onMaxRetriesReached={handleMaxRetriesReached}
+                  loadingMessage="Chargement de la commande..."
+                  loadingSubmessage="Récupération des détails..."
+                  errorMessage="Erreur de chargement de la commande"
+                >
+                  <OrderDetailsPage />
+                </PageDataLoader>
+              </SecureRoute>
+            </Suspense>
+          } 
+        />
+
+        <Route 
+          path="/mes-commandes" 
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <OrdersPage />
+            </Suspense>
+          } 
+        />
+
+        <Route 
+          path="/vente-flash/:id" 
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <FlashSalePage />
+            </Suspense>
+          } 
+        />
+
+        <Route 
+          path="/blog" 
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <BlogPage />
+            </Suspense>
+          } 
+        />
+
+        <Route 
+          path="/livraison" 
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <DeliveryPage />
+            </Suspense>
+          } 
+        />
+
+        <Route 
+          path="/service-client" 
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <CustomerServicePage />
+            </Suspense>
+          } 
+        />
+
+        {/* Pages d'authentification */}
+        <Route 
+          path="/login" 
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <PageDataLoader
+                fetchFunction={loadPageData}
+                onSuccess={handleDataSuccess}
+                onMaxRetriesReached={handleMaxRetriesReached}
+                loadingMessage="Chargement de la connexion..."
+                loadingSubmessage="Préparation de votre espace..."
+                errorMessage="Erreur de chargement"
+              >
+                <LoginPage />
+              </PageDataLoader>
+            </Suspense>
+          } 
+        />
+
+        <Route 
+          path="/register" 
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <RegistrationChecker>
+                <PageDataLoader
+                  fetchFunction={loadPageData}
+                  onSuccess={handleDataSuccess}
+                  onMaxRetriesReached={handleMaxRetriesReached}
+                  loadingMessage="Chargement de l'inscription..."
+                  loadingSubmessage="Préparation de votre compte..."
+                  errorMessage="Erreur de chargement"
+                >
+                  <RegisterPage />
+                </PageDataLoader>
+              </RegistrationChecker>
+            </Suspense>
+          } 
+        />
+
+        <Route 
+          path="/forgot-password" 
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <PageDataLoader
+                fetchFunction={loadPageData}
+                onSuccess={handleDataSuccess}
+                onMaxRetriesReached={handleMaxRetriesReached}
+                loadingMessage="Chargement..."
+                loadingSubmessage="Préparation de la récupération..."
+                errorMessage="Erreur de chargement"
+              >
+                <ForgotPasswordPage />
+              </PageDataLoader>
+            </Suspense>
+          } 
+        />
+
+        <Route 
+          path="/reset-password" 
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <PageDataLoader
+                fetchFunction={loadPageData}
+                onSuccess={handleDataSuccess}
+                onMaxRetriesReached={handleMaxRetriesReached}
+                loadingMessage="Chargement..."
+                loadingSubmessage="Préparation de la réinitialisation..."
+                errorMessage="Erreur de chargement"
+              >
+                <ResetPasswordPage />
+              </PageDataLoader>
+            </Suspense>
+          } 
+        />
+
+        {/* Routes administrateur */}
+        <Route 
+          path="/admin/dashboard" 
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <PageDataLoader
+                fetchFunction={loadPageData}
+                onSuccess={handleDataSuccess}
+                onMaxRetriesReached={handleMaxRetriesReached}
+                loadingMessage="Chargement du tableau de bord..."
+                loadingSubmessage="Préparation des statistiques..."
+                errorMessage="Erreur de chargement du dashboard"
+              >
+                <AdminDashboard />
+              </PageDataLoader>
+            </Suspense>
+          } 
+        />
+
+        <Route 
+          path="/admin/products" 
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <PageDataLoader
+                fetchFunction={loadPageData}
+                onSuccess={handleDataSuccess}
+                onMaxRetriesReached={handleMaxRetriesReached}
+                loadingMessage="Chargement des produits admin..."
+                loadingSubmessage="Préparation de la gestion..."
+                errorMessage="Erreur de chargement des produits"
+              >
+                <AdminProducts />
+              </PageDataLoader>
+            </Suspense>
+          } 
+        />
+
+        <Route 
+          path="/admin/categories" 
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <PageDataLoader
+                fetchFunction={loadPageData}
+                onSuccess={handleDataSuccess}
+                onMaxRetriesReached={handleMaxRetriesReached}
+                loadingMessage="Chargement des catégories admin..."
+                loadingSubmessage="Préparation de la gestion..."
+                errorMessage="Erreur de chargement des catégories"
+              >
+                <AdminCategories />
+              </PageDataLoader>
+            </Suspense>
+          } 
+        />
+
+        <Route 
+          path="/admin/orders" 
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <PageDataLoader
+                fetchFunction={loadPageData}
+                onSuccess={handleDataSuccess}
+                onMaxRetriesReached={handleMaxRetriesReached}
+                loadingMessage="Chargement des commandes admin..."
+                loadingSubmessage="Préparation de la gestion..."
+                errorMessage="Erreur de chargement des commandes"
+              >
+                <AdminOrders />
+              </PageDataLoader>
+            </Suspense>
+          } 
+        />
+
+        <Route 
+          path="/admin/users" 
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <PageDataLoader
+                fetchFunction={loadPageData}
+                onSuccess={handleDataSuccess}
+                onMaxRetriesReached={handleMaxRetriesReached}
+                loadingMessage="Chargement des utilisateurs admin..."
+                loadingSubmessage="Préparation de la gestion..."
+                errorMessage="Erreur de chargement des utilisateurs"
+              >
+                <AdminUsers />
+              </PageDataLoader>
+            </Suspense>
+          } 
+        />
+
+        <Route 
+          path="/admin/settings" 
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <PageDataLoader
+                fetchFunction={loadPageData}
+                onSuccess={handleDataSuccess}
+                onMaxRetriesReached={handleMaxRetriesReached}
+                loadingMessage="Chargement des paramètres admin..."
+                loadingSubmessage="Préparation de la configuration..."
+                errorMessage="Erreur de chargement des paramètres"
+              >
+                <AdminSettings />
+              </PageDataLoader>
+            </Suspense>
+          } 
+        />
+
+        <Route 
+          path="/admin/promo-codes" 
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <PageDataLoader
+                fetchFunction={loadPageData}
+                onSuccess={handleDataSuccess}
+                onMaxRetriesReached={handleMaxRetriesReached}
+                loadingMessage="Chargement des codes promo admin..."
+                loadingSubmessage="Préparation de la gestion..."
+                errorMessage="Erreur de chargement des codes promo"
+              >
+                <AdminPromoCodes />
+              </PageDataLoader>
+            </Suspense>
+          } 
+        />
+
+        <Route 
+          path="/admin/flash-sales" 
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <PageDataLoader
+                fetchFunction={loadPageData}
+                onSuccess={handleDataSuccess}
+                onMaxRetriesReached={handleMaxRetriesReached}
+                loadingMessage="Chargement des ventes flash admin..."
+                loadingSubmessage="Préparation de la gestion..."
+                errorMessage="Erreur de chargement des ventes flash"
+              >
+                <AdminFlashSales />
+              </PageDataLoader>
+            </Suspense>
+          } 
+        />
+
+        {/* Confirmation de commande sécurisée */}
+        <Route 
+          path="/:secureId" 
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <SecureRoute>
+                <PageDataLoader
+                  fetchFunction={loadPageData}
+                  onSuccess={handleDataSuccess}
+                  onMaxRetriesReached={handleMaxRetriesReached}
+                  loadingMessage="Chargement sécurisé..."
+                  loadingSubmessage="Vérification des accès..."
+                  errorMessage="Erreur de chargement sécurisé"
+                >
+                  <OrderConfirmationPage />
+                </PageDataLoader>
+              </SecureRoute>
+            </Suspense>
+          } 
+        />
+
+        {/* Pages d'erreur */}
+        <Route 
+          path="/register-blocked" 
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <RegisterBlockPage />
+            </Suspense>
+          } 
+        />
+
+        <Route 
+          path="/not-found" 
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <NotFound />
+            </Suspense>
+          } 
+        />
+
+        <Route 
+          path="*" 
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <NotFound />
+            </Suspense>
+          } 
+        />
       </Routes>
-    </Suspense>
+      <Toaster />
+    </Router>
   );
 };
 

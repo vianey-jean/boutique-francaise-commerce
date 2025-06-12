@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -15,6 +14,7 @@ import {
 } from '@/components/ui/form';
 import { useAuth } from '@/contexts/AuthContext';
 import Layout from '@/components/layout/Layout';
+import PageDataLoader from '@/components/layout/PageDataLoader';
 import { authAPI } from '@/services/api';
 import { toast } from '@/components/ui/sonner';
 import { Eye, EyeOff, Mail, Lock, ArrowRight, ShoppingBag } from 'lucide-react';
@@ -36,6 +36,7 @@ const LoginPage = () => {
   const [userEmail, setUserEmail] = useState('');
   const [userName, setUserName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   // ✅ Formulaires
   const emailForm = useForm<{ email: string }>({
@@ -92,10 +93,31 @@ const LoginPage = () => {
 
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
 
+  const loadLoginData = async () => {
+    // Simuler le chargement des données de connexion
+    await new Promise(resolve => setTimeout(resolve, 800));
+    return { initialized: true };
+  };
+
+  const handleDataSuccess = () => {
+    setDataLoaded(true);
+  };
+
+  const handleMaxRetriesReached = () => {
+    setDataLoaded(true);
+  };
+
   return (
     <Layout>
-      <div className="min-h-[90vh] bg-gradient-to-br from-red-50 via-white to-red-50 dark:from-red-950/20 dark:via-neutral-950 dark:to-red-950/20 flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
+      <PageDataLoader
+        fetchFunction={loadLoginData}
+        onSuccess={handleDataSuccess}
+        onMaxRetriesReached={handleMaxRetriesReached}
+        loadingMessage="Chargement de la page de connexion..."
+        loadingSubmessage="Préparation de votre espace sécurisé..."
+        errorMessage="Erreur de chargement de la connexion"
+      >
+        <div className="min-h-[90vh] bg-gradient-to-br from-red-50 via-white to-red-50 dark:from-red-950/20 dark:via-neutral-950 dark:to-red-950/20 flex items-center justify-center p-4">
           {/* Header with Logo */}
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-red-600 to-red-700 rounded-2xl shadow-lg mb-4">
@@ -262,7 +284,7 @@ const LoginPage = () => {
             </CardFooter>
           </Card>
         </div>
-      </div>
+      </PageDataLoader>
     </Layout>
   );
 };

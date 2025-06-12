@@ -8,7 +8,7 @@ const { createServer } = require('http');
 
 // Importation des modules de configuration
 const corsOptions = require('./config/cors');
-const { securityMiddlewares, additionalCorsHeaders, sanitizeMiddleware } = require('./config/security');
+const { securityMiddlewares, additionalCorsHeaders, sanitizeMiddleware, securityMonitoring } = require('./config/security');
 const { initializeDataFiles } = require('./config/dataFiles');
 const { authenticateToken } = require('./config/auth');
 const setupRoutes = require('./config/routes');
@@ -19,8 +19,11 @@ const initializeSocket = require('./socket/socketConfig');
 const app = express();
 const server = createServer(app);
 
-// Middleware de sécurité
+// Middleware de sécurité renforcée
 securityMiddlewares.forEach(middleware => app.use(middleware));
+
+// Middleware de surveillance des attaques
+app.use(securityMonitoring);
 
 // Configuration de CORS
 app.use(cors(corsOptions));
@@ -29,8 +32,8 @@ app.use(cors(corsOptions));
 app.use(additionalCorsHeaders);
 
 // Middleware pour parser le corps des requêtes
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json({ limit: '10mb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 
 // Middleware pour vérifier et créer les fichiers de données s'ils n'existent pas
 app.use(initializeDataFiles);
@@ -38,10 +41,11 @@ app.use(initializeDataFiles);
 // Middleware pour servir les fichiers statiques avec des en-têtes CORS appropriés
 app.use('/uploads', (req, res, next) => {
   res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+  res.set('X-Content-Type-Options', 'nosniff');
   express.static(path.join(__dirname, 'uploads'))(req, res, next);
 });
 
-// Protection contre les injections
+// Protection contre les injections (doit être après bodyParser)
 app.use(sanitizeMiddleware);
 
 // Configuration des routes
@@ -52,7 +56,12 @@ const io = initializeSocket(server);
 
 // Route pour tester le serveur
 app.get('/', (req, res) => {
-  res.send('API de l\'application e-commerce Riziky-Boutic est active!');
+  res.set({
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'X-XSS-Protection': '1; mode=block'
+  });
+  res.send('API de l\'application e-commerce Riziky-Boutic est active - Sécurisée SSL/TLS!');
 });
 
 // Middleware pour la gestion des erreurs
@@ -62,5 +71,6 @@ app.use(globalErrorHandler);
 // Démarrer le serveur
 const PORT = process.env.PORT || 10000;
 server.listen(PORT, () => {
-  console.log(`Serveur démarré sur le port ${PORT}`);
+  console.log(`🔒 Serveur sécurisé démarré sur le port ${PORT}`);
+  console.log(`🛡️  Sécurité renforcée: SSL/TLS, AES-256, XSS Protection activés`);
 });

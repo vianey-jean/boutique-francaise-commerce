@@ -1,9 +1,10 @@
 
 /// <reference types="vite/client" />
 
-// Apple Pay Session types
+// Stripe types
 declare global {
   interface Window {
+    Stripe?: (key: string) => any;
     ApplePaySession?: typeof ApplePaySession;
   }
 }

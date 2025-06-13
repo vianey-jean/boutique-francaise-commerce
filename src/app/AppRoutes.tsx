@@ -1,4 +1,3 @@
-
 import React, { useEffect, lazy, Suspense } from 'react';
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -43,6 +42,7 @@ const OrderPage = lazy(() => import('@/pages/OrderPage'));
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'));
 const FlashSalePage = lazy(() => import('@/pages/FlashSalePage'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
+const PaymentSuccessPage = lazy(() => import('@/pages/PaymentSuccessPage'));
 
 // Pages Admin
 const AdminProductsPage = lazy(() => import('@/pages/admin/AdminProductsPage'));
@@ -382,6 +382,8 @@ const AppRoutes: React.FC = () => {
           </SecureRoute>
         } />
         <Route path="/admin/flash-sales" element={<Navigate to={secureRoutes.get('/admin/flash-sales') || '/'} replace />} />
+        
+        <Route path="/payment-success" element={<PaymentSuccessPage />} />
         
         <Route path="/page/notfound" element={<NotFound />} />
         

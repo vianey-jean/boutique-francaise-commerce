@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
@@ -13,9 +14,6 @@ import { useCarouselAutoplay } from '@/hooks/useCarouselAutoplay';
 import SalesNotification from '@/components/engagement/SalesNotification';
 import LiveVisitorCounter from '@/components/engagement/LiveVisitorCounter';
 import { Sparkles, TrendingUp, Star, ShoppingBag } from 'lucide-react';
-import SSLIndicator from '@/components/security/SSLIndicator';
-import SecurityBanner from '@/components/security/SecurityBanner';
-import SecurityStatus from '@/components/security/SecurityStatus';
 
 const HomePage = () => {
   const [searchParams] = useSearchParams();
@@ -61,13 +59,6 @@ const HomePage = () => {
           loadingSubmessage="Préparation de votre expérience shopping premium..."
           errorMessage="Erreur de chargement des produits"
         >
-          {/* Security Banner at the top */}
-          <div className="sticky top-16 z-40 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm border-b border-neutral-200 dark:border-neutral-800 py-2">
-            <div className="container mx-auto px-4">
-              <SecurityBanner />
-            </div>
-          </div>
-
           {/* Hero Section moderne */}
           <div className="relative overflow-hidden bg-gradient-to-r from-red-500/10 via-rose-500/10 to-pink-500/10 dark:from-red-500/5 dark:via-rose-500/5 dark:to-pink-500/5">
             <div className="absolute inset-0 bg-grid-neutral-100/50 dark:bg-grid-neutral-800/50" />
@@ -99,11 +90,6 @@ const HomePage = () => {
                   </div>
                 </div>
               </div>
-
-              {/* SSL Indicator */}
-              <div className="flex justify-center mb-6">
-                <SSLIndicator />
-              </div>
             </div>
           </div>
 
@@ -120,13 +106,6 @@ const HomePage = () => {
             {!searchParams.get('q') && (
               <div className="mb-12 animate-fade-in">
                 <FlashSaleBanner />
-              </div>
-            )}
-
-            {/* Security Status Section */}
-            {!searchParams.get('q') && (
-              <div className="mb-12 animate-fade-in">
-                <SecurityStatus />
               </div>
             )}
 

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import { CreditCard, Shield } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
 
 interface StripePaymentFormProps {
   amount: number;
@@ -22,61 +23,39 @@ const StripePaymentForm: React.FC<StripePaymentFormProps> = ({
     setLoading(true);
     
     try {
-      // Vérifier que Stripe est chargé
-      if (!window.Stripe) {
-        throw new Error('Stripe n\'est pas chargé correctement');
-      }
+      // Initialiser Supabase client
+      const supabase = createClient(
+        import.meta.env.VITE_SUPABASE_URL || '',
+        import.meta.env.VITE_SUPABASE_ANON_KEY || ''
+      );
 
-      // Initialiser Stripe avec la clé publique
-      const stripe = window.Stripe('pk_test_51RJ8CjRrys1rHLYCyBqVMkvAtQCy1tHPYz2UKcQuFaGX0LdzTgFSzpiJ30dhnFAxwZNQ0JvRguZAOVHS0Tb9lBvb00QrraSKRP');
-      
       toast.info("Création de la session de paiement Stripe...");
       
-      // Créer une session de paiement Stripe directement
-      const sessionData = {
-        payment_method_types: ['card'],
-        line_items: [{
-          price_data: {
-            currency: 'eur',
-            product_data: {
-              name: 'Commande Riziky Boutique',
-              description: `Paiement de ${amount.toFixed(2)}€`,
-            },
-            unit_amount: Math.round(amount * 100), // Convertir en centimes
-          },
-          quantity: 1,
-        }],
-        mode: 'payment',
-        success_url: `${window.location.origin}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${window.location.origin}/checkout`,
-        metadata: {
-          order_id: `order_${Date.now()}`,
-          customer_email: 'customer@example.com',
-        },
-      };
+      // Appeler la fonction edge pour créer la session Stripe
+      const { data, error } = await supabase.functions.invoke('create-stripe-checkout', {
+        body: {
+          amount: Math.round(amount * 100), // Convertir en centimes
+          currency: 'eur'
+        }
+      });
 
-      // Simuler une réponse réussie pour rediriger vers Stripe Checkout
-      console.log('Données de session Stripe:', sessionData);
-      
-      // Rediriger vers une URL Stripe Checkout simulée
-      const checkoutUrl = `https://checkout.stripe.com/pay/cs_test_${Math.random().toString(36).substr(2, 9)}#fidkdWxOYHwnPyd1blpxYHZxWjA0S31sQXxjYH1gMXVhRTNfN3E1aXA9aDU8dFxnY2FJNGtMUkFyMkRJQk5hRmNdN2BDVnY2MFdufDFrTWRuZ39KNG5gZUlpMEJLRH9mQkY9bGI0a1U0ZXZ0PDRvZyc3dXF2dHFWQFRtQXYneCUl`;
-      
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      if (!data?.url) {
+        throw new Error('URL de paiement non reçue');
+      }
+
       toast.success("Redirection vers Stripe Checkout...");
       
-      // Rediriger vers Stripe Checkout dans un nouvel onglet
-      setTimeout(() => {
-        window.open(checkoutUrl, '_blank');
-        // Simuler le succès après un délai
-        setTimeout(() => {
-          setLoading(false);
-          onSuccess();
-        }, 3000);
-      }, 1000);
+      // Rediriger vers Stripe Checkout
+      window.location.href = data.url;
       
     } catch (error) {
       console.error('Erreur Stripe:', error);
       setLoading(false);
-      toast.error("Erreur lors de la création de la session de paiement Stripe");
+      toast.error(error instanceof Error ? error.message : "Erreur lors de la création de la session de paiement Stripe");
     }
   };
 
@@ -124,7 +103,7 @@ const StripePaymentForm: React.FC<StripePaymentFormProps> = ({
           {loading ? (
             <>
               <LoadingSpinner size="sm" className="mr-2" />
-              Création de la session...
+              Redirection en cours...
             </>
           ) : (
             <>

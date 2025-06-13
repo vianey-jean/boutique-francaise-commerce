@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import { CreditCard, Shield } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
 
 interface StripePaymentFormProps {
   amount: number;
@@ -23,27 +22,29 @@ const StripePaymentForm: React.FC<StripePaymentFormProps> = ({
     setLoading(true);
     
     try {
-      // Initialiser Supabase client
-      const supabase = createClient(
-        import.meta.env.VITE_SUPABASE_URL || '',
-        import.meta.env.VITE_SUPABASE_ANON_KEY || ''
-      );
-
       toast.info("Création de la session de paiement Stripe...");
       
-      // Appeler la fonction edge pour créer la session Stripe
-      const { data, error } = await supabase.functions.invoke('create-stripe-checkout', {
-        body: {
+      // Utiliser l'API backend existante au lieu de Supabase Edge Functions
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://riziky-boutic-server.onrender.com';
+      
+      const response = await fetch(`${API_BASE_URL}/api/stripe/create-checkout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           amount: Math.round(amount * 100), // Convertir en centimes
           currency: 'eur'
-        }
+        }),
       });
 
-      if (error) {
-        throw new Error(error.message);
+      if (!response.ok) {
+        throw new Error(`Erreur HTTP: ${response.status}`);
       }
 
-      if (!data?.url) {
+      const data = await response.json();
+
+      if (!data.url) {
         throw new Error('URL de paiement non reçue');
       }
 

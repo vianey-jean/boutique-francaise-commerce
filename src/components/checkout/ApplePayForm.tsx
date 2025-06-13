@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
@@ -21,7 +20,7 @@ const ApplePayForm: React.FC<ApplePayFormProps> = ({
 
   const handleApplePayment = async () => {
     // Vérifier si Apple Pay est disponible
-    if (!window.ApplePaySession || !ApplePaySession.canMakePayments()) {
+    if (!window.ApplePaySession || !window.ApplePaySession.canMakePayments()) {
       toast.error("Apple Pay n'est pas disponible sur cet appareil");
       return;
     }

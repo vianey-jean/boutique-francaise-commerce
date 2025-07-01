@@ -13,10 +13,10 @@ import { ShoppingCart, Sparkles, Shield, TrendingUp } from 'lucide-react';
 
 const CartPage = () => {
   const { 
-    cart, 
+    cartItems, 
     updateQuantity, 
     removeFromCart, 
-    loadingCart, 
+    loading, 
     setSelectedCartItems 
   } = useStore();
   const { isAuthenticated } = useAuth();
@@ -25,19 +25,19 @@ const CartPage = () => {
   const [dataLoaded, setDataLoaded] = useState(false);
 
   useEffect(() => {
-    if (cart && cart.length > 0) {
-      const initialSelection = cart.reduce((acc, item) => {
+    if (cartItems && cartItems.length > 0) {
+      const initialSelection = cartItems.reduce((acc, item) => {
         acc[item.product.id] = true;
         return acc;
       }, {} as Record<string, boolean>);
       setSelectedItems(initialSelection);
     }
-  }, [cart]);
+  }, [cartItems]);
 
   const loadCartData = async () => {
     // Simuler le chargement du panier
     await new Promise(resolve => setTimeout(resolve, 1000));
-    return cart;
+    return cartItems;
   };
 
   const handleDataSuccess = () => {
@@ -50,7 +50,7 @@ const CartPage = () => {
 
   const handleQuantityChange = (productId: string, newQuantity: number) => {
     if (newQuantity >= 1) {
-      updateQuantity(productId, newQuantity);
+      updateQuantity(productId, newQuantity, cartItems.map(item => item.product));
     }
   };
 
@@ -62,7 +62,7 @@ const CartPage = () => {
   };
 
   const handleCheckout = () => {
-    const selectedProducts = cart.filter(item => selectedItems[item.product.id]);
+    const selectedProducts = cartItems.filter(item => selectedItems[item.product.id]);
     setSelectedCartItems(selectedProducts);
     navigate('/paiement');
   };
@@ -85,7 +85,7 @@ const CartPage = () => {
                 Votre Panier
               </h1>
               
-              {cart && cart.length > 0 && (
+              {cartItems && cartItems.length > 0 && (
                 <div className="flex items-center justify-center space-x-8 text-sm text-neutral-500 dark:text-neutral-400">
                   <div className="flex items-center space-x-2">
                     <Sparkles className="h-5 w-5 text-blue-500" />
@@ -106,7 +106,7 @@ const CartPage = () => {
         </div>
 
         <div className="container mx-auto px-4 py-8">
-          {!isAuthenticated || !cart || cart.length === 0 ? (
+          {!isAuthenticated || !cartItems || cartItems.length === 0 ? (
             <EmptyCartMessage isAuthenticated={isAuthenticated} />
           ) : (
             <PageDataLoader
@@ -126,13 +126,13 @@ const CartPage = () => {
                       </h2>
                       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 px-4 py-2 rounded-full">
                         <span className="text-blue-700 dark:text-blue-400 font-medium">
-                          {cart.length} article{cart.length > 1 ? 's' : ''}
+                          {cartItems.length} article{cartItems.length > 1 ? 's' : ''}
                         </span>
                       </div>
                     </div>
                     
                     <div className="space-y-6">
-                      {cart.map((item) => (
+                      {cartItems.map((item) => (
                         <div 
                           key={item.product.id}
                           className="bg-gradient-to-r from-neutral-50 to-neutral-100 dark:from-neutral-800 dark:to-neutral-700 rounded-xl p-4 border border-neutral-200 dark:border-neutral-600"
@@ -153,15 +153,15 @@ const CartPage = () => {
                         variant="outline" 
                         className="text-sm hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-700 hover:border-blue-300 dark:hover:from-blue-950/20 dark:hover:to-indigo-950/20 dark:hover:text-blue-400"
                         onClick={() => {
-                          const allSelected = cart.every(item => selectedItems[item.product.id]);
-                          const newSelection = cart.reduce((acc, item) => {
+                          const allSelected = cartItems.every(item => selectedItems[item.product.id]);
+                          const newSelection = cartItems.reduce((acc, item) => {
                             acc[item.product.id] = !allSelected;
                             return acc;
                           }, {} as Record<string, boolean>);
                           setSelectedItems(newSelection);
                         }}
                       >
-                        {cart.every(item => selectedItems[item.product.id]) 
+                        {cartItems.every(item => selectedItems[item.product.id]) 
                           ? "Désélectionner tout" 
                           : "Sélectionner tout"}
                       </Button>

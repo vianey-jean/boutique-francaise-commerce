@@ -14,7 +14,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from '@/components/ui/sonner';
-import CreditCardForm from '@/components/checkout/CreditCardForm';
+import PaymentMethodSelector from '@/components/checkout/PaymentMethodSelector';
+import PaymentPopup from '@/components/checkout/PaymentPopup';
 import { ShippingAddress, codePromosAPI } from '@/services/api';
 import { Link } from 'react-router-dom';
 import { Percent, ShoppingCart, CheckCircle, Truck, CreditCard, Shield, MapPin, Phone, Mail } from 'lucide-react';
@@ -23,9 +24,6 @@ import CartSummary from '@/components/cart/CartSummary';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import { formatPrice } from '@/lib/utils';
 import { motion } from 'framer-motion';
-import StripePaymentForm from '@/components/checkout/StripePaymentForm';
-import PayPalPaymentForm from '@/components/checkout/PayPalPaymentForm';
-import ApplePayForm from '@/components/checkout/ApplePayForm';
 
 // Définition des prix de livraison par ville
 const DELIVERY_PRICES = {
@@ -62,10 +60,10 @@ const CheckoutPage = () => {
   const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [showCardForm, setShowCardForm] = useState(false);
-  const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [deliveryCity, setDeliveryCity] = useState<string>("");
   const [deliveryPrice, setDeliveryPrice] = useState<number>(0);
   const [step, setStep] = useState<'shipping' | 'payment'>('shipping');
+  const [showPaymentPopup, setShowPaymentPopup] = useState(false);
   
   // État pour le code promo
   const [codePromo, setCodePromo] = useState<string>('');
@@ -199,10 +197,11 @@ const CheckoutPage = () => {
   const handlePaymentSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     
-    if (paymentMethod === 'card' || paymentMethod === 'paypal' || paymentMethod === 'applepay') {
-      setShowPaymentForm(true);
+    if (paymentMethod === 'card') {
+      // Ouvrir la popup de paiement avec le montant total TTC
+      setShowPaymentPopup(true);
     } else {
-      // Traiter les autres méthodes de paiement (cash)
+      // Traiter les autres méthodes de paiement
       processOrder();
     }
   };
@@ -234,6 +233,7 @@ const CheckoutPage = () => {
       const order = await createOrder(
         shippingData, 
         paymentMethod, 
+        selectedCartItems,
         verifiedPromo ? {
           code: verifiedPromo.code,
           productId: verifiedPromo.productId,
@@ -257,6 +257,7 @@ const CheckoutPage = () => {
 
   const handlePaymentSuccess = () => {
     console.log("Payment success, processing order...");
+    setShowPaymentPopup(false);
     processOrder();
   };
   
@@ -412,7 +413,16 @@ const CheckoutPage = () => {
             </div>
           </motion.div>
         
-          {showPaymentForm ? (
+          {showPaymentPopup && (
+            <PaymentPopup
+              isOpen={showPaymentPopup}
+              onClose={() => setShowPaymentPopup(false)}
+              amount={orderTotal} // Passer le montant total TTC
+              onSuccess={handlePaymentSuccess}
+            />
+          )}
+          
+          {showCardForm ? (
             <motion.div 
               className="max-w-md mx-auto"
               initial={{ opacity: 0, scale: 0.95 }}
@@ -420,29 +430,21 @@ const CheckoutPage = () => {
               transition={{ duration: 0.4 }}
             >
               <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-200">
-                {paymentMethod === 'card' && (
-                  <StripePaymentForm 
-                    amount={orderTotal}
-                    onSuccess={handlePaymentSuccess}
-                    onCancel={() => setShowPaymentForm(false)}
-                  />
-                )}
-                
-                {paymentMethod === 'paypal' && (
-                  <PayPalPaymentForm 
-                    amount={orderTotal}
-                    onSuccess={handlePaymentSuccess}
-                    onCancel={() => setShowPaymentForm(false)}
-                  />
-                )}
-                
-                {paymentMethod === 'applepay' && (
-                  <ApplePayForm 
-                    amount={orderTotal}
-                    onSuccess={handlePaymentSuccess}
-                    onCancel={() => setShowPaymentForm(false)}
-                  />
-                )}
+                <div className="text-center mb-6">
+                  <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Shield className="h-8 w-8 text-white" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Paiement sécurisé</h2>
+                  <p className="text-gray-600">Vos données sont protégées par cryptage SSL</p>
+                </div>
+                <PaymentMethodSelector onPaymentSuccess={handlePaymentSuccess} />
+                <Button 
+                  variant="outline" 
+                  className="mt-6 w-full border-gray-300 hover:border-gray-400"
+                  onClick={() => setShowCardForm(false)}
+                >
+                  Retour aux options de paiement
+                </Button>
               </div>
             </motion.div>
           ) : (
@@ -577,25 +579,25 @@ const CheckoutPage = () => {
                           </div>
                         </div>
                       </div>
-                    </div>
                     
-                    <div className="flex flex-col sm:flex-row justify-between gap-4 mt-8">
-                      <Button 
-                        type="button" 
-                        variant="outline"
-                        onClick={() => navigate('/panier')}
-                        className="flex items-center px-6 py-3 h-12 border-gray-300 hover:border-gray-400"
-                      >
-                        <ShoppingCart className="h-5 w-5 mr-2" />
-                        Retour au panier
-                      </Button>
-                      <Button 
-                        type="submit" 
-                        className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white px-8 py-3 h-12 shadow-lg hover:shadow-xl transition-all duration-300"
-                      >
-                        <CheckCircle className="h-5 w-5 mr-2" />
-                        Continuer au paiement
-                      </Button>
+                      <div className="flex flex-col sm:flex-row justify-between gap-4 mt-8">
+                        <Button 
+                          type="button" 
+                          variant="outline"
+                          onClick={() => navigate('/panier')}
+                          className="flex items-center px-6 py-3 h-12 border-gray-300 hover:border-gray-400"
+                        >
+                          <ShoppingCart className="h-5 w-5 mr-2" />
+                          Retour au panier
+                        </Button>
+                        <Button 
+                          type="submit" 
+                          className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white px-8 py-3 h-12 shadow-lg hover:shadow-xl transition-all duration-300"
+                        >
+                          <CheckCircle className="h-5 w-5 mr-2" />
+                          Continuer au paiement
+                        </Button>
+                      </div>
                     </div>
                   </form>
                 )}

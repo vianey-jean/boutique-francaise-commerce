@@ -1,134 +1,171 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { loadStripe } from '@stripe/stripe-js';
+import {
+  Elements,
+  CardElement,
+  useStripe,
+  useElements
+} from '@stripe/react-stripe-js';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2, CreditCard, Shield } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
-import LoadingSpinner from '@/components/ui/loading-spinner';
-import { CreditCard, Shield } from 'lucide-react';
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 interface StripePaymentFormProps {
   amount: number;
   onSuccess: () => void;
-  onCancel: () => void;
+  onError: (error: string) => void;
 }
 
-const StripePaymentForm: React.FC<StripePaymentFormProps> = ({ 
-  amount, 
-  onSuccess, 
-  onCancel 
-}) => {
-  const [loading, setLoading] = useState(false);
+const PaymentForm: React.FC<StripePaymentFormProps> = ({ amount, onSuccess, onError }) => {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string>('');
 
-  const handleStripePayment = async () => {
-    setLoading(true);
-    
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (!stripe || !elements) {
+      setError('Stripe n\'est pas encore chargé');
+      return;
+    }
+
+    const cardElement = elements.getElement(CardElement);
+    if (!cardElement) {
+      setError('Élément de carte non trouvé');
+      return;
+    }
+
+    setIsProcessing(true);
+    setError('');
+
     try {
-      toast.info("Création de la session de paiement Stripe...");
-      
-      // Utiliser l'API backend existante au lieu de Supabase Edge Functions
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://riziky-boutic-server.onrender.com';
-      
-      const response = await fetch(`${API_BASE_URL}/api/stripe/create-checkout`, {
+      // Créer un PaymentIntent
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/stripe-payments/create-payment-intent`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         },
         body: JSON.stringify({
           amount: Math.round(amount * 100), // Convertir en centimes
           currency: 'eur'
-        }),
+        })
       });
 
-      if (!response.ok) {
-        throw new Error(`Erreur HTTP: ${response.status}`);
+      const { clientSecret } = await response.json();
+
+      if (!clientSecret) {
+        throw new Error('Impossible de créer l\'intention de paiement');
       }
 
-      const data = await response.json();
+      // Confirmer le paiement avec 3D Secure
+      const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: cardElement,
+        }
+      });
 
-      if (!data.url) {
-        throw new Error('URL de paiement non reçue');
+      if (stripeError) {
+        setError(stripeError.message || 'Erreur lors du paiement');
+        onError(stripeError.message || 'Erreur lors du paiement');
+      } else if (paymentIntent?.status === 'succeeded') {
+        toast.success('Paiement réussi !');
+        onSuccess();
+      } else {
+        setError('Le paiement n\'a pas pu être traité');
+        onError('Le paiement n\'a pas pu être traité');
       }
-
-      toast.success("Redirection vers Stripe Checkout...");
-      
-      // Rediriger vers Stripe Checkout
-      window.location.href = data.url;
-      
-    } catch (error) {
-      console.error('Erreur Stripe:', error);
-      setLoading(false);
-      toast.error(error instanceof Error ? error.message : "Erreur lors de la création de la session de paiement Stripe");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors du paiement';
+      setError(errorMessage);
+      onError(errorMessage);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
-          <CreditCard className="h-8 w-8 text-white" />
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="space-y-4">
+        <div className="p-4 border rounded-lg bg-gray-50">
+          <CardElement
+            options={{
+              style: {
+                base: {
+                  fontSize: '16px',
+                  color: '#424770',
+                  '::placeholder': {
+                    color: '#aab7c4',
+                  },
+                },
+                invalid: {
+                  color: '#9e2146',
+                },
+              },
+            }}
+          />
         </div>
-        <h3 className="text-xl font-bold mb-2">Paiement sécurisé avec Stripe</h3>
-        <p className="text-gray-600">Montant à payer: <span className="font-bold text-lg">{amount.toFixed(2)}€</span></p>
-      </div>
-
-      <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-        <div className="flex items-center mb-2">
-          <Shield className="h-5 w-5 text-blue-600 mr-2" />
-          <span className="font-semibold text-blue-800">Paiement 100% sécurisé</span>
-        </div>
-        <ul className="text-sm text-blue-700 space-y-1">
-          <li>• Cryptage SSL 256-bit</li>
-          <li>• Conformité PCI DSS</li>
-          <li>• Protection contre la fraude</li>
-          <li>• Redirection vers Stripe.com</li>
-          <li>• Validation automatique du paiement</li>
-        </ul>
-      </div>
-
-      <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-        <h4 className="font-semibold text-green-800 mb-2">Processus de paiement :</h4>
-        <ol className="text-sm text-green-700 space-y-1">
-          <li>1. Redirection vers Stripe.com</li>
-          <li>2. Saisie sécurisée des informations bancaires</li>
-          <li>3. Validation par Stripe</li>
-          <li>4. Retour automatique sur notre site</li>
-          <li>5. Confirmation de la commande</li>
-        </ol>
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-3">
-        <Button 
-          onClick={handleStripePayment}
-          disabled={loading}
-          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-12"
-        >
-          {loading ? (
-            <>
-              <LoadingSpinner size="sm" className="mr-2" />
-              Redirection en cours...
-            </>
-          ) : (
-            <>
-              <CreditCard className="h-5 w-5 mr-2" />
-              Payer avec Stripe
-            </>
-          )}
-        </Button>
         
-        <Button 
-          onClick={onCancel}
-          variant="outline"
-          disabled={loading}
-          className="sm:w-auto"
-        >
-          Annuler
-        </Button>
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
       </div>
 
-      <div className="text-xs text-gray-500 text-center">
-        <p>🔒 Vos données bancaires sont traitées directement par Stripe</p>
-        <p>Elles ne transitent jamais par nos serveurs</p>
+      <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
+        <div className="flex items-center space-x-2">
+          <Shield className="h-5 w-5 text-blue-600" />
+          <span className="text-sm text-blue-800">Paiement sécurisé avec 3D Secure</span>
+        </div>
+        <span className="font-semibold text-lg">
+          {(amount).toFixed(2)}€
+        </span>
       </div>
-    </div>
+
+      <Button
+        type="submit"
+        disabled={!stripe || isProcessing}
+        className="w-full bg-green-600 hover:bg-green-700"
+        size="lg"
+      >
+        {isProcessing ? (
+          <>
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            Traitement en cours...
+          </>
+        ) : (
+          <>
+            <CreditCard className="h-4 w-4 mr-2" />
+            Payer {(amount).toFixed(2)}€
+          </>
+        )}
+      </Button>
+    </form>
+  );
+};
+
+const StripePaymentForm: React.FC<StripePaymentFormProps> = (props) => {
+  return (
+    <Elements stripe={stripePromise}>
+      <Card className="w-full max-w-md mx-auto">
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <CreditCard className="h-5 w-5 mr-2" />
+            Paiement sécurisé
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <PaymentForm {...props} />
+        </CardContent>
+      </Card>
+    </Elements>
   );
 };
 

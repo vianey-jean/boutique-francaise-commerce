@@ -69,8 +69,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     
-    <!-- Politique de sécurité du contenu conforme UE -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.gpteng.co 'unsafe-inline'; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https: http:; connect-src 'self' https: http://localhost:* wss://riziky-boutic-server.onrender.com/ ws://riziky-boutic-server.onrender.com/; media-src 'self' data: blob: mediastream:;">
+    <!-- Politique de sécurité du contenu conforme UE avec support Stripe -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.gpteng.co https://js.stripe.com https://m.stripe.network 'unsafe-inline'; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https: http:; connect-src 'self' https: http://localhost:* wss://riziky-boutic-server.onrender.com/ ws://riziky-boutic-server.onrender.com/ https://api.stripe.com https://m.stripe.network; media-src 'self' data: blob: mediastream:; frame-src 'self' https://js.stripe.com https://hooks.stripe.com;">
     
     <!-- Canonical URL -->
     <link rel="canonical" href="https://riziky-boutique.com/" />

@@ -4,11 +4,24 @@ const router = express.Router();
 const stripeService = require('../services/stripe.service');
 const { authenticateToken } = require('../config/auth');
 
+// Middleware conditionnel d'authentification
+const optionalAuth = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  
+  if (authHeader) {
+    // Si un token est fourni, on l'authentifie
+    return authenticateToken(req, res, next);
+  } else {
+    // Sinon on continue sans user
+    req.user = null;
+    next();
+  }
+};
+
 // Créer un PaymentIntent
-router.post('/create-payment-intent', authenticateToken, async (req, res) => {
+router.post('/create-payment-intent', optionalAuth, async (req, res) => {
   try {
     const { amount, currency = 'eur' } = req.body;
-    const userId = req.user.id;
 
     if (!amount || amount <= 0) {
       return res.status(400).json({ 
@@ -38,7 +51,7 @@ router.post('/create-payment-intent', authenticateToken, async (req, res) => {
 });
 
 // Confirmer un paiement
-router.post('/confirm-payment', authenticateToken, async (req, res) => {
+router.post('/confirm-payment', optionalAuth, async (req, res) => {
   try {
     const { paymentIntentId, paymentMethodId } = req.body;
 
@@ -72,7 +85,7 @@ router.post('/confirm-payment', authenticateToken, async (req, res) => {
 });
 
 // Vérifier le statut d'un paiement
-router.get('/payment-status/:paymentIntentId', authenticateToken, async (req, res) => {
+router.get('/payment-status/:paymentIntentId', optionalAuth, async (req, res) => {
   try {
     const { paymentIntentId } = req.params;
 
@@ -97,7 +110,7 @@ router.get('/payment-status/:paymentIntentId', authenticateToken, async (req, re
 });
 
 // Créer un client Stripe
-router.post('/create-customer', authenticateToken, async (req, res) => {
+router.post('/create-customer', optionalAuth, async (req, res) => {
   try {
     const { email, name } = req.body;
 

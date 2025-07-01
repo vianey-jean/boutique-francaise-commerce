@@ -1,8 +1,7 @@
 
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import StripeElements from './StripeElements';
-import StripePaymentForm from './StripePaymentForm';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import StripeCheckout from './StripeCheckout';
 
 interface PaymentPopupProps {
   isOpen: boolean;
@@ -26,14 +25,15 @@ const PaymentPopup: React.FC<PaymentPopupProps> = ({ isOpen, onClose, amount, on
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Paiement sécurisé</DialogTitle>
+          <DialogDescription>
+            Finalisez votre commande avec notre système de paiement sécurisé
+          </DialogDescription>
         </DialogHeader>
-        <StripeElements amount={amount}>
-          <StripePaymentForm
-            amount={amount}
-            onSuccess={handleSuccess}
-            onError={handleError}
-          />
-        </StripeElements>
+        <StripeCheckout
+          amount={amount}
+          onSuccess={handleSuccess}
+          onError={handleError}
+        />
       </DialogContent>
     </Dialog>
   );

@@ -1,8 +1,10 @@
-
 const Stripe = require('stripe');
 
 class StripeService {
   constructor() {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      throw new Error('STRIPE_SECRET_KEY is required');
+    }
     this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
       apiVersion: '2023-10-16',
     });
@@ -10,14 +12,15 @@ class StripeService {
 
   async createPaymentIntent(amount, currency = 'eur', customerId = null) {
     try {
+      console.log(`Creating PaymentIntent for ${amount} cents`);
+      
       const paymentIntentData = {
         amount: Math.round(amount), // Montant en centimes
-        currency: currency,
+        currency: currency.toLowerCase(),
         automatic_payment_methods: {
           enabled: true,
         },
-        confirmation_method: 'manual',
-        confirm: false,
+        setup_future_usage: 'off_session', // Permet la sauvegarde de carte
       };
 
       if (customerId) {
@@ -26,26 +29,31 @@ class StripeService {
 
       const paymentIntent = await this.stripe.paymentIntents.create(paymentIntentData);
       
+      console.log(`PaymentIntent created successfully: ${paymentIntent.id}`);
+      
       return {
         clientSecret: paymentIntent.client_secret,
         paymentIntentId: paymentIntent.id
       };
     } catch (error) {
-      console.error('Erreur lors de la création du PaymentIntent:', error);
-      throw error;
+      console.error('Error creating PaymentIntent:', error);
+      throw new Error(`Failed to create PaymentIntent: ${error.message}`);
     }
   }
 
-  async createCheckoutSession(amount, currency = 'eur') {
+  async createCheckoutSession(amount, currency = 'eur', successUrl, cancelUrl) {
     try {
+      console.log(`Creating checkout session for ${amount} cents`);
+      
       const session = await this.stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         line_items: [
           {
             price_data: {
-              currency: currency,
+              currency: currency.toLowerCase(),
               product_data: {
-                name: 'Commande',
+                name: 'Commande Riziky Boutique',
+                description: 'Produits capillaires premium'
               },
               unit_amount: Math.round(amount), // Montant en centimes
             },
@@ -53,14 +61,20 @@ class StripeService {
           },
         ],
         mode: 'payment',
-        success_url: `${process.env.CLIENT_URL || 'http://localhost:5173'}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${process.env.CLIENT_URL || 'http://localhost:5173'}/checkout`,
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+        allow_promotion_codes: true,
+        billing_address_collection: 'auto',
+        shipping_address_collection: {
+          allowed_countries: ['FR', 'RE'],
+        }
       });
 
+      console.log(`Checkout session created: ${session.id}`);
       return session;
     } catch (error) {
-      console.error('Erreur lors de la création de la session checkout:', error);
-      throw error;
+      console.error('Error creating checkout session:', error);
+      throw new Error(`Failed to create checkout session: ${error.message}`);
     }
   }
 
@@ -73,7 +87,7 @@ class StripeService {
 
       return paymentIntent;
     } catch (error) {
-      console.error('Erreur lors de la confirmation du paiement:', error);
+      console.error('Error confirming payment:', error);
       throw error;
     }
   }
@@ -82,7 +96,7 @@ class StripeService {
     try {
       return await this.stripe.paymentIntents.retrieve(paymentIntentId);
     } catch (error) {
-      console.error('Erreur lors de la récupération du PaymentIntent:', error);
+      console.error('Error retrieving PaymentIntent:', error);
       throw error;
     }
   }
@@ -94,7 +108,7 @@ class StripeService {
         name: name
       });
     } catch (error) {
-      console.error('Erreur lors de la création du client Stripe:', error);
+      console.error('Error creating Stripe customer:', error);
       throw error;
     }
   }
@@ -103,7 +117,7 @@ class StripeService {
     try {
       return await this.stripe.customers.retrieve(customerId);
     } catch (error) {
-      console.error('Erreur lors de la récupération du client:', error);
+      console.error('Error retrieving customer:', error);
       throw error;
     }
   }
@@ -117,7 +131,7 @@ class StripeService {
         },
       });
     } catch (error) {
-      console.error('Erreur lors de la création du SetupIntent:', error);
+      console.error('Error creating SetupIntent:', error);
       throw error;
     }
   }
@@ -129,7 +143,7 @@ class StripeService {
         type: 'card',
       });
     } catch (error) {
-      console.error('Erreur lors de la récupération des méthodes de paiement:', error);
+      console.error('Error retrieving payment methods:', error);
       throw error;
     }
   }
@@ -138,7 +152,7 @@ class StripeService {
     try {
       return await this.stripe.paymentMethods.detach(paymentMethodId);
     } catch (error) {
-      console.error('Erreur lors de la suppression de la méthode de paiement:', error);
+      console.error('Error deleting payment method:', error);
       throw error;
     }
   }

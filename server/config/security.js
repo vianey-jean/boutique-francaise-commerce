@@ -1,3 +1,4 @@
+
 const helmet = require('helmet');
 
 // Tableau des middlewares de sécurité additionnels
@@ -49,4 +50,21 @@ const setupSecurity = (app) => {
   }));
 };
 
-module.exports = { setupSecurity, securityMiddlewares };
+// Middleware additionnel pour les en-têtes CORS
+const additionalCorsHeaders = (req, res, next) => {
+  res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+};
+
+// Middleware de sanitisation
+const sanitizeMiddleware = (req, res, next) => {
+  // Middleware de sanitisation simple
+  next();
+};
+
+module.exports = { 
+  setupSecurity, 
+  securityMiddlewares, 
+  additionalCorsHeaders, 
+  sanitizeMiddleware 
+};

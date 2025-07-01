@@ -36,6 +36,34 @@ class StripeService {
     }
   }
 
+  async createCheckoutSession(amount, currency = 'eur') {
+    try {
+      const session = await this.stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price_data: {
+              currency: currency,
+              product_data: {
+                name: 'Commande',
+              },
+              unit_amount: Math.round(amount), // Montant en centimes
+            },
+            quantity: 1,
+          },
+        ],
+        mode: 'payment',
+        success_url: `${process.env.CLIENT_URL || 'http://localhost:5173'}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${process.env.CLIENT_URL || 'http://localhost:5173'}/checkout`,
+      });
+
+      return session;
+    } catch (error) {
+      console.error('Erreur lors de la création de la session checkout:', error);
+      throw error;
+    }
+  }
+
   async confirmPaymentIntent(paymentIntentId, paymentMethodId) {
     try {
       const paymentIntent = await this.stripe.paymentIntents.confirm(paymentIntentId, {

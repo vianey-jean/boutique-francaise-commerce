@@ -1,3 +1,4 @@
+
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -7,8 +8,7 @@ const { createServer } = require('http');
 
 // Importation des modules de configuration
 const corsOptions = require('./config/cors');
-const { setupSecurity, securityMiddlewares } = require('./config/security');
-const { additionalCorsHeaders, sanitizeMiddleware } = require('./config/security');
+const { setupSecurity, securityMiddlewares, additionalCorsHeaders, sanitizeMiddleware } = require('./config/security');
 const { initializeDataFiles } = require('./config/dataFiles');
 const { authenticateToken } = require('./config/auth');
 const setupRoutes = require('./config/routes');
@@ -23,7 +23,9 @@ const server = createServer(app);
 setupSecurity(app);
 
 // Ajout des middlewares de sécurité additionnels
-securityMiddlewares.forEach(middleware => app.use(middleware));
+if (securityMiddlewares && Array.isArray(securityMiddlewares)) {
+  securityMiddlewares.forEach(middleware => app.use(middleware));
+}
 
 // Configuration CORS
 app.use(cors(corsOptions));
@@ -69,6 +71,7 @@ app.use('/api/admin-chat', require('./routes/admin-chat'));
 app.use('/api/client-chat', require('./routes/client-chat'));
 app.use('/api/cards', require('./routes/cards'));
 app.use('/api/stripe-payments', require('./routes/stripe-payments'));
+app.use('/api/stripe', require('./routes/stripe'));
 
 // Initialiser Socket.io
 const io = initializeSocket(server);

@@ -1,19 +1,10 @@
 
-import React, { useState, useEffect } from 'react';
-import { loadStripe } from '@stripe/stripe-js';
-import {
-  Elements,
-  CardElement,
-  useStripe,
-  useElements
-} from '@stripe/react-stripe-js';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, CreditCard, Shield } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
-
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 interface StripePaymentFormProps {
   amount: number;
@@ -21,32 +12,18 @@ interface StripePaymentFormProps {
   onError: (error: string) => void;
 }
 
-const PaymentForm: React.FC<StripePaymentFormProps> = ({ amount, onSuccess, onError }) => {
-  const stripe = useStripe();
-  const elements = useElements();
+const StripePaymentForm: React.FC<StripePaymentFormProps> = ({ amount, onSuccess, onError }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string>('');
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-
-    if (!stripe || !elements) {
-      setError('Stripe n\'est pas encore chargé');
-      return;
-    }
-
-    const cardElement = elements.getElement(CardElement);
-    if (!cardElement) {
-      setError('Élément de carte non trouvé');
-      return;
-    }
-
+  const handleStripePayment = async () => {
     setIsProcessing(true);
     setError('');
 
     try {
-      // Créer un PaymentIntent
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/stripe-payments/create-payment-intent`, {
+      console.log('Création de la session de checkout pour le montant:', amount);
+
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/stripe/create-checkout`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -58,32 +35,26 @@ const PaymentForm: React.FC<StripePaymentFormProps> = ({ amount, onSuccess, onEr
         })
       });
 
-      const { clientSecret } = await response.json();
-
-      if (!clientSecret) {
-        throw new Error('Impossible de créer l\'intention de paiement');
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Erreur de création de session:', errorData);
+        throw new Error(errorData.message || 'Erreur lors de la création de la session de paiement');
       }
 
-      // Confirmer le paiement avec 3D Secure
-      const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
-        payment_method: {
-          card: cardElement,
-        }
-      });
+      const data = await response.json();
+      console.log('Session créée avec succès:', data);
 
-      if (stripeError) {
-        setError(stripeError.message || 'Erreur lors du paiement');
-        onError(stripeError.message || 'Erreur lors du paiement');
-      } else if (paymentIntent?.status === 'succeeded') {
-        toast.success('Paiement réussi !');
-        onSuccess();
+      if (data.success && data.url) {
+        // Rediriger vers Stripe Checkout
+        window.location.href = data.url;
       } else {
-        setError('Le paiement n\'a pas pu être traité');
-        onError('Le paiement n\'a pas pu être traité');
+        throw new Error('URL de session invalide');
       }
     } catch (err) {
+      console.error('Erreur Stripe:', err);
       const errorMessage = err instanceof Error ? err.message : 'Erreur lors du paiement';
       setError(errorMessage);
+      toast.error('Erreur lors du paiement: ' + errorMessage);
       onError(errorMessage);
     } finally {
       setIsProcessing(false);
@@ -91,81 +62,50 @@ const PaymentForm: React.FC<StripePaymentFormProps> = ({ amount, onSuccess, onEr
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-4">
-        <div className="p-4 border rounded-lg bg-gray-50">
-          <CardElement
-            options={{
-              style: {
-                base: {
-                  fontSize: '16px',
-                  color: '#424770',
-                  '::placeholder': {
-                    color: '#aab7c4',
-                  },
-                },
-                invalid: {
-                  color: '#9e2146',
-                },
-              },
-            }}
-          />
-        </div>
-        
+    <Card className="w-full max-w-md mx-auto">
+      <CardHeader>
+        <CardTitle className="flex items-center">
+          <CreditCard className="h-5 w-5 mr-2" />
+          Paiement sécurisé
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
         {error && (
           <Alert variant="destructive">
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
-      </div>
 
-      <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
-        <div className="flex items-center space-x-2">
-          <Shield className="h-5 w-5 text-blue-600" />
-          <span className="text-sm text-blue-800">Paiement sécurisé avec 3D Secure</span>
+        <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
+          <div className="flex items-center space-x-2">
+            <Shield className="h-5 w-5 text-blue-600" />
+            <span className="text-sm text-blue-800">Paiement sécurisé avec Stripe</span>
+          </div>
+          <span className="font-semibold text-lg">
+            {amount.toFixed(2)}€
+          </span>
         </div>
-        <span className="font-semibold text-lg">
-          {(amount).toFixed(2)}€
-        </span>
-      </div>
 
-      <Button
-        type="submit"
-        disabled={!stripe || isProcessing}
-        className="w-full bg-green-600 hover:bg-green-700"
-        size="lg"
-      >
-        {isProcessing ? (
-          <>
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            Traitement en cours...
-          </>
-        ) : (
-          <>
-            <CreditCard className="h-4 w-4 mr-2" />
-            Payer {(amount).toFixed(2)}€
-          </>
-        )}
-      </Button>
-    </form>
-  );
-};
-
-const StripePaymentForm: React.FC<StripePaymentFormProps> = (props) => {
-  return (
-    <Elements stripe={stripePromise}>
-      <Card className="w-full max-w-md mx-auto">
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <CreditCard className="h-5 w-5 mr-2" />
-            Paiement sécurisé
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <PaymentForm {...props} />
-        </CardContent>
-      </Card>
-    </Elements>
+        <Button
+          onClick={handleStripePayment}
+          disabled={isProcessing}
+          className="w-full bg-green-600 hover:bg-green-700"
+          size="lg"
+        >
+          {isProcessing ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Redirection vers Stripe...
+            </>
+          ) : (
+            <>
+              <CreditCard className="h-4 w-4 mr-2" />
+              Payer {amount.toFixed(2)}€
+            </>
+          )}
+        </Button>
+      </CardContent>
+    </Card>
   );
 };
 

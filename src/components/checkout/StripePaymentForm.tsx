@@ -24,13 +24,11 @@ const StripePaymentForm: React.FC<StripePaymentFormProps> = ({ amount, onSuccess
   React.useEffect(() => {
     const createPaymentIntent = async () => {
       try {
-        const authToken = localStorage.getItem('authToken');
-        
+        // Ne pas envoyer de token d'authentification pour les paiements guests
         const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/stripe-payments/create-payment-intent`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify({
             amount: Math.round(amount * 100), // Convertir en centimes

@@ -32,6 +32,7 @@ const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
   useEffect(() => {
     // Si l'utilisateur n'est pas connecté, aller directement à l'onglet nouvelle carte
     if (!user) {
+      console.log('Utilisateur non connecté, redirection vers nouvelle carte');
       setActiveTab('new');
       setHasSavedCards(false);
       return;
@@ -42,22 +43,31 @@ const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
 
   const checkSavedCards = async () => {
     if (!user) {
+      console.log('Pas d\'utilisateur connecté pour vérifier les cartes');
       setHasSavedCards(false);
       return;
     }
 
     try {
+      console.log('Vérification des cartes sauvegardées pour l\'utilisateur:', user.email);
       const response = await stripeAPI.getSavedCards();
-      setHasSavedCards(response.data.cards.length > 0);
+      const cardsCount = response.data.cards.length;
+      console.log(`${cardsCount} cartes trouvées`);
+      
+      setHasSavedCards(cardsCount > 0);
       
       // Si pas de cartes sauvegardées, aller directement à l'onglet nouvelle carte
-      if (response.data.cards.length === 0) {
+      if (cardsCount === 0) {
         setActiveTab('new');
       } else {
         setActiveTab('saved');
       }
     } catch (error: any) {
-      console.log('Pas de cartes sauvegardées ou utilisateur non authentifié');
+      console.log('Erreur lors de la vérification des cartes:', error);
+      // Ne pas traiter l'erreur 403 comme une erreur critique
+      if (error.response?.status === 403) {
+        console.log('Utilisateur non authentifié pour les cartes sauvegardées');
+      }
       setHasSavedCards(false);
       setActiveTab('new');
     }

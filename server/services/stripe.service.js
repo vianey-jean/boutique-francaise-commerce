@@ -37,10 +37,10 @@ class StripeService {
     const successUrl = `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`;
     const cancelUrl = `${origin}/checkout/cancel`;
 
-    // Utiliser le total TTC fourni directement
+    // Utiliser le total TTC fourni directement (déjà calculé côté frontend)
     const finalAmount = Math.round(totalAmount * 100); // Convertir en centimes
 
-    console.log('Création session Stripe avec montant TTC:', totalAmount, 'soit', finalAmount, 'centimes');
+    console.log('Création session Stripe avec montant TTC final:', totalAmount, '€ soit', finalAmount, 'centimes');
 
     const sessionConfig = {
       customer: customer.id,
@@ -50,7 +50,7 @@ class StripeService {
           currency: 'eur',
           product_data: {
             name: 'Commande - Total TTC',
-            description: `Commande avec ${items.length} article(s)`
+            description: `Commande avec ${items.length} article(s) - Total TTC incluant TVA et livraison`
           },
           unit_amount: finalAmount,
         },
@@ -79,7 +79,7 @@ class StripeService {
     }
 
     const session = await stripe.checkout.sessions.create(sessionConfig);
-    console.log('Session Stripe créée:', session.id);
+    console.log('Session Stripe créée avec succès:', session.id, 'URL:', session.url);
 
     return session;
   }

@@ -1,6 +1,5 @@
 
 import React, { useState } from 'react';
-import { useStripe, useElements, CardElement } from '@stripe/react-stripe-js';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -26,34 +25,22 @@ const StripeCheckoutFormInner: React.FC<StripeCheckoutFormProps> = ({
   onSuccess,
   onCancel
 }) => {
-  const stripe = useStripe();
-  const elements = useElements();
   const [processing, setProcessing] = useState(false);
   const [saveCard, setSaveCard] = useState(false);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (!stripe || !elements) {
-      toast.error('Stripe n\'est pas encore chargé. Veuillez patienter.');
-      return;
-    }
-
-    const cardElement = elements.getElement(CardElement);
-    if (!cardElement) {
-      toast.error('Élément de carte non trouvé');
-      return;
-    }
-
     setProcessing(true);
 
     try {
       console.log('Création de la session de checkout avec le total TTC:', orderData.totalAmount);
       
-      // Créer une session de checkout avec le total TTC
+      // Créer une session de checkout Stripe qui redirige directement vers Stripe
       const response = await stripeAPI.createCheckoutSession({
-        ...orderData,
-        // S'assurer que le montant total TTC est envoyé
+        items: orderData.items,
+        shippingAddress: orderData.shippingAddress,
+        deliveryPrice: orderData.deliveryPrice,
         totalAmount: orderData.totalAmount,
         saveCard
       });
@@ -61,7 +48,7 @@ const StripeCheckoutFormInner: React.FC<StripeCheckoutFormProps> = ({
       console.log('Réponse de la session:', response.data);
 
       if (response.data.url) {
-        // Rediriger vers Stripe Checkout avec paiement direct
+        // Rediriger vers Stripe Checkout
         console.log('Redirection vers Stripe Checkout:', response.data.url);
         window.location.href = response.data.url;
       } else {
@@ -71,26 +58,8 @@ const StripeCheckoutFormInner: React.FC<StripeCheckoutFormProps> = ({
       console.error('Erreur lors du paiement:', error);
       const errorMessage = error.response?.data?.error || error.message || 'Erreur lors de l\'initialisation du paiement';
       toast.error(errorMessage);
-    } finally {
       setProcessing(false);
     }
-  };
-
-  const cardElementOptions = {
-    style: {
-      base: {
-        fontSize: '16px',
-        color: '#424770',
-        '::placeholder': {
-          color: '#aab7c4',
-        },
-        fontFamily: 'system-ui, -apple-system, sans-serif',
-      },
-      invalid: {
-        color: '#9e2146',
-      },
-    },
-    hidePostalCode: true,
   };
 
   return (
@@ -137,8 +106,8 @@ const StripeCheckoutFormInner: React.FC<StripeCheckoutFormProps> = ({
             {/* Note importante */}
             <div className="bg-blue-50 p-4 rounded-xl border border-blue-200">
               <p className="text-sm text-blue-800">
-                💳 Votre carte sera directement débitée du montant total. 
-                Aucune saisie supplémentaire ne sera demandée.
+                💳 En cliquant sur "Payer", vous serez redirigé vers la page sécurisée de Stripe 
+                où vous pourrez saisir vos informations de carte bancaire.
               </p>
             </div>
 
@@ -177,13 +146,13 @@ const StripeCheckoutFormInner: React.FC<StripeCheckoutFormProps> = ({
               </Button>
               <Button
                 type="submit"
-                disabled={!stripe || processing}
+                disabled={processing}
                 className="flex-1 h-12 bg-gradient-to-r from-green-500 via-blue-500 to-purple-500 hover:from-green-600 hover:via-blue-600 hover:to-purple-600 text-white shadow-xl"
               >
                 {processing ? (
                   <div className="flex items-center gap-2">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    Traitement...
+                    Redirection...
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">

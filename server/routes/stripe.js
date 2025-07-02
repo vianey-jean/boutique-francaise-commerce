@@ -4,13 +4,29 @@ const router = express.Router();
 const stripeService = require('../services/stripe.service');
 const { authenticateToken } = require('../middlewares/stripeAuth');
 
-// Créer une session de checkout
-router.post('/create-checkout-session', authenticateToken, async (req, res) => {
+// Route publique pour créer une session de checkout (accessible sans authentification)
+router.post('/create-checkout-session', async (req, res) => {
   try {
     const { items, shippingAddress, saveCard = false } = req.body;
-    const userId = req.user.id;
     
-    console.log('Création session Stripe pour utilisateur:', userId);
+    // Si l'utilisateur est authentifié, utiliser ses informations
+    let userId = 'guest';
+    let userEmail = 'guest@example.com';
+    
+    const authHeader = req.headers['authorization'];
+    if (authHeader) {
+      try {
+        const jwt = require('jsonwebtoken');
+        const token = authHeader.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_key');
+        userId = decoded.id;
+        userEmail = decoded.email;
+      } catch (authError) {
+        console.log('Utilisateur non authentifié, utilisation du mode invité');
+      }
+    }
+    
+    console.log('Création session Stripe pour:', userId === 'guest' ? 'invité' : `utilisateur ${userId}`);
 
     const origin = req.headers.origin || req.headers.referer?.replace(/\/$/, '') || 'http://localhost:8080';
     
@@ -18,8 +34,8 @@ router.post('/create-checkout-session', authenticateToken, async (req, res) => {
       items,
       shippingAddress,
       userId,
-      userEmail: req.user.email,
-      saveCard,
+      userEmail,
+      saveCard: userId !== 'guest' ? saveCard : false, // Pas de sauvegarde pour les invités
       origin
     });
 
@@ -41,8 +57,8 @@ router.post('/create-checkout-session', authenticateToken, async (req, res) => {
   }
 });
 
-// Vérifier le statut d'une session
-router.get('/verify-session/:sessionId', authenticateToken, async (req, res) => {
+// Vérifier le statut d'une session (accessible sans authentification)
+router.get('/verify-session/:sessionId', async (req, res) => {
   try {
     const { sessionId } = req.params;
     console.log('Vérification session:', sessionId);
@@ -65,7 +81,7 @@ router.get('/verify-session/:sessionId', authenticateToken, async (req, res) => 
   }
 });
 
-// Récupérer les cartes sauvegardées
+// Récupérer les cartes sauvegardées (nécessite authentification)
 router.get('/saved-cards', authenticateToken, async (req, res) => {
   try {
     console.log('Récupération cartes pour utilisateur:', req.user.email);
@@ -83,7 +99,7 @@ router.get('/saved-cards', authenticateToken, async (req, res) => {
   }
 });
 
-// Créer un paiement avec une carte sauvegardée
+// Créer un paiement avec une carte sauvegardée (nécessite authentification)
 router.post('/pay-with-saved-card', authenticateToken, async (req, res) => {
   try {
     const { paymentMethodId, items, shippingAddress } = req.body;
@@ -111,7 +127,7 @@ router.post('/pay-with-saved-card', authenticateToken, async (req, res) => {
   }
 });
 
-// Supprimer une carte sauvegardée
+// Supprimer une carte sauvegardée (nécessite authentification)
 router.delete('/saved-cards/:cardId', authenticateToken, async (req, res) => {
   try {
     await stripeService.deleteSavedCard(req.params.cardId);

@@ -9,6 +9,7 @@ import StripeCheckoutForm from './StripeCheckoutForm';
 import { StripeProvider } from '@/contexts/StripeContext';
 import { stripeAPI } from '@/services/stripeAPI';
 import { toast } from '@/components/ui/sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface PaymentMethodSelectorProps {
   onPaymentSuccess: () => void;
@@ -24,14 +25,26 @@ const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
   onPaymentSuccess, 
   orderData 
 }) => {
-  const [activeTab, setActiveTab] = useState('saved');
+  const [activeTab, setActiveTab] = useState('new');
   const [hasSavedCards, setHasSavedCards] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
+    // Si l'utilisateur n'est pas connecté, aller directement à l'onglet nouvelle carte
+    if (!user) {
+      setActiveTab('new');
+      return;
+    }
+
     checkSavedCards();
-  }, []);
+  }, [user]);
 
   const checkSavedCards = async () => {
+    if (!user) {
+      setHasSavedCards(false);
+      return;
+    }
+
     try {
       const response = await stripeAPI.getSavedCards();
       setHasSavedCards(response.data.cards.length > 0);
@@ -39,9 +52,18 @@ const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
       // Si pas de cartes sauvegardées, aller directement à l'onglet nouvelle carte
       if (response.data.cards.length === 0) {
         setActiveTab('new');
+      } else {
+        setActiveTab('saved');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erreur lors de la vérification des cartes:', error);
+      
+      // Si erreur 403, l'utilisateur n'est pas authentifié
+      if (error.response?.status === 403) {
+        console.log('Utilisateur non authentifié');
+        setHasSavedCards(false);
+      }
+      
       setActiveTab('new');
     }
   };
@@ -55,9 +77,9 @@ const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
     <StripeProvider>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-2xl mx-auto">
         <TabsList className="grid w-full grid-cols-2 mb-6">
-          <TabsTrigger value="saved" disabled={!hasSavedCards}>
+          <TabsTrigger value="saved" disabled={!user || !hasSavedCards}>
             <CreditCard className="h-4 w-4 mr-2" />
-            Cartes enregistrées
+            {user ? 'Cartes enregistrées' : 'Connexion requise'}
           </TabsTrigger>
           <TabsTrigger value="new">
             <Plus className="h-4 w-4 mr-2" />
@@ -66,21 +88,36 @@ const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
         </TabsList>
         
         <TabsContent value="saved">
-          <SavedCardSelector 
-            onSelectCard={handleCardSelected}
-            onAddNewCard={() => setActiveTab('new')}
-            orderData={orderData}
-          />
+          {user ? (
+            <SavedCardSelector 
+              onSelectCard={handleCardSelected}
+              onAddNewCard={() => setActiveTab('new')}
+              orderData={orderData}
+            />
+          ) : (
+            <Card>
+              <CardContent className="text-center py-8">
+                <p className="text-gray-600 mb-4">
+                  Vous devez être connecté pour utiliser des cartes sauvegardées
+                </p>
+                <Button onClick={() => setActiveTab('new')}>
+                  Payer avec une nouvelle carte
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
         
         <TabsContent value="new">
           <StripeCheckoutForm 
             orderData={orderData}
             onSuccess={() => {
-              checkSavedCards();
+              if (user) {
+                checkSavedCards();
+              }
               onPaymentSuccess();
             }}
-            onCancel={() => setActiveTab('saved')}
+            onCancel={() => user && hasSavedCards ? setActiveTab('saved') : undefined}
           />
         </TabsContent>
       </Tabs>

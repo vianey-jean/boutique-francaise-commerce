@@ -8,6 +8,7 @@ import { CreditCard, Lock, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from '@/components/ui/sonner';
 import { stripeAPI } from '@/services/stripeAPI';
+import { useStripe as useStripeContext } from '@/contexts/StripeContext';
 
 interface StripeCheckoutFormProps {
   orderData: {
@@ -27,17 +28,48 @@ const StripeCheckoutForm: React.FC<StripeCheckoutFormProps> = ({
 }) => {
   const stripe = useStripe();
   const elements = useElements();
+  const { isLoaded, error } = useStripeContext();
   const [processing, setProcessing] = useState(false);
   const [saveCard, setSaveCard] = useState(false);
-  const [stripeReady, setStripeReady] = useState(false);
 
-  // Vérifier que Stripe est prêt
-  React.useEffect(() => {
-    if (stripe && elements) {
-      setStripeReady(true);
-      console.log('Stripe est prêt');
-    }
-  }, [stripe, elements]);
+  // Si Stripe n'est pas encore chargé, afficher un état de chargement
+  if (!isLoaded) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Card className="w-full max-w-lg mx-auto shadow-2xl border-0 bg-gradient-to-br from-white to-gray-50">
+          <CardContent className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p className="text-gray-600">Chargement du système de paiement sécurisé...</p>
+          </CardContent>
+        </Card>
+      </motion.div>
+    );
+  }
+
+  // Si erreur de chargement Stripe
+  if (error) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Card className="w-full max-w-lg mx-auto shadow-2xl border-0 bg-gradient-to-br from-white to-gray-50">
+          <CardContent className="text-center py-8">
+            <p className="text-red-600 mb-4">Erreur de chargement du système de paiement</p>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <Button onClick={onCancel} variant="outline">
+              Retour
+            </Button>
+          </CardContent>
+        </Card>
+      </motion.div>
+    );
+  }
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -145,16 +177,9 @@ const StripeCheckoutForm: React.FC<StripeCheckoutFormProps> = ({
               <label className="block text-sm font-medium text-gray-700">
                 Informations de carte
               </label>
-              {!stripeReady ? (
-                <div className="p-4 border border-gray-300 rounded-xl bg-gray-50 text-center">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto mb-2"></div>
-                  <p className="text-sm text-gray-600">Chargement du système de paiement sécurisé...</p>
-                </div>
-              ) : (
-                <div className="p-4 border border-gray-300 rounded-xl bg-white shadow-sm focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all">
-                  <CardElement options={cardElementOptions} />
-                </div>
-              )}
+              <div className="p-4 border border-gray-300 rounded-xl bg-white shadow-sm focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all">
+                <CardElement options={cardElementOptions} />
+              </div>
             </div>
 
             {/* Option d'enregistrement */}
@@ -192,7 +217,7 @@ const StripeCheckoutForm: React.FC<StripeCheckoutFormProps> = ({
               </Button>
               <Button
                 type="submit"
-                disabled={!stripeReady || processing}
+                disabled={!stripe || processing}
                 className="flex-1 h-12 bg-gradient-to-r from-green-500 via-blue-500 to-purple-500 hover:from-green-600 hover:via-blue-600 hover:to-purple-600 text-white shadow-xl"
               >
                 {processing ? (

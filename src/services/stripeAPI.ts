@@ -1,3 +1,4 @@
+
 import { API } from './apiConfig';
 
 export interface SavedCard {
@@ -14,6 +15,7 @@ export interface CheckoutSessionData {
   shippingAddress: any;
   deliveryPrice?: number;
   saveCard?: boolean;
+  totalAmount: number; // Added totalAmount property
 }
 
 export const stripeAPI = {

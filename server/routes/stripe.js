@@ -7,8 +7,21 @@ const { authenticateToken } = require('../middlewares/stripeAuth');
 // Route publique pour créer une session de checkout (accessible sans authentification)
 router.post('/create-checkout-session', async (req, res) => {
   try {
-    const { items, shippingAddress, saveCard = false } = req.body;
+    const { items, shippingAddress, totalAmount, saveCard = false } = req.body;
     
+    console.log('Données reçues pour la session Stripe:', {
+      items: items?.length || 0,
+      totalAmount,
+      saveCard
+    });
+
+    if (!totalAmount || totalAmount <= 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Le montant total TTC est requis et doit être supérieur à 0'
+      });
+    }
+
     // Si l'utilisateur est authentifié, utiliser ses informations
     let userId = 'guest';
     let userEmail = 'guest@example.com';
@@ -27,6 +40,7 @@ router.post('/create-checkout-session', async (req, res) => {
     }
     
     console.log('Création session Stripe pour:', userId === 'guest' ? 'invité' : `utilisateur ${userId}`);
+    console.log('Montant total TTC à débiter:', totalAmount, '€');
 
     const origin = req.headers.origin || req.headers.referer?.replace(/\/$/, '') || 'http://localhost:8080';
     
@@ -36,7 +50,8 @@ router.post('/create-checkout-session', async (req, res) => {
       userId,
       userEmail,
       saveCard: userId !== 'guest' ? saveCard : false, // Pas de sauvegarde pour les invités
-      origin
+      origin,
+      totalAmount // Passer le total TTC directement
     });
 
     console.log('Session Stripe créée avec succès:', session.id);

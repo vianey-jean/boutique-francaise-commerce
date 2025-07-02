@@ -51,7 +51,13 @@ const CheckoutSuccessPage = () => {
           console.error('Erreur lors du rechargement du panier:', cartError);
         }
         
-        toast.success('Paiement confirmé ! Votre commande a été traitée.');
+        toast.success('Paiement confirmé ! Votre commande a été enregistrée avec succès.');
+        
+        // Rediriger vers les commandes après 3 secondes
+        setTimeout(() => {
+          navigate('/commandes');
+        }, 3000);
+        
       } else {
         throw new Error(`Paiement non validé. Statut: ${response.data.payment_status || 'inconnu'}`);
       }
@@ -75,7 +81,7 @@ const CheckoutSuccessPage = () => {
               <LoadingSpinner size="lg" />
               <p className="text-lg font-medium mt-4">Vérification du paiement...</p>
               <p className="text-sm text-gray-500 mt-4">
-                Veuillez patienter pendant que nous vérifions votre transaction
+                Veuillez patienter pendant que nous vérifions votre transaction et créons votre commande
               </p>
             </CardContent>
           </Card>
@@ -164,8 +170,8 @@ const CheckoutSuccessPage = () => {
                 Paiement réussi !
               </h1>
               <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-                Votre commande a été confirmée et sera traitée dans les plus brefs délais.
-                Un email de confirmation vous sera envoyé.
+                Votre commande a été confirmée et enregistrée avec succès. 
+                Vous allez être redirigé vers vos commandes dans quelques secondes.
               </p>
             </motion.div>
 
@@ -184,18 +190,19 @@ const CheckoutSuccessPage = () => {
               <div className="space-y-4">
                 <div className="flex justify-between items-center p-4 bg-green-50 rounded-xl">
                   <span className="font-medium text-green-800">Statut du paiement</span>
-                  <span className="text-green-600 font-bold">✅ Validé</span>
+                  <span className="text-green-600 font-bold">✅ Validé et enregistré</span>
                 </div>
                 
                 <div className="flex justify-between items-center p-4 bg-blue-50 rounded-xl">
                   <span className="font-medium text-blue-800">Statut de la commande</span>
-                  <span className="text-blue-600 font-bold">🚀 En préparation</span>
+                  <span className="text-blue-600 font-bold">🚀 Confirmée</span>
                 </div>
 
                 <div className="text-sm text-gray-600 bg-gray-50 p-4 rounded-xl">
                   <p>• Votre paiement a été traité avec succès</p>
-                  <p>• Vous recevrez un email de confirmation</p>
+                  <p>• Votre commande a été enregistrée dans notre système</p>
                   <p>• La livraison sera effectuée dans les délais prévus</p>
+                  <p>• Redirection automatique vers vos commandes...</p>
                 </div>
               </div>
             </motion.div>
@@ -212,7 +219,7 @@ const CheckoutSuccessPage = () => {
                 className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-8 py-4 h-auto shadow-xl"
               >
                 <Package className="h-5 w-5 mr-2" />
-                Voir mes commandes
+                Voir mes commandes maintenant
               </Button>
               
               <Button
@@ -233,7 +240,7 @@ const CheckoutSuccessPage = () => {
               className="mt-12 p-6 bg-gradient-to-r from-purple-100 to-pink-100 rounded-2xl border border-purple-200"
             >
               <p className="text-purple-800 font-medium">
-                🎉 Merci pour votre confiance ! Nous espérons que vos achats vous plairont.
+                🎉 Merci pour votre confiance ! Votre commande a été enregistrée avec succès.
               </p>
             </motion.div>
           </motion.div>

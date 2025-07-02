@@ -33,6 +33,7 @@ const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
     // Si l'utilisateur n'est pas connecté, aller directement à l'onglet nouvelle carte
     if (!user) {
       setActiveTab('new');
+      setHasSavedCards(false);
       return;
     }
 
@@ -56,14 +57,8 @@ const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
         setActiveTab('saved');
       }
     } catch (error: any) {
-      console.error('Erreur lors de la vérification des cartes:', error);
-      
-      // Si erreur 403, l'utilisateur n'est pas authentifié
-      if (error.response?.status === 403) {
-        console.log('Utilisateur non authentifié');
-        setHasSavedCards(false);
-      }
-      
+      console.log('Pas de cartes sauvegardées ou utilisateur non authentifié');
+      setHasSavedCards(false);
       setActiveTab('new');
     }
   };
@@ -88,7 +83,7 @@ const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
         </TabsList>
         
         <TabsContent value="saved">
-          {user ? (
+          {user && hasSavedCards ? (
             <SavedCardSelector 
               onSelectCard={handleCardSelected}
               onAddNewCard={() => setActiveTab('new')}
@@ -98,7 +93,7 @@ const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
             <Card>
               <CardContent className="text-center py-8">
                 <p className="text-gray-600 mb-4">
-                  Vous devez être connecté pour utiliser des cartes sauvegardées
+                  {!user ? 'Vous devez être connecté pour utiliser des cartes sauvegardées' : 'Aucune carte sauvegardée'}
                 </p>
                 <Button onClick={() => setActiveTab('new')}>
                   Payer avec une nouvelle carte

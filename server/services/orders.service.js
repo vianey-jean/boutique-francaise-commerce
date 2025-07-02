@@ -1,4 +1,3 @@
-
 const database = require('../core/database');
 
 class OrdersService {
@@ -25,8 +24,17 @@ class OrdersService {
     const orders = this.getAll();
     const newOrder = {
       id: `ORD-${Date.now()}`,
-      ...orderData,
-      status: 'en attente',
+      userId: orderData.userId || 'guest',
+      userName: orderData.userName || 'Client',
+      userEmail: orderData.userEmail || 'guest@example.com',
+      items: orderData.items || [],
+      totalAmount: orderData.totalAmount || 0,
+      shippingAddress: orderData.shippingAddress || {},
+      paymentMethod: orderData.paymentMethod || 'stripe',
+      stripeSessionId: orderData.stripeSessionId || null,
+      paymentStatus: orderData.paymentStatus || 'paid',
+      codePromoUsed: orderData.codePromo || null,
+      status: 'confirmée',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -40,6 +48,7 @@ class OrdersService {
     // Enregistrer la notification de vente pour chaque produit
     this.recordSalesNotifications(newOrder);
     
+    console.log('Commande créée avec succès:', newOrder.id);
     return newOrder;
   }
 

@@ -48,18 +48,20 @@ const StripeCheckoutFormInner: React.FC<StripeCheckoutFormProps> = ({
     setProcessing(true);
 
     try {
-      console.log('Création de la session de checkout...');
+      console.log('Création de la session de checkout avec le total TTC:', orderData.totalAmount);
       
-      // Créer une session de checkout
+      // Créer une session de checkout avec le total TTC
       const response = await stripeAPI.createCheckoutSession({
         ...orderData,
+        // S'assurer que le montant total TTC est envoyé
+        totalAmount: orderData.totalAmount,
         saveCard
       });
 
       console.log('Réponse de la session:', response.data);
 
       if (response.data.url) {
-        // Rediriger vers Stripe Checkout
+        // Rediriger vers Stripe Checkout avec paiement direct
         console.log('Redirection vers Stripe Checkout:', response.data.url);
         window.location.href = response.data.url;
       } else {
@@ -132,14 +134,12 @@ const StripeCheckoutFormInner: React.FC<StripeCheckoutFormProps> = ({
               </div>
             </div>
 
-            {/* Élément carte Stripe */}
-            <div className="space-y-4">
-              <label className="block text-sm font-medium text-gray-700">
-                Informations de carte
-              </label>
-              <div className="p-4 border border-gray-300 rounded-xl bg-white shadow-sm focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all">
-                <CardElement options={cardElementOptions} />
-              </div>
+            {/* Note importante */}
+            <div className="bg-blue-50 p-4 rounded-xl border border-blue-200">
+              <p className="text-sm text-blue-800">
+                💳 Votre carte sera directement débitée du montant total. 
+                Aucune saisie supplémentaire ne sera demandée.
+              </p>
             </div>
 
             {/* Option d'enregistrement */}
@@ -188,7 +188,7 @@ const StripeCheckoutFormInner: React.FC<StripeCheckoutFormProps> = ({
                 ) : (
                   <div className="flex items-center gap-2">
                     <Lock className="h-4 w-4" />
-                    Payer {orderData.totalAmount.toFixed(2)} €
+                    Payer {orderData.totalAmount.toFixed(2)} € TTC
                   </div>
                 )}
               </Button>

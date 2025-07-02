@@ -1,5 +1,5 @@
-
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const ordersService = require('./orders.service');
 
 class StripeService {
   // Créer ou récupérer un client Stripe
@@ -31,42 +31,93 @@ class StripeService {
   }
 
   // Créer une session de checkout
-  async createCheckoutSession({ items, shippingAddress, userId, userEmail, saveCard, origin }) {
+  async createCheckoutSession({ items, shippingAddress, userId, userEmail, saveCard, origin, totalAmount }) {
     const customer = await this.getOrCreateCustomer(userEmail, shippingAddress);
 
     const successUrl = `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`;
     const cancelUrl = `${origin}/checkout/cancel`;
 
+    // Utiliser le total TTC fourni directement
+    const finalAmount = Math.round(totalAmount * 100); // Convertir en centimes
+
+    console.log('Création session Stripe avec montant TTC:', totalAmount, 'soit', finalAmount, 'centimes');
+
     const sessionConfig = {
       customer: customer.id,
       payment_method_types: ['card'],
-      line_items: items.map(item => ({
+      line_items: [{
         price_data: {
           currency: 'eur',
           product_data: {
-            name: item.name,
-            images: item.image ? [`${process.env.BASE_URL || origin}${item.image}`] : []
+            name: 'Commande - Total TTC',
+            description: `Commande avec ${items.length} article(s)`
           },
-          unit_amount: Math.round(item.price * 100),
+          unit_amount: finalAmount,
         },
-        quantity: item.quantity,
-      })),
+        quantity: 1,
+      }],
       mode: 'payment',
       success_url: successUrl,
       cancel_url: cancelUrl,
       metadata: {
         userId: userId,
-        orderId: `temp-${Date.now()}`
+        userEmail: userEmail,
+        orderData: JSON.stringify({
+          items,
+          shippingAddress,
+          totalAmount,
+          userId,
+          userEmail
+        })
       }
     };
 
-    if (saveCard) {
+    if (saveCard && userId !== 'guest') {
       sessionConfig.payment_intent_data = {
         setup_future_usage: 'off_session'
       };
     }
 
-    return await stripe.checkout.sessions.create(sessionConfig);
+    const session = await stripe.checkout.sessions.create(sessionConfig);
+    console.log('Session Stripe créée:', session.id);
+
+    return session;
+  }
+
+  // Vérifier le statut d'une session et créer la commande
+  async verifySession(sessionId) {
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    console.log('Session récupérée:', session.id, 'Statut:', session.payment_status);
+
+    // Si le paiement est réussi, créer la commande
+    if (session.payment_status === 'paid' && session.metadata.orderData) {
+      try {
+        const orderData = JSON.parse(session.metadata.orderData);
+        console.log('Création de la commande après paiement réussi...');
+
+        // Créer la commande avec les données de la session
+        const order = await ordersService.create({
+          items: orderData.items.map(item => ({
+            productId: item.productId || item.id,
+            quantity: item.quantity,
+            price: item.price
+          })),
+          shippingAddress: orderData.shippingAddress,
+          paymentMethod: 'stripe',
+          userId: orderData.userId || 'guest',
+          userEmail: orderData.userEmail || 'guest@example.com',
+          totalAmount: orderData.totalAmount,
+          stripeSessionId: sessionId,
+          paymentStatus: 'paid'
+        });
+
+        console.log('Commande créée avec succès:', order.id);
+      } catch (error) {
+        console.error('Erreur lors de la création de la commande:', error);
+      }
+    }
+
+    return session;
   }
 
   // Récupérer les cartes sauvegardées
@@ -114,11 +165,6 @@ class StripeService {
   // Supprimer une carte sauvegardée
   async deleteSavedCard(cardId) {
     return await stripe.paymentMethods.detach(cardId);
-  }
-
-  // Vérifier le statut d'une session
-  async verifySession(sessionId) {
-    return await stripe.checkout.sessions.retrieve(sessionId);
   }
 }
 

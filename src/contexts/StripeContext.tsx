@@ -9,9 +9,10 @@ const getStripePromise = () => {
   if (!stripePromise) {
     const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
     if (!publishableKey) {
-      console.error('VITE_STRIPE_PUBLISHABLE_KEY manquante');
+      console.error('VITE_STRIPE_PUBLISHABLE_KEY manquante dans les variables d\'environnement');
       return null;
     }
+    console.log('Initialisation de Stripe avec la clé:', publishableKey.substring(0, 20) + '...');
     stripePromise = loadStripe(publishableKey);
   }
   return stripePromise;
@@ -35,22 +36,26 @@ export const StripeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       try {
         const stripePromise = getStripePromise();
         if (!stripePromise) {
-          setError('Configuration Stripe manquante');
+          setError('Configuration Stripe manquante - vérifiez VITE_STRIPE_PUBLISHABLE_KEY');
+          setIsLoaded(false);
           return;
         }
 
+        console.log('Chargement de Stripe.js...');
         const stripe = await stripePromise;
+        
         if (stripe) {
           setStripeInstance(stripe);
           setIsLoaded(true);
           setError(null);
           console.log('Stripe.js chargé avec succès');
         } else {
-          setError('Impossible de charger Stripe.js');
+          setError('Impossible de charger Stripe.js - vérifiez votre clé publique');
+          setIsLoaded(false);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Erreur lors du chargement de Stripe.js:', error);
-        setError('Erreur de chargement Stripe.js');
+        setError(`Erreur de chargement Stripe.js: ${error.message}`);
         setIsLoaded(false);
       }
     };

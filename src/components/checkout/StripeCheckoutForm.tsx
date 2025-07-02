@@ -21,55 +21,15 @@ interface StripeCheckoutFormProps {
   onCancel: () => void;
 }
 
-const StripeCheckoutForm: React.FC<StripeCheckoutFormProps> = ({
+const StripeCheckoutFormInner: React.FC<StripeCheckoutFormProps> = ({
   orderData,
   onSuccess,
   onCancel
 }) => {
   const stripe = useStripe();
   const elements = useElements();
-  const { isLoaded, error } = useStripeContext();
   const [processing, setProcessing] = useState(false);
   const [saveCard, setSaveCard] = useState(false);
-
-  // Si Stripe n'est pas encore chargé, afficher un état de chargement
-  if (!isLoaded) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <Card className="w-full max-w-lg mx-auto shadow-2xl border-0 bg-gradient-to-br from-white to-gray-50">
-          <CardContent className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-            <p className="text-gray-600">Chargement du système de paiement sécurisé...</p>
-          </CardContent>
-        </Card>
-      </motion.div>
-    );
-  }
-
-  // Si erreur de chargement Stripe
-  if (error) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <Card className="w-full max-w-lg mx-auto shadow-2xl border-0 bg-gradient-to-br from-white to-gray-50">
-          <CardContent className="text-center py-8">
-            <p className="text-red-600 mb-4">Erreur de chargement du système de paiement</p>
-            <p className="text-gray-600 mb-4">{error}</p>
-            <Button onClick={onCancel} variant="outline">
-              Retour
-            </Button>
-          </CardContent>
-        </Card>
-      </motion.div>
-    );
-  }
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -238,6 +198,52 @@ const StripeCheckoutForm: React.FC<StripeCheckoutFormProps> = ({
       </Card>
     </motion.div>
   );
+};
+
+const StripeCheckoutForm: React.FC<StripeCheckoutFormProps> = (props) => {
+  const { isLoaded, error } = useStripeContext();
+
+  // Si Stripe n'est pas encore chargé, afficher un état de chargement
+  if (!isLoaded) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Card className="w-full max-w-lg mx-auto shadow-2xl border-0 bg-gradient-to-br from-white to-gray-50">
+          <CardContent className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p className="text-gray-600">Chargement du système de paiement sécurisé...</p>
+          </CardContent>
+        </Card>
+      </motion.div>
+    );
+  }
+
+  // Si erreur de chargement Stripe
+  if (error) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Card className="w-full max-w-lg mx-auto shadow-2xl border-0 bg-gradient-to-br from-white to-gray-50">
+          <CardContent className="text-center py-8">
+            <p className="text-red-600 mb-4">Erreur de chargement du système de paiement</p>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <Button onClick={props.onCancel} variant="outline">
+              Retour
+            </Button>
+          </CardContent>
+        </Card>
+      </motion.div>
+    );
+  }
+
+  // Render le composant interne seulement si Stripe est chargé
+  return <StripeCheckoutFormInner {...props} />;
 };
 
 export default StripeCheckoutForm;

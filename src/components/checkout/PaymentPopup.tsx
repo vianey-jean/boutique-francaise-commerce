@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -58,11 +57,12 @@ const PaymentForm: React.FC<{
     setError(null);
 
     try {
-      // Créer la session de checkout Stripe
+      // Créer la session de checkout Stripe avec totalAmount
       const sessionResponse = await stripeAPI.createCheckoutSession({
         items: orderData.items,
         shippingAddress: orderData.shippingAddress,
         deliveryPrice: orderData.deliveryPrice,
+        totalAmount: orderData.totalAmount,
         saveCard: false
       });
 

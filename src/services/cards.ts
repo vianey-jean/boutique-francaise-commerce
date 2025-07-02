@@ -24,12 +24,8 @@ class CardsAPI {
   createPaymentIntent(p0: { cardId: string; }): { clientSecret: any; } | PromiseLike<{ clientSecret: any; }> {
     throw new Error('Method not implemented.');
   }
-  
   private getAuthHeaders() {
-    const token = localStorage.getItem('authToken');
-    if (!token) {
-      throw new Error('Token d\'authentification manquant');
-    }
+    const token = localStorage.getItem('authToken'); // Utiliser 'authToken' au lieu de 'token'
     return {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
@@ -37,79 +33,39 @@ class CardsAPI {
   }
 
   async getUserCards(): Promise<SavedCard[]> {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/api/cards`, {
-        headers: this.getAuthHeaders()
-      });
-      return response.data.data || [];
-    } catch (error) {
-      console.error('Erreur lors de la récupération des cartes:', error);
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        throw new Error('Session expirée, veuillez vous reconnecter');
-      }
-      return [];
-    }
+    const response = await axios.get(`${API_BASE_URL}/api/cards`, {
+      headers: this.getAuthHeaders()
+    });
+    return response.data.data;
   }
 
   async getCard(cardId: string): Promise<CardData & { id: string; cardType: string; isDefault: boolean }> {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/api/cards/${cardId}`, {
-        headers: this.getAuthHeaders()
-      });
-      return response.data.data;
-    } catch (error) {
-      console.error('Erreur lors de la récupération de la carte:', error);
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        throw new Error('Session expirée, veuillez vous reconnecter');
-      }
-      throw error;
-    }
+    const response = await axios.get(`${API_BASE_URL}/api/cards/${cardId}`, {
+      headers: this.getAuthHeaders()
+    });
+    return response.data.data;
   }
 
   async addCard(cardData: CardData, setAsDefault: boolean = false): Promise<string> {
-    try {
-      const response = await axios.post(`${API_BASE_URL}/api/cards`, {
-        ...cardData,
-        setAsDefault
-      }, {
-        headers: this.getAuthHeaders()
-      });
-      return response.data.cardId;
-    } catch (error) {
-      console.error('Erreur lors de l\'ajout de la carte:', error);
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        throw new Error('Session expirée, veuillez vous reconnecter');
-      }
-      throw error;
-    }
+    const response = await axios.post(`${API_BASE_URL}/api/cards`, {
+      ...cardData,
+      setAsDefault
+    }, {
+      headers: this.getAuthHeaders()
+    });
+    return response.data.cardId;
   }
 
   async setDefaultCard(cardId: string): Promise<void> {
-    try {
-      await axios.put(`${API_BASE_URL}/api/cards/${cardId}/default`, {}, {
-        headers: this.getAuthHeaders()
-      });
-    } catch (error) {
-      console.error('Erreur lors de la définition de la carte par défaut:', error);
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        throw new Error('Session expirée, veuillez vous reconnecter');
-      }
-      throw error;
-    }
+    await axios.put(`${API_BASE_URL}/api/cards/${cardId}/default`, {}, {
+      headers: this.getAuthHeaders()
+    });
   }
 
   async deleteCard(cardId: string): Promise<void> {
-    try {
-      await axios.delete(`${API_BASE_URL}/api/cards/${cardId}`, {
-        headers: this.getAuthHeaders()
-      });
-    } catch (error) {
-      console.error('Erreur lors de la suppression de la carte:', error);
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        throw new Error('Session expirée, veuillez vous reconnecter');
-      }
-      throw error;
-    }
+    await axios.delete(`${API_BASE_URL}/api/cards/${cardId}`, {
+      headers: this.getAuthHeaders()
+    });
   }
 }
 

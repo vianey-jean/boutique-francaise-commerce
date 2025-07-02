@@ -1,3 +1,4 @@
+
 import React, { useEffect, lazy, Suspense } from 'react';
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -37,6 +38,8 @@ const ChatPage = lazy(() => import('@/pages/ChatPage'));
 const CartPage = lazy(() => import('@/pages/CartPage'));
 const FavoritesPage = lazy(() => import('@/pages/FavoritesPage'));
 const CheckoutPage = lazy(() => import('@/pages/CheckoutPage'));
+const CheckoutSuccessPage = lazy(() => import('@/pages/CheckoutSuccessPage'));
+const CheckoutCancelPage = lazy(() => import('@/pages/CheckoutCancelPage'));
 const OrdersPage = lazy(() => import('@/pages/OrdersPage'));
 const OrderPage = lazy(() => import('@/pages/OrderPage'));
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'));
@@ -119,7 +122,7 @@ const AppRoutes: React.FC = () => {
             <DeliveryPage />
           </MaintenanceChecker>
         } />
-        <Route path="/livraison" element={<Navigate to={secureRoutes.get('/livraison') || '/'} replace />} />
+        <Route path="/livraision" element={<Navigate to={secureRoutes.get('/livraison') || '/'} replace />} />
         
         <Route path="/mentions-legales" element={
           <MaintenanceChecker>
@@ -282,6 +285,19 @@ const AppRoutes: React.FC = () => {
           </MaintenanceChecker>
         } />
         <Route path="/paiement" element={<Navigate to={secureRoutes.get('/paiement') || '/'} replace />} />
+        
+        {/* Routes checkout success et cancel */}
+        <Route path="/checkout/success" element={
+          <MaintenanceChecker>
+            <CheckoutSuccessPage />
+          </MaintenanceChecker>
+        } />
+        
+        <Route path="/checkout/cancel" element={
+          <MaintenanceChecker>
+            <CheckoutCancelPage />
+          </MaintenanceChecker>
+        } />
         
         <Route path={secureRoutes.get('/commandes')?.substring(1)} element={
           <MaintenanceChecker>

@@ -20,10 +20,10 @@ const CartSummary: React.FC<CartSummaryProps> = ({
   isCompact = false,
   selectedItems = {}
 }) => {
-  const { cartItems } = useStore();
+  const { cart } = useStore();
   
   // Filtrer les produits sélectionnés
-  const selectedCartItems = cartItems ? cartItems.filter(item => selectedItems[item.product.id]) : [];
+  const selectedCartItems = cart ? cart.filter(item => selectedItems[item.product.id]) : [];
   
   const subtotal = selectedCartItems.reduce((total, item) => total + (item.product.price * item.quantity), 0);
   const itemCount = selectedCartItems.reduce((count, item) => count + item.quantity, 0);

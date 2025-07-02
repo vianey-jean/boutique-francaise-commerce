@@ -8,7 +8,7 @@ const { createServer } = require('http');
 
 // Importation des modules de configuration
 const corsOptions = require('./config/cors');
-const { setupSecurity, securityMiddlewares, additionalCorsHeaders, sanitizeMiddleware } = require('./config/security');
+const { securityMiddlewares, additionalCorsHeaders, sanitizeMiddleware } = require('./middlewares/security');
 const { initializeDataFiles } = require('./config/dataFiles');
 const { authenticateToken } = require('./config/auth');
 const setupRoutes = require('./config/routes');
@@ -19,28 +19,23 @@ const initializeSocket = require('./socket/socketConfig');
 const app = express();
 const server = createServer(app);
 
-// Installation de Helmet avec CSP et autres réglages
-setupSecurity(app);
+// Middleware de sécurité
+securityMiddlewares.forEach(middleware => app.use(middleware));
 
-// Ajout des middlewares de sécurité additionnels
-if (securityMiddlewares && Array.isArray(securityMiddlewares)) {
-  securityMiddlewares.forEach(middleware => app.use(middleware));
-}
-
-// Configuration CORS
+// Configuration de CORS
 app.use(cors(corsOptions));
 
-// Middleware additionnel pour les en-têtes CORS
+// Middleware additionnels pour les en-têtes CORS
 app.use(additionalCorsHeaders);
 
-// Middleware de parsing
+// Middleware pour parser le corps des requêtes
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Initialisation des fichiers de données
+// Middleware pour vérifier et créer les fichiers de données s'ils n'existent pas
 app.use(initializeDataFiles);
 
-// Servir les fichiers statiques /uploads avec en-tête CORS adapté
+// Middleware pour servir les fichiers statiques avec des en-têtes CORS appropriés
 app.use('/uploads', (req, res, next) => {
   res.set('Cross-Origin-Resource-Policy', 'cross-origin');
   express.static(path.join(__dirname, 'uploads'))(req, res, next);
@@ -49,7 +44,7 @@ app.use('/uploads', (req, res, next) => {
 // Protection contre les injections
 app.use(sanitizeMiddleware);
 
-// Déclaration des routes
+// Configuration des routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/products', require('./routes/products'));
@@ -70,25 +65,22 @@ app.use('/api/data-sync', require('./routes/data-sync'));
 app.use('/api/admin-chat', require('./routes/admin-chat'));
 app.use('/api/client-chat', require('./routes/client-chat'));
 app.use('/api/cards', require('./routes/cards'));
-app.use('/api/stripe-payments', require('./routes/stripe-payments'));
 app.use('/api/stripe', require('./routes/stripe'));
 
 // Initialiser Socket.io
 const io = initializeSocket(server);
 
-// Route de test
+// Route pour tester le serveur
 app.get('/', (req, res) => {
-  res.send("API de l'application e-commerce Riziky-Boutic est active !");
+  res.send('API de l\'application e-commerce Riziky-Boutic est active!');
 });
 
-// Gestion des erreurs
+// Middleware pour la gestion des erreurs
 app.use(notFoundHandler);
 app.use(globalErrorHandler);
 
-// Démarrage du serveur
+// Démarrer le serveur
 const PORT = process.env.PORT || 10000;
 server.listen(PORT, () => {
-  console.log(`✅ Serveur démarré sur le port ${PORT}`);
-  console.log(`✅ Environnement : ${process.env.NODE_ENV}`);
-  console.log(`✅ Stripe configuré : ${process.env.STRIPE_SECRET_KEY ? 'Oui' : 'Non'}`);
+  console.log(`Serveur démarré sur le port ${PORT}`);
 });

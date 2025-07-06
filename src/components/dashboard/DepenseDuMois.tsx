@@ -91,11 +91,11 @@ const DepenseDuMois = () => {
     try {
       const depensesFixeData = await depenseService.getDepensesFixe();
       setDepensesFixe({
-        free: depensesFixeData.free || '',
-        internetZeop: depensesFixeData.internetZeop || '',
-        assuranceVoiture: depensesFixeData.assuranceVoiture || '',
-        autreDepense: depensesFixeData.autreDepense || '',
-        assuranceVie: depensesFixeData.assuranceVie || '',
+        free: (depensesFixeData.free || 0).toString(),
+        internetZeop: (depensesFixeData.internetZeop || 0).toString(),
+        assuranceVoiture: (depensesFixeData.assuranceVoiture || 0).toString(),
+        autreDepense: (depensesFixeData.autreDepense || 0).toString(),
+        assuranceVie: (depensesFixeData.assuranceVie || 0).toString(),
       });
     } catch (error) {
       console.error("Erreur lors de la récupération des dépenses fixes:", error);
@@ -121,10 +121,16 @@ const DepenseDuMois = () => {
         });
         return;
       }
+
+      // Créer l'objet mouvement avec le solde calculé
+      const mouvementData = {
+        ...newMouvement,
+        solde: solde + (parseFloat(newMouvement.credit) || 0) - (parseFloat(newMouvement.debit) || 0)
+      };
       
       if (editMouvementId) {
         // Mise à jour d'un mouvement existant
-        await depenseService.updateMouvement(editMouvementId, newMouvement);
+        await depenseService.updateMouvement(editMouvementId, mouvementData);
         
         toast({
           title: "Succès",
@@ -133,7 +139,7 @@ const DepenseDuMois = () => {
         });
       } else {
         // Création d'un nouveau mouvement
-        await depenseService.addMouvement(newMouvement);
+        await depenseService.addMouvement(mouvementData);
         
         toast({
           title: "Succès",
@@ -202,7 +208,16 @@ const DepenseDuMois = () => {
   // Mise à jour des dépenses fixes
   const handleUpdateDepensesFixe = async () => {
     try {
-      await depenseService.updateDepensesFixe(depensesFixe);
+      // Convertir les strings en numbers pour l'API
+      const depensesFixeNumbers = {
+        free: parseFloat(depensesFixe.free) || 0,
+        internetZeop: parseFloat(depensesFixe.internetZeop) || 0,
+        assuranceVoiture: parseFloat(depensesFixe.assuranceVoiture) || 0,
+        autreDepense: parseFloat(depensesFixe.autreDepense) || 0,
+        assuranceVie: parseFloat(depensesFixe.assuranceVie) || 0,
+      };
+      
+      await depenseService.updateDepensesFixe(depensesFixeNumbers);
       
       toast({
         title: "Succès",
@@ -258,7 +273,7 @@ const DepenseDuMois = () => {
           ...newMouvement,
           categorie: value,
           description: "Charge fixe",
-          debit: depensesFixeData.total.toString(),
+          debit: (depensesFixeData.total || 0).toString(),
           credit: ''
         });
       });
@@ -273,6 +288,7 @@ const DepenseDuMois = () => {
       });
     }
   };
+
   const estPositif = solde >= 0;
 
   return (
@@ -348,6 +364,7 @@ const DepenseDuMois = () => {
         </span>
       </div>
     </div>
+      
       {/* Tableau des mouvements */}
       <div className="table-responsive card-3d">
         <Table className={isMobile ? "table-responsive-stack" : ""}>

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -53,42 +52,16 @@ const VentesProduits: React.FC = () => {
   const [exportDialogOpen, setExportDialogOpen] = React.useState(false);
   const [selectedSale, setSelectedSale] = React.useState<Sale | undefined>(undefined);
   const [showProductsList, setShowProductsList] = React.useState(false);
-  const [filteredSales, setFilteredSales] = useState<Sale[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
+
+  // Les ventes sont déjà filtrées par le contexte, pas besoin de filtrage supplémentaire
+  const filteredSales = sales;
 
   // Calcul des statistiques basés sur les ventes filtrées
   const totalProfit = filteredSales.reduce((sum, sale) => sum + sale.profit, 0);
   const totalProductsSold = filteredSales.reduce((sum, sale) => sum + sale.quantitySold, 0);
   const availableProducts = products.filter(p => p.quantity > 0);
   const totalStock = products.reduce((sum, product) => sum + product.quantity, 0);
-
-  // Filtrer les ventes pour le mois et l'année sélectionnés
-  useEffect(() => {
-    // Assurez-vous de filtrer les ventes pour n'afficher que celles du mois et de l'année sélectionnés
-    const currentDate = new Date();
-    const currentMonthIndex = currentDate.getMonth(); // 0-based index (0 = Janvier)
-    const currentYearValue = currentDate.getFullYear();
-    
-    // Définir le mois et l'année actuels si nécessaire
-    if (selectedMonth !== currentMonthIndex + 1) {
-      setSelectedMonth(currentMonthIndex + 1);
-    }
-    
-    if (selectedYear !== currentYearValue) {
-      setSelectedYear(currentYearValue);
-    }
-    
-    // Filtrer les ventes pour le mois en cours
-    const filtered = sales.filter(sale => {
-      const saleDate = new Date(sale.date);
-      // saleDate.getMonth() retourne 0-11, selectedMonth est 1-12
-      return saleDate.getMonth() + 1 === selectedMonth && saleDate.getFullYear() === selectedYear;
-    });
-    
-    setFilteredSales(filtered);
-    
-    console.log(`Filtered sales for month ${selectedMonth}, year ${selectedYear}: ${filtered.length} sales`);
-  }, [sales, selectedMonth, selectedYear, setSelectedMonth, setSelectedYear]);
 
   // Charger les données au montage du composant seulement si authentifié
   useEffect(() => {
@@ -101,18 +74,14 @@ const VentesProduits: React.FC = () => {
       setLoadError(null);
       
       try {
+        console.log(`Loading data for month ${selectedMonth}, year ${selectedYear}`);
         // Charger les produits et les ventes en parallèle
-        // S'assurer que les ventes sont chargées pour le mois en cours
-        const currentDate = new Date();
-        const currentMonthNum = currentDate.getMonth() + 1; // Convertir de 0-11 à 1-12
-        const currentYearNum = currentDate.getFullYear();
-        
         await Promise.all([
           fetchProducts(),
-          fetchSales(currentMonthNum, currentYearNum)
+          fetchSales(selectedMonth, selectedYear)
         ]);
         
-        console.log(`Loaded sales for month ${currentMonthNum}, year ${currentYearNum}`);
+        console.log(`Loaded sales for month ${selectedMonth}, year ${selectedYear}`);
       } catch (error) {
         console.error("Failed to load data:", error);
         setLoadError("Impossible de charger les données. Veuillez réessayer.");
@@ -125,7 +94,7 @@ const VentesProduits: React.FC = () => {
     };
     
     loadData();
-  }, [fetchProducts, fetchSales, toast, isAuthenticated, authLoading]);
+  }, [fetchProducts, fetchSales, toast, isAuthenticated, authLoading, selectedMonth, selectedYear]);
 
   // Si l'utilisateur n'est pas authentifié, afficher un message
   if (!isAuthenticated) {
@@ -279,6 +248,11 @@ const VentesProduits: React.FC = () => {
             />
           </div>
         )}
+        
+        {/* Debug info */}
+        <div className="text-xs text-gray-500 mt-4">
+          Debug: Mois sélectionné: {selectedMonth}, Année: {selectedYear}, Ventes: {filteredSales.length}
+        </div>
       </ModernContainer>
       
       {/* Formulaires dans des dialogues */}

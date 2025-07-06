@@ -37,9 +37,9 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
-  // Get current date for initialization - FIX: Use correct month indexing
+  // Get current date for initialization - Use 1-based month indexing consistently
   const now = new Date();
-  const currentMonthNum = now.getMonth(); // Keep 0-based for internal logic
+  const currentMonthNum = now.getMonth() + 1; // Convert to 1-based (1-12)
   const currentYearNum = now.getFullYear();
   
   const [products, setProducts] = useState<Product[]>([]);
@@ -51,8 +51,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [selectedYear, setSelectedYear] = useState<number>(currentYearNum);
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   
-  // Add the missing properties that components are expecting - FIX: Return correct month values
-  const currentMonth = selectedMonth; // This will be 0-based (0 = January)
+  // Add the missing properties that components are expecting - Use consistent 1-based indexing
+  const currentMonth = selectedMonth; // This will be 1-based (1 = January)
   const currentYear = selectedYear;
   const isLoading = loading;
 
@@ -67,6 +67,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     try {
       const fetchedProducts = await productService.getProducts();
       setProducts(fetchedProducts);
+      console.log(`Fetched ${fetchedProducts.length} products`);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch products');
       toast({
@@ -85,19 +86,21 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
     
+    // Use 1-based month consistently
     const monthToFetch = month !== undefined ? month : selectedMonth;
     const yearToFetch = year || selectedYear;
     
-    console.log(`Fetching sales for month: ${monthToFetch}, year: ${yearToFetch}`);
+    console.log(`Fetching sales for month: ${monthToFetch} (1-based), year: ${yearToFetch}`);
     
     setLoading(true);
     setError(null);
     try {
-      // Convert to 1-based month for API call
-      const fetchedSales = await salesService.getSales(monthToFetch + 1, yearToFetch);
-      console.log(`Fetched ${fetchedSales.length} sales for ${monthToFetch + 1}/${yearToFetch}`);
+      // API expects 1-based month, so pass it directly
+      const fetchedSales = await salesService.getSales(monthToFetch, yearToFetch);
+      console.log(`Fetched ${fetchedSales.length} sales for ${monthToFetch}/${yearToFetch}`);
       setSales(fetchedSales);
     } catch (err: any) {
+      console.error('Error fetching sales:', err);
       setError(err.message || 'Failed to fetch sales');
       toast({
         title: "Erreur de chargement",

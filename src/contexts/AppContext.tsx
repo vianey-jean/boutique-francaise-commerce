@@ -286,8 +286,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     try {
       const result = await salesService.addSale(saleData);
       
-      // Update local state only if we get a Sale object back
-      if (result && typeof result !== 'boolean') {
+      // Update local state - result should be a Sale object
+      if (result && typeof result === 'object' && 'id' in result) {
         // Check if the new sale belongs to the current month/year
         const saleDate = new Date(result.date);
         const saleMonth = saleDate.getMonth() + 1; // Convert from 0-based to 1-based
@@ -311,13 +311,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         return result;
       }
       
-      // If we got a boolean result, still consider it a success but return null
-      if (result === true) {
-        await fetchSales();
-        await fetchAllSales(); // Rafraîchir aussi les données historiques
-        return null;
-      }
-      
       return null;
     } catch (error) {
       console.error('Error adding sale:', error);
@@ -334,8 +327,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     try {
       const result = await salesService.updateSale(sale);
       
-      // Update local state only if we get a Sale object back
-      if (result && typeof result !== 'boolean') {
+      // Update local state - result should be a Sale object
+      if (result && typeof result === 'object' && 'id' in result) {
         setSales(prevSales =>
           prevSales.map(s => (s.id === sale.id ? result : s))
         );
@@ -346,13 +339,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         );
         
         return result;
-      }
-      
-      // If we got a boolean result, still consider it a success but return null
-      if (result === true) {
-        await fetchSales();
-        await fetchAllSales();
-        return null;
       }
       
       return null;

@@ -73,12 +73,24 @@ const api = createApiInstance();
 export const authService = {
   async login(credentials: LoginCredentials): Promise<{ user: User; token: string }> {
     const response: AxiosResponse<{ user: User; token: string }> = await api.post('/api/auth/login', credentials);
-    return response.data;
+    const data = response.data;
+    
+    // Store user and token
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('user', JSON.stringify(data.user));
+    
+    return data;
   },
 
   async register(credentials: RegisterCredentials): Promise<{ user: User; token: string }> {
     const response: AxiosResponse<{ user: User; token: string }> = await api.post('/api/auth/register', credentials);
-    return response.data;
+    const data = response.data;
+    
+    // Store user and token
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('user', JSON.stringify(data.user));
+    
+    return data;
   },
 
   async checkEmail(email: string): Promise<{ exists: boolean }> {
@@ -94,6 +106,33 @@ export const authService = {
   async verifyToken(): Promise<{ user: User }> {
     const response: AxiosResponse<{ user: User }> = await api.get('/api/auth/verify');
     return response.data;
+  },
+
+  getCurrentUser(): User | null {
+    try {
+      const userStr = localStorage.getItem('user');
+      return userStr ? JSON.parse(userStr) : null;
+    } catch {
+      return null;
+    }
+  },
+
+  setCurrentUser(user: User | null): void {
+    if (user) {
+      localStorage.setItem('user', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+    }
+  },
+
+  resetPasswordRequest: async (data: { email: string }): Promise<boolean> => {
+    try {
+      const response = await api.post('/api/auth/reset-password-request', data);
+      return response.data.exists;
+    } catch (error) {
+      return false;
+    }
   },
 };
 
@@ -156,6 +195,19 @@ export const salesService = {
     await api.post('/api/sales/export-month', { month, year });
     return true;
   },
+};
+
+// Placeholder services for missing dependencies
+export const depenseService = {
+  // Placeholder - implement when needed
+};
+
+export const pretFamilleService = {
+  // Placeholder - implement when needed
+};
+
+export const pretProduitService = {
+  // Placeholder - implement when needed
 };
 
 // Export the api instance for direct use if needed

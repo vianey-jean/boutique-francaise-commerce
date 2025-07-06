@@ -5,8 +5,8 @@ import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { AppProvider } from '@/contexts/AppContext';
-import ErrorBoundary from '@/components/common/ErrorBoundary';
-import RealtimeWrapper from '@/components/common/RealtimeWrapper';
+import { ErrorBoundary } from '@/components/common/ErrorBoundary';
+import { RealtimeWrapper } from '@/components/common/RealtimeWrapper';
 
 import HomePage from '@/pages/HomePage';
 import AboutPage from '@/pages/AboutPage';
@@ -34,7 +34,7 @@ function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
+        <ThemeProvider>
           <AuthProvider>
             <AppProvider>
               <RealtimeWrapper>

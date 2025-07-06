@@ -1,4 +1,3 @@
-
 // We need to add typings to handle boolean returns from the API
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -37,24 +36,63 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
-  // Get current date for initialization - Use 1-based month indexing consistently
-  const now = new Date();
-  const currentMonthNum = now.getMonth() + 1; // Convert to 1-based (1-12)
-  const currentYearNum = now.getFullYear();
-  
+  // Fonction pour obtenir le mois et l'année actuels
+  const getCurrentMonthYear = () => {
+    const now = new Date();
+    return {
+      month: now.getMonth() + 1, // Convert to 1-based (1-12)
+      year: now.getFullYear()
+    };
+  };
+
+  // Initialiser toujours avec le mois en cours
+  const [currentDate, setCurrentDate] = useState(getCurrentMonthYear());
   const [products, setProducts] = useState<Product[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  const [selectedMonth, setSelectedMonth] = useState<number>(currentMonthNum);
-  const [selectedYear, setSelectedYear] = useState<number>(currentYearNum);
+  
+  // Toujours utiliser le mois en cours - pas de sélection manuelle
+  const selectedMonth = currentDate.month;
+  const selectedYear = currentDate.year;
+  
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   
   // Add the missing properties that components are expecting - Use consistent 1-based indexing
   const currentMonth = selectedMonth; // This will be 1-based (1 = January)
   const currentYear = selectedYear;
   const isLoading = loading;
+
+  // Fonction pour vérifier et mettre à jour le mois en cours
+  const checkAndUpdateCurrentMonth = useCallback(() => {
+    const newDate = getCurrentMonthYear();
+    if (newDate.month !== currentDate.month || newDate.year !== currentDate.year) {
+      console.log(`Changement de mois détecté: ${currentDate.month}/${currentDate.year} -> ${newDate.month}/${newDate.year}`);
+      setCurrentDate(newDate);
+      // Vider les ventes existantes car on change de mois
+      setSales([]);
+      toast({
+        title: "Nouveau mois",
+        description: `Passage au mois ${newDate.month}/${newDate.year}. Les données ont été rafraîchies.`,
+      });
+    }
+  }, [currentDate, toast]);
+
+  // Vérifier le changement de mois toutes les minutes
+  useEffect(() => {
+    const interval = setInterval(checkAndUpdateCurrentMonth, 60000); // Vérifier chaque minute
+    return () => clearInterval(interval);
+  }, [checkAndUpdateCurrentMonth]);
+
+  // Fonctions pour la compatibilité (même si on ne permet plus la sélection manuelle)
+  const setSelectedMonth = (month: number) => {
+    console.log('setSelectedMonth appelé mais ignoré - utilisation du mois en cours uniquement');
+  };
+  
+  const setSelectedYear = (year: number) => {
+    console.log('setSelectedYear appelé mais ignoré - utilisation de l\'année en cours uniquement');
+  };
 
   const fetchProducts = useCallback(async () => {
     if (!isAuthenticated || authLoading) {
@@ -86,11 +124,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
     
-    // Use 1-based month consistently
-    const monthToFetch = month !== undefined ? month : selectedMonth;
-    const yearToFetch = year || selectedYear;
+    // Toujours utiliser le mois en cours, ignorer les paramètres
+    const monthToFetch = currentDate.month;
+    const yearToFetch = currentDate.year;
     
-    console.log(`Fetching sales for month: ${monthToFetch} (1-based), year: ${yearToFetch}`);
+    console.log(`Fetching sales for current month: ${monthToFetch} (1-based), year: ${yearToFetch}`);
     
     setLoading(true);
     setError(null);
@@ -110,7 +148,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setLoading(false);
     }
-  }, [toast, selectedMonth, selectedYear, isAuthenticated, authLoading]);
+  }, [toast, currentDate, isAuthenticated, authLoading]);
 
   // Fonction de rafraîchissement pour la synchronisation temps réel
   const refreshData = useCallback(async () => {
@@ -119,25 +157,25 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     try {
       await Promise.all([
         fetchProducts(),
-        fetchSales(selectedMonth, selectedYear)
+        fetchSales()
       ]);
     } catch (error) {
       console.error('Erreur lors du rafraîchissement des données:', error);
     }
-  }, [fetchProducts, fetchSales, selectedMonth, selectedYear, isAuthenticated, authLoading]);
+  }, [fetchProducts, fetchSales, isAuthenticated, authLoading]);
 
-  // Only fetch data when user is authenticated and not loading
+  // Charger les données seulement pour le mois en cours
   useEffect(() => {
     if (isAuthenticated && !authLoading) {
-      console.log('User authenticated, fetching data...');
+      console.log(`User authenticated, fetching data for current month: ${currentDate.month}/${currentDate.year}`);
       fetchProducts();
-      fetchSales(selectedMonth, selectedYear);
+      fetchSales();
     } else {
       console.log('User not authenticated or auth loading, clearing data');
       setProducts([]);
       setSales([]);
     }
-  }, [isAuthenticated, authLoading, selectedMonth, selectedYear]);
+  }, [isAuthenticated, authLoading, currentDate, fetchProducts, fetchSales]);
 
   // Add searchProducts function that is being used
   const searchProducts = async (query: string): Promise<Product[]> => {
@@ -222,14 +260,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         const saleMonth = saleDate.getMonth() + 1; // Convert from 0-based to 1-based
         const saleYear = saleDate.getFullYear();
         
-        console.log(`New sale added for ${saleMonth}/${saleYear}, current filter is ${selectedMonth}/${selectedYear}`);
+        console.log(`New sale added for ${saleMonth}/${saleYear}, current month is ${currentDate.month}/${currentDate.year}`);
         
-        if (saleMonth === selectedMonth && saleYear === selectedYear) {
+        if (saleMonth === currentDate.month && saleYear === currentDate.year) {
           setSales(prevSales => [...prevSales, result]);
         } else {
-          // If the sale is for a different month, we should refresh the sales list
-          // but no need to add it to the current view
-          console.log("Sale added but for a different month than currently selected");
+          console.log("Sale added but for a different month than current");
           toast({
             title: "Vente ajoutée",
             description: `La vente a été ajoutée pour le mois de ${saleMonth}/${saleYear}, différent du mois en cours.`,
@@ -240,7 +276,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       
       // If we got a boolean result, still consider it a success but return null
       if (result === true) {
-        await fetchSales(selectedMonth, selectedYear);
+        await fetchSales();
         return null;
       }
       
@@ -270,7 +306,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       
       // If we got a boolean result, still consider it a success but return null
       if (result === true) {
-        await fetchSales(selectedMonth, selectedYear);
+        await fetchSales();
         return null;
       }
       

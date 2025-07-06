@@ -1,16 +1,15 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, AreaChart, Area, Legend } from 'recharts';
 import { TrendingUp, TrendingDown, DollarSign, Package, Award, Target, ShoppingCart, Sparkles } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { cn } from '@/lib/utils';
 
 const TendancesPage = () => {
-  const { allSales, products, loading } = useApp(); // Utiliser allSales au lieu de sales
+  const { allSales, products, loading } = useApp();
   const [selectedPeriod, setSelectedPeriod] = useState('all');
 
   // Fonction pour déterminer la catégorie d'un produit
@@ -254,7 +253,7 @@ const TendancesPage = () => {
             {/* Vue d'ensemble */}
             <TabsContent value="overview" className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl border border-white/20 shadow-2xl">
+                <Card className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border border-white/20 shadow-2xl">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <TrendingUp className="h-5 w-5 text-emerald-600" />
@@ -263,7 +262,7 @@ const TendancesPage = () => {
                     <CardDescription>Progression mensuelle des ventes et bénéfices</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <ChartContainer config={chartConfig} className="h-[300px]">
+                    <div className="h-[300px] w-full bg-white/50 rounded-lg p-4">
                       <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={salesOverTime}>
                           <defs>
@@ -276,19 +275,36 @@ const TendancesPage = () => {
                               <stop offset="95%" stopColor="#06D6A0" stopOpacity={0.1}/>
                             </linearGradient>
                           </defs>
-                          <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                          <XAxis dataKey="monthName" className="text-xs" />
-                          <YAxis className="text-xs" />
-                          <ChartTooltip content={<ChartTooltipContent />} />
-                          <Area type="monotone" dataKey="ventes" stroke="#8B5CF6" fillOpacity={1} fill="url(#colorVentes)" strokeWidth={3} />
-                          <Area type="monotone" dataKey="benefice" stroke="#06D6A0" fillOpacity={1} fill="url(#colorBenefice)" strokeWidth={3} />
+                          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                          <XAxis dataKey="monthName" tick={{ fontSize: 12 }} stroke="#64748b" />
+                          <YAxis tick={{ fontSize: 12 }} stroke="#64748b" />
+                          <ChartTooltip 
+                            content={({ active, payload, label }) => {
+                              if (active && payload && payload.length) {
+                                return (
+                                  <div className="bg-white p-3 border rounded-lg shadow-lg">
+                                    <p className="font-semibold">{label}</p>
+                                    {payload.map((entry, index) => (
+                                      <p key={index} style={{ color: entry.color }}>
+                                        {entry.name}: {entry.value?.toLocaleString()} €
+                                      </p>
+                                    ))}
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
+                          />
+                          <Legend />
+                          <Area type="monotone" dataKey="ventes" stroke="#8B5CF6" fillOpacity={1} fill="url(#colorVentes)" strokeWidth={3} name="Ventes (€)" />
+                          <Area type="monotone" dataKey="benefice" stroke="#06D6A0" fillOpacity={1} fill="url(#colorBenefice)" strokeWidth={3} name="Bénéfice (€)" />
                         </AreaChart>
                       </ResponsiveContainer>
-                    </ChartContainer>
+                    </div>
                   </CardContent>
                 </Card>
 
-                <Card className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl border border-white/20 shadow-2xl">
+                <Card className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border border-white/20 shadow-2xl">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Package className="h-5 w-5 text-blue-600" />
@@ -297,17 +313,32 @@ const TendancesPage = () => {
                     <CardDescription>Classement par bénéfice généré</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <ChartContainer config={chartConfig} className="h-[300px]">
+                    <div className="h-[300px] w-full bg-white/50 rounded-lg p-4">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={topProfitableProducts.slice(0, 8)} layout="horizontal">
-                          <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                          <XAxis type="number" className="text-xs" />
-                          <YAxis dataKey="name" type="category" width={120} className="text-xs" />
-                          <ChartTooltip content={<ChartTooltipContent />} />
-                          <Bar dataKey="benefice" fill="#06D6A0" radius={[0, 4, 4, 0]} />
+                          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                          <XAxis type="number" tick={{ fontSize: 12 }} stroke="#64748b" />
+                          <YAxis dataKey="name" type="category" width={120} tick={{ fontSize: 10 }} stroke="#64748b" />
+                          <ChartTooltip 
+                            content={({ active, payload, label }) => {
+                              if (active && payload && payload.length) {
+                                return (
+                                  <div className="bg-white p-3 border rounded-lg shadow-lg">
+                                    <p className="font-semibold text-sm">{label}</p>
+                                    <p style={{ color: payload[0].color }}>
+                                      Bénéfice: {payload[0].value?.toLocaleString()} €
+                                    </p>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
+                          />
+                          <Legend />
+                          <Bar dataKey="benefice" fill="#06D6A0" radius={[0, 4, 4, 0]} name="Bénéfice (€)" />
                         </BarChart>
                       </ResponsiveContainer>
-                    </ChartContainer>
+                    </div>
                   </CardContent>
                 </Card>
               </div>
@@ -315,7 +346,7 @@ const TendancesPage = () => {
 
             {/* Par Produits */}
             <TabsContent value="products" className="space-y-6">
-              <Card className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl border border-white/20 shadow-2xl">
+              <Card className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border border-white/20 shadow-2xl">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <ShoppingCart className="h-5 w-5 text-purple-600" />
@@ -324,19 +355,36 @@ const TendancesPage = () => {
                   <CardDescription>Analyse détaillée des ventes, bénéfices et prix d'achat</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <ChartContainer config={chartConfig} className="h-[400px]">
+                  <div className="h-[400px] w-full bg-white/50 rounded-lg p-4">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={salesByProduct.slice(0, 12)}>
-                        <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                        <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} className="text-xs" />
-                        <YAxis className="text-xs" />
-                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                        <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} tick={{ fontSize: 10 }} stroke="#64748b" />
+                        <YAxis tick={{ fontSize: 12 }} stroke="#64748b" />
+                        <ChartTooltip 
+                          content={({ active, payload, label }) => {
+                            if (active && payload && payload.length) {
+                              return (
+                                <div className="bg-white p-3 border rounded-lg shadow-lg">
+                                  <p className="font-semibold text-sm">{label}</p>
+                                  {payload.map((entry, index) => (
+                                    <p key={index} style={{ color: entry.color }}>
+                                      {entry.name}: {entry.value?.toLocaleString()} €
+                                    </p>
+                                  ))}
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                        <Legend />
                         <Bar dataKey="ventes" fill="#8B5CF6" name="Ventes (€)" radius={[4, 4, 0, 0]} />
                         <Bar dataKey="benefice" fill="#06D6A0" name="Bénéfice (€)" radius={[4, 4, 0, 0]} />
                         <Bar dataKey="prixAchat" fill="#F59E0B" name="Prix d'achat (€)" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
-                  </ChartContainer>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -344,7 +392,7 @@ const TendancesPage = () => {
             {/* Par Catégories */}
             <TabsContent value="categories" className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl border border-white/20 shadow-2xl">
+                <Card className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border border-white/20 shadow-2xl">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Target className="h-5 w-5 text-orange-600" />
@@ -353,7 +401,7 @@ const TendancesPage = () => {
                     <CardDescription>Distribution des ventes par type de produit</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <ChartContainer config={chartConfig} className="h-[300px]">
+                    <div className="h-[300px] w-full bg-white/50 rounded-lg p-4">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie
@@ -369,14 +417,29 @@ const TendancesPage = () => {
                               <Cell key={`cell-${index}`} fill={categoryColors[entry.category] || colors[index % colors.length]} />
                             ))}
                           </Pie>
-                          <ChartTooltip content={<ChartTooltipContent />} />
+                          <ChartTooltip 
+                            content={({ active, payload, label }) => {
+                              if (active && payload && payload.length) {
+                                return (
+                                  <div className="bg-white p-3 border rounded-lg shadow-lg">
+                                    <p className="font-semibold">{payload[0].payload.category}</p>
+                                    <p style={{ color: payload[0].color }}>
+                                      Ventes: {payload[0].value?.toLocaleString()} €
+                                    </p>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
+                          />
+                          <Legend />
                         </PieChart>
                       </ResponsiveContainer>
-                    </ChartContainer>
+                    </div>
                   </CardContent>
                 </Card>
 
-                <Card className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl border border-white/20 shadow-2xl">
+                <Card className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border border-white/20 shadow-2xl">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Award className="h-5 w-5 text-emerald-600" />
@@ -385,17 +448,32 @@ const TendancesPage = () => {
                     <CardDescription>Rentabilité par type de produit</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <ChartContainer config={chartConfig} className="h-[300px]">
+                    <div className="h-[300px] w-full bg-white/50 rounded-lg p-4">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={salesByCategory}>
-                          <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                          <XAxis dataKey="category" className="text-xs" />
-                          <YAxis className="text-xs" />
-                          <ChartTooltip content={<ChartTooltipContent />} />
-                          <Bar dataKey="benefice" fill="#06D6A0" radius={[4, 4, 0, 0]} />
+                          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                          <XAxis dataKey="category" tick={{ fontSize: 12 }} stroke="#64748b" />
+                          <YAxis tick={{ fontSize: 12 }} stroke="#64748b" />
+                          <ChartTooltip 
+                            content={({ active, payload, label }) => {
+                              if (active && payload && payload.length) {
+                                return (
+                                  <div className="bg-white p-3 border rounded-lg shadow-lg">
+                                    <p className="font-semibold">{label}</p>
+                                    <p style={{ color: payload[0].color }}>
+                                      Bénéfice: {payload[0].value?.toLocaleString()} €
+                                    </p>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
+                          />
+                          <Legend />
+                          <Bar dataKey="benefice" fill="#06D6A0" radius={[4, 4, 0, 0]} name="Bénéfice (€)" />
                         </BarChart>
                       </ResponsiveContainer>
-                    </ChartContainer>
+                    </div>
                   </CardContent>
                 </Card>
               </div>

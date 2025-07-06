@@ -1,7 +1,7 @@
 
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import axiosRetry from 'axios-retry';
-import { Product, Sale, User, LoginCredentials, RegisterCredentials } from '@/types';
+import { Product, Sale, User, LoginCredentials, RegisterCredentials, PretFamille, PretProduit, DepenseFixe, DepenseDuMois } from '@/types';
 
 // Configuration de l'URL de base
 const getBaseURL = () => {
@@ -197,17 +197,93 @@ export const salesService = {
   },
 };
 
-// Placeholder services for missing dependencies
+// Depense Service
 export const depenseService = {
-  // Placeholder - implement when needed
+  async getMouvements(): Promise<DepenseDuMois[]> {
+    const response: AxiosResponse<DepenseDuMois[]> = await api.get('/api/depenses/mouvements');
+    return response.data;
+  },
+
+  async addMouvement(mouvement: Omit<DepenseDuMois, 'id'>): Promise<DepenseDuMois> {
+    const response: AxiosResponse<DepenseDuMois> = await api.post('/api/depenses/mouvements', mouvement);
+    return response.data;
+  },
+
+  async updateMouvement(id: string, mouvement: Partial<DepenseDuMois>): Promise<DepenseDuMois> {
+    const response: AxiosResponse<DepenseDuMois> = await api.put(`/api/depenses/mouvements/${id}`, mouvement);
+    return response.data;
+  },
+
+  async deleteMouvement(id: string): Promise<boolean> {
+    await api.delete(`/api/depenses/mouvements/${id}`);
+    return true;
+  },
+
+  async getDepensesFixe(): Promise<DepenseFixe> {
+    const response: AxiosResponse<DepenseFixe> = await api.get('/api/depenses/fixes');
+    return response.data;
+  },
+
+  async updateDepensesFixe(depensesFixe: Partial<DepenseFixe>): Promise<DepenseFixe> {
+    const response: AxiosResponse<DepenseFixe> = await api.put('/api/depenses/fixes', depensesFixe);
+    return response.data;
+  },
+
+  async resetMouvements(): Promise<boolean> {
+    await api.delete('/api/depenses/mouvements/reset');
+    return true;
+  },
 };
 
+// PretFamille Service
 export const pretFamilleService = {
-  // Placeholder - implement when needed
+  async getPretFamilles(): Promise<PretFamille[]> {
+    const response: AxiosResponse<PretFamille[]> = await api.get('/api/pretfamilles');
+    return response.data;
+  },
+
+  async addPretFamille(pret: Omit<PretFamille, 'id'>): Promise<PretFamille> {
+    const response: AxiosResponse<PretFamille> = await api.post('/api/pretfamilles', pret);
+    return response.data;
+  },
+
+  async updatePretFamille(id: string, pret: Partial<PretFamille>): Promise<PretFamille> {
+    const response: AxiosResponse<PretFamille> = await api.put(`/api/pretfamilles/${id}`, pret);
+    return response.data;
+  },
+
+  async deletePretFamille(id: string): Promise<boolean> {
+    await api.delete(`/api/pretfamilles/${id}`);
+    return true;
+  },
+
+  async searchByName(name: string): Promise<PretFamille[]> {
+    const response: AxiosResponse<PretFamille[]> = await api.get(`/api/pretfamilles/search?name=${encodeURIComponent(name)}`);
+    return response.data;
+  },
 };
 
+// PretProduit Service
 export const pretProduitService = {
-  // Placeholder - implement when needed
+  async getPretProduits(): Promise<PretProduit[]> {
+    const response: AxiosResponse<PretProduit[]> = await api.get('/api/pretproduits');
+    return response.data;
+  },
+
+  async addPretProduit(pret: Omit<PretProduit, 'id'>): Promise<PretProduit> {
+    const response: AxiosResponse<PretProduit> = await api.post('/api/pretproduits', pret);
+    return response.data;
+  },
+
+  async updatePretProduit(id: string, pret: Partial<PretProduit>): Promise<PretProduit> {
+    const response: AxiosResponse<PretProduit> = await api.put(`/api/pretproduits/${id}`, pret);
+    return response.data;
+  },
+
+  async deletePretProduit(id: string): Promise<boolean> {
+    await api.delete(`/api/pretproduits/${id}`);
+    return true;
+  },
 };
 
 // Export the api instance for direct use if needed

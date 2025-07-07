@@ -241,13 +241,46 @@ const TendancesPage = () => {
 
           {/* Main Charts */}
           <Tabs defaultValue="overview" className="space-y-8">
-            <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-3xl shadow-2xl p-6 border border-white/20">
-              <TabsList className="grid w-full grid-cols-1 md:grid-cols-4 gap-2 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm rounded-2xl p-2">
-                <TabsTrigger value="overview" className="rounded-xl font-semibold">Vue d'ensemble</TabsTrigger>
-                <TabsTrigger value="products" className="rounded-xl font-semibold">Par Produits</TabsTrigger>
-                <TabsTrigger value="categories" className="rounded-xl font-semibold">Par Catégories</TabsTrigger>
-                <TabsTrigger value="recommendations" className="rounded-xl font-semibold">Recommandations</TabsTrigger>
-              </TabsList>
+            {/* Conteneur responsive avec tabs modernes */}
+            <div className="relative">
+              {/* Overflow container pour mobile */}
+              <div className="overflow-x-auto overflow-y-visible pb-4 scrollbar-thin scrollbar-thumb-purple-300 scrollbar-track-transparent">
+                <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/30 dark:border-gray-700/30 p-4 sm:p-6 min-w-max">
+                  <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full min-w-[600px] sm:min-w-0 gap-2 bg-gradient-to-r from-white/60 to-white/40 dark:from-gray-900/60 dark:to-gray-900/40 backdrop-blur-sm rounded-2xl p-2 border border-white/20 dark:border-gray-700/20">
+                    <TabsTrigger 
+                      value="overview" 
+                      className="relative rounded-xl font-semibold text-sm px-4 py-3 transition-all duration-300 hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-blue-500 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:border-0 hover:bg-white/60 dark:hover:bg-gray-800/60"
+                    >
+                      <span className="relative z-10">Vue d'ensemble</span>
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="products" 
+                      className="relative rounded-xl font-semibold text-sm px-4 py-3 transition-all duration-300 hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:border-0 hover:bg-white/60 dark:hover:bg-gray-800/60"
+                    >
+                      <span className="relative z-10">Par Produits</span>
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="categories" 
+                      className="relative rounded-xl font-semibold text-sm px-4 py-3 transition-all duration-300 hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:border-0 hover:bg-white/60 dark:hover:bg-gray-800/60"
+                    >
+                      <span className="relative z-10">Par Catégories</span>
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="recommendations" 
+                      className="relative rounded-xl font-semibold text-sm px-4 py-3 transition-all duration-300 hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500 data-[state=active]:to-orange-500 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:border-0 hover:bg-white/60 dark:hover:bg-gray-800/60"
+                    >
+                      <span className="relative z-10 flex items-center gap-2">
+                        <Sparkles className="h-4 w-4" />
+                        Recommandations
+                      </span>
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
+              </div>
+              
+              {/* Indicateurs de scroll sur mobile */}
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-8 h-full bg-gradient-to-r from-slate-50/80 to-transparent dark:from-gray-900/80 pointer-events-none rounded-l-3xl sm:hidden" />
+              <div className="absolute right-0 top-1/2 -translate-y-1/2 w-8 h-full bg-gradient-to-l from-slate-50/80 to-transparent dark:from-gray-900/80 pointer-events-none rounded-r-3xl sm:hidden" />
             </div>
 
             {/* Vue d'ensemble */}

@@ -313,21 +313,43 @@ const TendancesPage = () => {
                     <CardDescription>Classement par bénéfice généré</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="h-[300px] w-full bg-white/50 rounded-lg p-4">
+                    <div className="h-[400px] w-full bg-white/50 rounded-lg p-4">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={topProfitableProducts.slice(0, 8)} layout="horizontal">
+                        <BarChart data={topProfitableProducts.slice(0, 10)} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                          <XAxis type="number" tick={{ fontSize: 12 }} stroke="#64748b" />
-                          <YAxis dataKey="name" type="category" width={120} tick={{ fontSize: 10 }} stroke="#64748b" />
+                          <XAxis 
+                            dataKey="name" 
+                            angle={-45} 
+                            textAnchor="end" 
+                            height={100} 
+                            tick={{ fontSize: 10 }} 
+                            stroke="#64748b"
+                            interval={0}
+                          />
+                          <YAxis 
+                            tick={{ fontSize: 12 }} 
+                            stroke="#64748b"
+                            label={{ value: 'Bénéfice (€)', angle: -90, position: 'insideLeft' }}
+                          />
                           <ChartTooltip 
                             content={({ active, payload, label }) => {
                               if (active && payload && payload.length) {
+                                const data = payload[0].payload;
                                 return (
-                                  <div className="bg-white p-3 border rounded-lg shadow-lg">
-                                    <p className="font-semibold text-sm">{label}</p>
-                                    <p style={{ color: payload[0].color }}>
-                                      Bénéfice: {payload[0].value?.toLocaleString()} €
-                                    </p>
+                                  <div className="bg-white dark:bg-gray-800 p-4 border rounded-lg shadow-xl border-gray-200 dark:border-gray-600">
+                                    <p className="font-semibold text-sm mb-2 text-gray-900 dark:text-gray-100">{data.fullName || label}</p>
+                                    <div className="space-y-1">
+                                      <p className="text-emerald-600 dark:text-emerald-400 flex items-center">
+                                        <span className="w-3 h-3 bg-emerald-500 rounded-full mr-2"></span>
+                                        Bénéfice: <span className="font-bold ml-1">{payload[0].value?.toLocaleString()} €</span>
+                                      </p>
+                                      <p className="text-blue-600 dark:text-blue-400 text-xs">
+                                        Quantité vendue: {data.quantite}
+                                      </p>
+                                      <p className="text-purple-600 dark:text-purple-400 text-xs">
+                                        Ventes totales: {data.ventes?.toLocaleString()} €
+                                      </p>
+                                    </div>
                                   </div>
                                 );
                               }
@@ -335,7 +357,20 @@ const TendancesPage = () => {
                             }}
                           />
                           <Legend />
-                          <Bar dataKey="benefice" fill="#06D6A0" radius={[0, 4, 4, 0]} name="Bénéfice (€)" />
+                          <Bar 
+                            dataKey="benefice" 
+                            fill="url(#beneficeGradient)" 
+                            radius={[4, 4, 0, 0]} 
+                            name="Bénéfice (€)"
+                            stroke="#06D6A0"
+                            strokeWidth={1}
+                          />
+                          <defs>
+                            <linearGradient id="beneficeGradient" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#06D6A0" stopOpacity={0.9}/>
+                              <stop offset="95%" stopColor="#06D6A0" stopOpacity={0.6}/>
+                            </linearGradient>
+                          </defs>
                         </BarChart>
                       </ResponsiveContainer>
                     </div>

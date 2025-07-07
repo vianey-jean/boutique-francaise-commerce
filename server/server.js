@@ -20,14 +20,18 @@ const corsOptions = {
       'http://localhost:5173',
       'http://localhost:3000', 
       'http://localhost:8080',
+      'https://riziky-gestion-ventes.vercel.app',
+      'https://server-gestion-ventes.onrender.com',
       'https://4d7ac2d5-2cf0-40f0-b5f2-c401087b8839.lovableproject.com'
     ];
     
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
-    // Check if origin matches allowed origins or is a lovableproject.com subdomain
-    if (allowedOrigins.includes(origin) || origin.match(/^https:\/\/.*\.lovableproject\.com$/)) {
+    // Check if origin matches allowed origins or is a lovable domain
+    if (allowedOrigins.includes(origin) || 
+        origin.match(/^https:\/\/.*\.lovableproject\.com$/) ||
+        origin.match(/^https:\/\/.*\.lovable\.app$/)) {
       return callback(null, true);
     }
     
@@ -61,7 +65,9 @@ app.use((err, req, res, next) => {
       origin: req.get('Origin'),
       allowedOrigins: [
         'http://localhost:5173',
-        'https://*.lovableproject.com'
+        'https://*.lovableproject.com',
+        'https://server-gestion-ventes.onrender.com',
+        'https://riziky-gestion-ventes.vercel.app'
       ]
     });
   } else {
@@ -192,5 +198,5 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`CORS enabled for Lovable domains`);
-  console.log(`Sync events available at http://localhost:${PORT}/api/sync/events`);
+  console.log(`Sync events available at https://server-gestion-ventes.onrender.com:${PORT}/api/sync/events`);
 });

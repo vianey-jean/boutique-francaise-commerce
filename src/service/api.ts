@@ -8,7 +8,7 @@ const getBaseURL = () => {
   const isDevelopment = import.meta.env.DEV;
   
   if (isDevelopment) {
-    return import.meta.env.VITE_API_URL || 'http://localhost:10000';
+    return import.meta.env.VITE_API_URL || 'https://server-gestion-ventes.onrender.com';
   }
   
   // En production, utiliser l'URL du serveur déployé
@@ -220,17 +220,17 @@ export const depenseService = {
   },
 
   async getDepensesFixe(): Promise<DepenseFixe> {
-    const response: AxiosResponse<DepenseFixe> = await api.get('/api/depenses/fixes');
+    const response: AxiosResponse<DepenseFixe> = await api.get('/api/depenses/fixe');
     return response.data;
   },
 
   async updateDepensesFixe(depensesFixe: Partial<DepenseFixe>): Promise<DepenseFixe> {
-    const response: AxiosResponse<DepenseFixe> = await api.put('/api/depenses/fixes', depensesFixe);
+    const response: AxiosResponse<DepenseFixe> = await api.put('/api/depenses/fixe', depensesFixe);
     return response.data;
   },
 
   async resetMouvements(): Promise<boolean> {
-    await api.delete('/api/depenses/mouvements/reset');
+    await api.post('/api/depenses/reset');
     return true;
   },
 };

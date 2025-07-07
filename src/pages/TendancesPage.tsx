@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,24 +13,32 @@ const TendancesPage = () => {
   const { allSales, products, loading } = useApp();
   const [selectedPeriod, setSelectedPeriod] = useState('all');
 
-  // Fonction pour déterminer la catégorie d'un produit
+  // Fonction pour déterminer la catégorie d'un produit (exclure les avances)
   const getProductCategory = (description: string) => {
     const desc = description.toLowerCase();
-    if (desc.includes('tissage')) {
+    if (desc.includes('avance')) {
+      return null; // Exclure les avances
+    } else if (desc.includes('tissage')) {
       return 'Tissages';
     } else if (desc.includes('perruque')) {
       return 'Perruques';
     } else if (desc.includes('colle') || desc.includes('disolvant')) {
       return 'Accessoires';
-    } else if (desc.includes('avance')) {
-      return 'Avances';
     }
     return 'Autres';
   };
 
-  // Données pour les graphiques de ventes par produit (utiliser allSales)
+  // Filtrer les ventes pour exclure les avances
+  const filteredSales = useMemo(() => {
+    return allSales.filter(sale => {
+      const category = getProductCategory(sale.description);
+      return category !== null; // Exclure les ventes avec catégorie null (avances)
+    });
+  }, [allSales]);
+
+  // Données pour les graphiques de ventes par produit (utiliser filteredSales)
   const salesByProduct = useMemo(() => {
-    const productSales = allSales.reduce((acc, sale) => {
+    const productSales = filteredSales.reduce((acc, sale) => {
       const productName = sale.description.length > 50 ? 
         sale.description.substring(0, 47) + '...' : 
         sale.description;
@@ -57,13 +66,13 @@ const TendancesPage = () => {
     return Object.values(productSales)
       .sort((a, b) => b.benefice - a.benefice)
       .slice(0, 15); // Top 15 produits
-  }, [allSales]);
+  }, [filteredSales]);
 
-  // Données pour les graphiques par catégorie (utiliser allSales)
+  // Données pour les graphiques par catégorie (utiliser filteredSales)
   const salesByCategory = useMemo(() => {
-    const categorySales = allSales.reduce((acc, sale) => {
+    const categorySales = filteredSales.reduce((acc, sale) => {
       const category = getProductCategory(sale.description);
-      if (!acc[category]) {
+      if (category && !acc[category]) {
         acc[category] = {
           category,
           ventes: 0,
@@ -72,19 +81,21 @@ const TendancesPage = () => {
           count: 0
         };
       }
-      acc[category].ventes += sale.sellingPrice;
-      acc[category].benefice += sale.profit;
-      acc[category].quantite += sale.quantitySold;
-      acc[category].count += 1;
+      if (category) {
+        acc[category].ventes += sale.sellingPrice;
+        acc[category].benefice += sale.profit;
+        acc[category].quantite += sale.quantitySold;
+        acc[category].count += 1;
+      }
       return acc;
     }, {} as Record<string, any>);
 
     return Object.values(categorySales);
-  }, [allSales]);
+  }, [filteredSales]);
 
-  // Données temporelles (par mois) (utiliser allSales)
+  // Données temporelles (par mois) (utiliser filteredSales)
   const salesOverTime = useMemo(() => {
-    const monthlySales = allSales.reduce((acc, sale) => {
+    const monthlySales = filteredSales.reduce((acc, sale) => {
       const date = new Date(sale.date);
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       const monthName = date.toLocaleDateString('fr-FR', { year: 'numeric', month: 'short' });
@@ -105,7 +116,7 @@ const TendancesPage = () => {
     }, {} as Record<string, any>);
 
     return Object.values(monthlySales).sort((a, b) => a.mois.localeCompare(b.mois));
-  }, [allSales]);
+  }, [filteredSales]);
 
   // Produits les plus rentables
   const topProfitableProducts = useMemo(() => {
@@ -115,12 +126,12 @@ const TendancesPage = () => {
       .slice(0, 10);
   }, [salesByProduct]);
 
-  // Recommandations d'achat basées sur le ROI
+  // Recommandations d'achat basées sur le ROI (montrer 12 produits)
   const buyingRecommendations = useMemo(() => {
     return salesByProduct
       .filter(product => product.benefice > 30 && product.prixAchat > 0)
       .sort((a, b) => (b.benefice / b.prixAchat) - (a.benefice / a.prixAchat))
-      .slice(0, 8)
+      .slice(0, 12) // Changé de 8 à 12
       .map(product => ({
         ...product,
         roi: ((product.benefice / product.prixAchat) * 100).toFixed(1),
@@ -134,7 +145,6 @@ const TendancesPage = () => {
     'Perruques': '#8B5CF6',
     'Tissages': '#06D6A0',
     'Accessoires': '#F59E0B',
-    'Avances': '#EF4444',
     'Autres': '#6B7280'
   };
 
@@ -185,10 +195,10 @@ const TendancesPage = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {allSales.reduce((sum, sale) => sum + sale.sellingPrice, 0).toLocaleString()} €
+                  {filteredSales.reduce((sum, sale) => sum + sale.sellingPrice, 0).toLocaleString()} €
                 </div>
                 <p className="text-xs text-purple-100">
-                  +{allSales.length} transactions historiques
+                  +{filteredSales.length} transactions historiques
                 </p>
               </CardContent>
             </Card>
@@ -200,10 +210,10 @@ const TendancesPage = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {allSales.reduce((sum, sale) => sum + sale.profit, 0).toLocaleString()} €
+                  {filteredSales.reduce((sum, sale) => sum + sale.profit, 0).toLocaleString()} €
                 </div>
                 <p className="text-xs text-emerald-100">
-                  Marge moyenne: {allSales.length > 0 ? ((allSales.reduce((sum, sale) => sum + sale.profit, 0) / allSales.reduce((sum, sale) => sum + sale.sellingPrice, 0)) * 100).toFixed(1) : 0}%
+                  Marge moyenne: {filteredSales.length > 0 ? ((filteredSales.reduce((sum, sale) => sum + sale.profit, 0) / filteredSales.reduce((sum, sale) => sum + sale.sellingPrice, 0)) * 100).toFixed(1) : 0}%
                 </p>
               </CardContent>
             </Card>
@@ -215,7 +225,7 @@ const TendancesPage = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {allSales.reduce((sum, sale) => sum + sale.quantitySold, 0)}
+                  {filteredSales.reduce((sum, sale) => sum + sale.quantitySold, 0)}
                 </div>
                 <p className="text-xs text-orange-100">
                   {salesByProduct.length} produits différents
@@ -241,46 +251,37 @@ const TendancesPage = () => {
 
           {/* Main Charts */}
           <Tabs defaultValue="overview" className="space-y-8">
-            {/* Conteneur responsive avec tabs modernes */}
-            <div className="relative">
-              {/* Overflow container pour mobile */}
-              <div className="overflow-x-auto overflow-y-visible pb-4 scrollbar-thin scrollbar-thumb-purple-300 scrollbar-track-transparent">
-                <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/30 dark:border-gray-700/30 p-4 sm:p-6 min-w-max">
-                  <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full min-w-[600px] sm:min-w-0 gap-2 bg-gradient-to-r from-white/60 to-white/40 dark:from-gray-900/60 dark:to-gray-900/40 backdrop-blur-sm rounded-2xl p-2 border border-white/20 dark:border-gray-700/20">
-                    <TabsTrigger 
-                      value="overview" 
-                      className="relative rounded-xl font-semibold text-sm px-4 py-3 transition-all duration-300 hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-blue-500 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:border-0 hover:bg-white/60 dark:hover:bg-gray-800/60"
-                    >
-                      <span className="relative z-10">Vue d'ensemble</span>
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="products" 
-                      className="relative rounded-xl font-semibold text-sm px-4 py-3 transition-all duration-300 hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:border-0 hover:bg-white/60 dark:hover:bg-gray-800/60"
-                    >
-                      <span className="relative z-10">Par Produits</span>
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="categories" 
-                      className="relative rounded-xl font-semibold text-sm px-4 py-3 transition-all duration-300 hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:border-0 hover:bg-white/60 dark:hover:bg-gray-800/60"
-                    >
-                      <span className="relative z-10">Par Catégories</span>
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="recommendations" 
-                      className="relative rounded-xl font-semibold text-sm px-4 py-3 transition-all duration-300 hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500 data-[state=active]:to-orange-500 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:border-0 hover:bg-white/60 dark:hover:bg-gray-800/60"
-                    >
-                      <span className="relative z-10 flex items-center gap-2">
-                        <Sparkles className="h-4 w-4" />
-                        Recommandations
-                      </span>
-                    </TabsTrigger>
-                  </TabsList>
-                </div>
-              </div>
-              
-              {/* Indicateurs de scroll sur mobile */}
-              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-8 h-full bg-gradient-to-r from-slate-50/80 to-transparent dark:from-gray-900/80 pointer-events-none rounded-l-3xl sm:hidden" />
-              <div className="absolute right-0 top-1/2 -translate-y-1/2 w-8 h-full bg-gradient-to-l from-slate-50/80 to-transparent dark:from-gray-900/80 pointer-events-none rounded-r-3xl sm:hidden" />
+            {/* Conteneur responsive avec tabs modernes - Version colonne sur mobile */}
+            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/30 dark:border-gray-700/30 p-4 sm:p-6">
+              <TabsList className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 w-full gap-2 bg-gradient-to-r from-white/60 to-white/40 dark:from-gray-900/60 dark:to-gray-900/40 backdrop-blur-sm rounded-2xl p-2 border border-white/20 dark:border-gray-700/20">
+                <TabsTrigger 
+                  value="overview" 
+                  className="relative rounded-xl font-semibold text-sm px-4 py-3 transition-all duration-300 hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-blue-500 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:border-0 hover:bg-white/60 dark:hover:bg-gray-800/60"
+                >
+                  <span className="relative z-10">Vue d'ensemble</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="products" 
+                  className="relative rounded-xl font-semibold text-sm px-4 py-3 transition-all duration-300 hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:border-0 hover:bg-white/60 dark:hover:bg-gray-800/60"
+                >
+                  <span className="relative z-10">Par Produits</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="categories" 
+                  className="relative rounded-xl font-semibold text-sm px-4 py-3 transition-all duration-300 hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:border-0 hover:bg-white/60 dark:hover:bg-gray-800/60"
+                >
+                  <span className="relative z-10">Par Catégories</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="recommendations" 
+                  className="relative rounded-xl font-semibold text-sm px-4 py-3 transition-all duration-300 hover:scale-105 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500 data-[state=active]:to-orange-500 data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:border-0 hover:bg-white/60 dark:hover:bg-gray-800/60"
+                >
+                  <span className="relative z-10 flex items-center gap-2">
+                    <Sparkles className="h-4 w-4" />
+                    Recommandations
+                  </span>
+                </TabsTrigger>
+              </TabsList>
             </div>
 
             {/* Vue d'ensemble */}
@@ -547,13 +548,13 @@ const TendancesPage = () => {
               </div>
             </TabsContent>
 
-            {/* Recommandations */}
+            {/* Recommandations - Affichage de 12 produits */}
             <TabsContent value="recommendations" className="space-y-6">
               <Card className="bg-gradient-to-br from-emerald-50 to-blue-50 dark:from-emerald-900/20 dark:to-blue-900/20 border-emerald-200 dark:border-emerald-800 shadow-2xl">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Sparkles className="h-5 w-5 text-emerald-600 animate-pulse" />
-                    Recommandations d'Achat Intelligentes
+                    Recommandations d'Achat Intelligentes (Top 12)
                   </CardTitle>
                   <CardDescription>Produits à privilégier pour maximiser vos bénéfices (basé sur le ROI historique)</CardDescription>
                 </CardHeader>

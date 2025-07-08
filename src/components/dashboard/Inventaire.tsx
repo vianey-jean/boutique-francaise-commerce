@@ -755,39 +755,44 @@ const Inventaire = () => {
             <AlertDialogTitle className="text-2xl font-black bg-gradient-to-r from-red-600 to-red-700 bg-clip-text text-transparent">
               ⚠️ Suppression Produit
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-gray-700 text-center font-medium">
-              Êtes-vous absolument certain de vouloir supprimer ce produit premium ?
-              <div className="mt-4 p-4 bg-red-50 rounded-xl border-2 border-red-200">
-                <div className="flex items-center gap-3 justify-center">
-                  <Package className="h-5 w-5 text-red-600" />
-                  <strong className="text-red-800">{deletingProduct?.description}</strong>
+            <AlertDialogDescription asChild>
+              <div className="text-gray-700 text-center font-medium space-y-4">
+                <div>Êtes-vous absolument certain de vouloir supprimer ce produit premium ?</div>
+                <div className="p-4 bg-red-50 rounded-xl border-2 border-red-200">
+                  <div className="flex items-center gap-3 justify-center">
+                    <Package className="h-5 w-5 text-red-600" />
+                    <span className="text-red-800 font-bold">{deletingProduct?.description}</span>
+                  </div>
                 </div>
-              </div>
-              <div className="mt-4 text-sm text-red-600 font-semibold">
-                ⚡ Cette action est irréversible et définitive !
+                <div className="text-sm text-red-600 font-semibold">
+                  ⚡ Cette action est irréversible et définitive !
+                </div>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex gap-3 pt-6">
-            <ModernActionButton
-              variant="outline"
-              gradient="green"
-              buttonSize="lg"
-              className="flex-1"
-              onClick={() => setDeletingProduct(null)}
-            >
-              <CheckCircle className="h-5 w-5 mr-2" />
-              Conserver
-            </ModernActionButton>
-            <ModernActionButton
-              gradient="red"
-              buttonSize="lg"
-              className="flex-1 btn-3d"
-              onClick={handleDeleteProduct}
-            >
-              <Trash2 className="h-5 w-5 mr-2" />
-              Supprimer Définitivement
-            </ModernActionButton>
+            <AlertDialogCancel asChild>
+              <ModernActionButton
+                variant="outline"
+                gradient="green"
+                buttonSize="lg"
+                className="flex-1"
+              >
+                <CheckCircle className="h-5 w-5 mr-2" />
+                Conserver
+              </ModernActionButton>
+            </AlertDialogCancel>
+            <AlertDialogAction asChild>
+              <ModernActionButton
+                gradient="red"
+                buttonSize="lg"
+                className="flex-1 btn-3d"
+                onClick={handleDeleteProduct}
+              >
+                <Trash2 className="h-5 w-5 mr-2" />
+                Supprimer Définitivement
+              </ModernActionButton>
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

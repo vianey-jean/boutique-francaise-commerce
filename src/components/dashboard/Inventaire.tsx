@@ -716,10 +716,16 @@ const Inventaire = () => {
                     <AlertTriangle className="h-4 w-4 text-indigo-500" />
                     Statut
                   </Label>
-                  <Badge className={cn("font-bold text-sm px-4 py-2 rounded-xl shadow-lg flex items-center gap-2 w-fit", getPriority(viewingProduct.quantity).color)}>
-                    <getPriority(viewingProduct.quantity).icon className="h-4 w-4" />
-                    {getPriority(viewingProduct.quantity).label}
-                  </Badge>
+                  {(() => {
+                    const priority = getPriority(viewingProduct.quantity);
+                    const PriorityIcon = priority.icon;
+                    return (
+                      <Badge className={cn("font-bold text-sm px-4 py-2 rounded-xl shadow-lg flex items-center gap-2 w-fit", priority.color)}>
+                        <PriorityIcon className="h-4 w-4" />
+                        {priority.label}
+                      </Badge>
+                    );
+                  })()}
                 </div>
               </div>
               <div className="flex justify-center pt-6">
@@ -750,16 +756,16 @@ const Inventaire = () => {
               ⚠️ Suppression Produit
             </AlertDialogTitle>
             <AlertDialogDescription className="text-gray-700 text-center font-medium">
-              <span>Êtes-vous absolument certain de vouloir supprimer ce produit premium ?</span>
+              Êtes-vous absolument certain de vouloir supprimer ce produit premium ?
               <div className="mt-4 p-4 bg-red-50 rounded-xl border-2 border-red-200">
                 <div className="flex items-center gap-3 justify-center">
                   <Package className="h-5 w-5 text-red-600" />
                   <strong className="text-red-800">{deletingProduct?.description}</strong>
                 </div>
               </div>
-              <span className="block mt-4 text-sm text-red-600 font-semibold">
+              <div className="mt-4 text-sm text-red-600 font-semibold">
                 ⚡ Cette action est irréversible et définitive !
-              </span>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex gap-3 pt-6">

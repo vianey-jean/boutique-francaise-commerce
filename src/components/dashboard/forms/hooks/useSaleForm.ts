@@ -73,6 +73,7 @@ export const useSaleForm = (editSale: Sale | undefined, products: Product[], isO
   };
 
   const handleProductSelect = (product: Product) => {
+    console.log('🎯 Produit sélectionné dans useSaleForm:', product);
     setSelectedProduct(product);
     
     const isAdvance = product.description.toLowerCase().includes('avance');
@@ -81,14 +82,20 @@ export const useSaleForm = (editSale: Sale | undefined, products: Product[], isO
     const productQuantity = product.quantity !== undefined ? product.quantity : 0;
     setMaxQuantity(productQuantity);
     
+    // Calculer un prix de vente suggéré (prix d'achat + 20% de marge)
+    const suggestedSellingPrice = (product.purchasePrice * 1.2).toFixed(2);
+    
     setFormData(prev => {
       const purchasePriceUnit = product.purchasePrice.toString();
-      const sellingPriceUnit = (product.purchasePrice * 1.2).toFixed(2);
+      const sellingPriceUnit = suggestedSellingPrice;
       const quantity = isAdvance ? '0' : '1';
       
+      // Calculer le profit
       const A = Number(purchasePriceUnit) * Number(quantity);
       const V = Number(sellingPriceUnit) * Number(quantity);
       const B = V - A;
+      
+      console.log('💰 Calcul du profit:', { A, V, B, purchasePriceUnit, sellingPriceUnit, quantity });
       
       return {
         ...prev,

@@ -11,6 +11,7 @@ router.get('/', async (req, res) => {
     const products = Product.getAll();
     res.json(products);
   } catch (error) {
+    console.error('Error getting products:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -27,6 +28,7 @@ router.get('/search', async (req, res) => {
     const products = Product.search(query);
     res.json(products);
   } catch (error) {
+    console.error('Error searching products:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -42,6 +44,7 @@ router.get('/:id', async (req, res) => {
     
     res.json(product);
   } catch (error) {
+    console.error('Error getting product by ID:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -51,7 +54,7 @@ router.post('/', authMiddleware, async (req, res) => {
   try {
     const { description, purchasePrice, quantity } = req.body;
     
-    if (!description || !purchasePrice || !quantity) {
+    if (!description || purchasePrice === undefined || quantity === undefined) {
       return res.status(400).json({ message: 'All fields are required' });
     }
     
@@ -67,8 +70,10 @@ router.post('/', authMiddleware, async (req, res) => {
       return res.status(500).json({ message: 'Error creating product' });
     }
     
+    console.log('✅ Product created successfully:', newProduct);
     res.status(201).json(newProduct);
   } catch (error) {
+    console.error('❌ Error creating product:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -98,8 +103,10 @@ router.put('/:id', authMiddleware, async (req, res) => {
       return res.status(400).json({ message: updatedProduct.error });
     }
     
+    console.log('✅ Product updated successfully:', updatedProduct);
     res.json(updatedProduct);
   } catch (error) {
+    console.error('❌ Error updating product:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -107,20 +114,26 @@ router.put('/:id', authMiddleware, async (req, res) => {
 // Delete product (requires authentication)
 router.delete('/:id', authMiddleware, async (req, res) => {
   try {
+    console.log('🗑️ Attempting to delete product with ID:', req.params.id);
+    
     const product = Product.getById(req.params.id);
     
     if (!product) {
+      console.log('❌ Product not found for deletion:', req.params.id);
       return res.status(404).json({ message: 'Product not found' });
     }
     
     const success = Product.delete(req.params.id);
     
     if (!success) {
+      console.log('❌ Failed to delete product:', req.params.id);
       return res.status(500).json({ message: 'Error deleting product' });
     }
     
+    console.log('✅ Product deleted successfully:', req.params.id);
     res.json({ message: 'Product deleted successfully' });
   } catch (error) {
+    console.error('❌ Error deleting product:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -146,6 +159,7 @@ router.patch('/:id/quantity', authMiddleware, async (req, res) => {
     
     res.json(result);
   } catch (error) {
+    console.error('Error updating product quantity:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -169,6 +183,7 @@ router.post('/:id/image', authMiddleware, upload.single('image'), async (req, re
     
     res.json(updatedProduct);
   } catch (error) {
+    console.error('Error uploading product image:', error);
     res.status(500).json({ message: error.message || 'Server error' });
   }
 });

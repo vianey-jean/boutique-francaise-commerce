@@ -104,6 +104,27 @@ router.put('/:id', authMiddleware, async (req, res) => {
   }
 });
 
+// Delete product (requires authentication)
+router.delete('/:id', authMiddleware, async (req, res) => {
+  try {
+    const product = Product.getById(req.params.id);
+    
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+    
+    const success = Product.delete(req.params.id);
+    
+    if (!success) {
+      return res.status(500).json({ message: 'Error deleting product' });
+    }
+    
+    res.json({ message: 'Product deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Update product quantity (requires authentication)
 router.patch('/:id/quantity', authMiddleware, async (req, res) => {
   try {

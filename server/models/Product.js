@@ -90,6 +90,30 @@ const Product = {
     }
   },
 
+  // Delete product
+  delete: (id) => {
+    try {
+      let products = JSON.parse(fs.readFileSync(productsPath, 'utf8'));
+      
+      // Find product index
+      const productIndex = products.findIndex(product => product.id === id);
+      if (productIndex === -1) {
+        return false;
+      }
+      
+      // Remove product from array
+      products.splice(productIndex, 1);
+      
+      // Write back to file
+      fs.writeFileSync(productsPath, JSON.stringify(products, null, 2));
+      
+      return true;
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      return false;
+    }
+  },
+
   // Update product quantity
   updateQuantity: (id, quantityChange) => {
     try {

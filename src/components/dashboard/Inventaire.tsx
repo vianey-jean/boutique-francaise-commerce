@@ -27,6 +27,7 @@ const Inventaire = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
   const [showStockAlert, setShowStockAlert] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -559,6 +560,7 @@ const Inventaire = () => {
                           variant="outline"
                           gradient="purple"
                           icon={Eye}
+                          onClick={() => setViewingProduct(product)}
                           className="btn-3d hover:scale-110"
                         />
                       </div>
@@ -670,6 +672,73 @@ const Inventaire = () => {
         </Dialog>
       )}
 
+      {/* Dialog de visualisation Premium */}
+      {viewingProduct && (
+        <Dialog open={!!viewingProduct} onOpenChange={() => setViewingProduct(null)}>
+          <DialogContent className="bg-gradient-to-br from-white via-purple-50 to-indigo-50 backdrop-blur-xl border-0 shadow-2xl rounded-3xl">
+            <DialogHeader className="text-center space-y-4 pb-6">
+              <div className="mx-auto w-16 h-16 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-xl">
+                <Eye className="h-8 w-8 text-white" />
+              </div>
+              <DialogTitle className="text-2xl font-black bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                ✨ Détails Produit Premium
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-6">
+              <div className="space-y-4">
+                <div className="p-4 bg-white/80 rounded-xl border-2 border-purple-200">
+                  <Label className="text-sm font-bold text-gray-700 flex items-center gap-2 mb-2">
+                    <Package className="h-4 w-4 text-purple-600" />
+                    Description
+                  </Label>
+                  <p className="text-lg font-semibold text-gray-900">{viewingProduct.description}</p>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 bg-white/80 rounded-xl border-2 border-yellow-200">
+                    <Label className="text-sm font-bold text-gray-700 flex items-center gap-2 mb-2">
+                      <Star className="h-4 w-4 text-yellow-500" />
+                      Prix d'achat
+                    </Label>
+                    <p className="text-2xl font-black text-yellow-600">{viewingProduct.purchasePrice.toFixed(2)} €</p>
+                  </div>
+                  <div className="p-4 bg-white/80 rounded-xl border-2 border-blue-200">
+                    <Label className="text-sm font-bold text-gray-700 flex items-center gap-2 mb-2">
+                      <TrendingUp className="h-4 w-4 text-blue-500" />
+                      Quantité
+                    </Label>
+                    <p className={cn("text-2xl font-black", getQuantityColor(viewingProduct.quantity))}>
+                      {viewingProduct.quantity}
+                    </p>
+                  </div>
+                </div>
+                <div className="p-4 bg-white/80 rounded-xl border-2 border-indigo-200">
+                  <Label className="text-sm font-bold text-gray-700 flex items-center gap-2 mb-2">
+                    <AlertTriangle className="h-4 w-4 text-indigo-500" />
+                    Statut
+                  </Label>
+                  <Badge className={cn("font-bold text-sm px-4 py-2 rounded-xl shadow-lg flex items-center gap-2 w-fit", getPriority(viewingProduct.quantity).color)}>
+                    <getPriority(viewingProduct.quantity).icon className="h-4 w-4" />
+                    {getPriority(viewingProduct.quantity).label}
+                  </Badge>
+                </div>
+              </div>
+              <div className="flex justify-center pt-6">
+                <ModernActionButton
+                  variant="outline"
+                  gradient="purple"
+                  onClick={() => setViewingProduct(null)}
+                  buttonSize="lg"
+                  className="px-8"
+                >
+                  <CheckCircle className="h-5 w-5 mr-2" />
+                  Fermer
+                </ModernActionButton>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
       {/* Dialog de suppression Premium */}
       <AlertDialog open={!!deletingProduct} onOpenChange={() => setDeletingProduct(null)}>
         <AlertDialogContent className="bg-gradient-to-br from-white via-red-50 to-pink-50 backdrop-blur-xl border-0 shadow-2xl rounded-3xl">
@@ -681,16 +750,16 @@ const Inventaire = () => {
               ⚠️ Suppression Produit
             </AlertDialogTitle>
             <AlertDialogDescription className="text-gray-700 text-center font-medium">
-              Êtes-vous absolument certain de vouloir supprimer ce produit premium ?
+              <span>Êtes-vous absolument certain de vouloir supprimer ce produit premium ?</span>
               <div className="mt-4 p-4 bg-red-50 rounded-xl border-2 border-red-200">
                 <div className="flex items-center gap-3 justify-center">
                   <Package className="h-5 w-5 text-red-600" />
                   <strong className="text-red-800">{deletingProduct?.description}</strong>
                 </div>
               </div>
-              <p className="mt-4 text-sm text-red-600 font-semibold">
+              <span className="block mt-4 text-sm text-red-600 font-semibold">
                 ⚡ Cette action est irréversible et définitive !
-              </p>
+              </span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex gap-3 pt-6">

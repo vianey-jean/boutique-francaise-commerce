@@ -1,143 +1,97 @@
 
 const fs = require('fs');
 const path = require('path');
+const { v4: uuidv4 } = require('uuid');
 
-const beneficePath = path.join(__dirname, '../db/benefice.json');
+const DB_PATH = path.join(__dirname, '../db/benefice.json');
 
-const Benefice = {
-  // Get all benefit calculations
-  getAll: () => {
+// Initialize JSON file if it doesn't exist
+if (!fs.existsSync(DB_PATH)) {
+  fs.writeFileSync(DB_PATH, JSON.stringify([], null, 2));
+}
+
+class Benefice {
+  static getAll() {
     try {
-      const data = fs.readFileSync(beneficePath, 'utf8');
-      const benefices = JSON.parse(data);
-      console.log(`📊 Retrieved ${benefices.length} benefit calculations from database`);
-      return benefices;
+      const data = fs.readFileSync(DB_PATH, 'utf8');
+      return JSON.parse(data);
     } catch (error) {
-      console.error("❌ Error reading benefit calculations:", error);
+      console.error('Error reading benefice data:', error);
       return [];
     }
-  },
+  }
 
-  // Get benefit calculation by product ID
-  getByProductId: (productId) => {
-    try {
-      const data = fs.readFileSync(beneficePath, 'utf8');
-      const benefices = JSON.parse(data);
-      const benefice = benefices.find(b => b.productId === productId) || null;
-      console.log(`🔍 Retrieved benefit calculation for product ${productId}:`, benefice ? 'Found' : 'Not found');
-      return benefice;
-    } catch (error) {
-      console.error("❌ Error finding benefit calculation by product id:", error);
-      return null;
-    }
-  },
+  static getById(id) {
+    const benefices = this.getAll();
+    return benefices.find(b => b.id === id);
+  }
 
-  // Create new benefit calculation
-  create: (beneficeData) => {
+  static getByProductId(productId) {
+    const benefices = this.getAll();
+    return benefices.find(b => b.productId === productId);
+  }
+
+  static create(beneficeData) {
     try {
-      console.log('📝 Creating new benefit calculation:', beneficeData);
-      
-      const data = fs.readFileSync(beneficePath, 'utf8');
-      const benefices = JSON.parse(data);
-      
-      // Create new benefit calculation object
+      const benefices = this.getAll();
       const newBenefice = {
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        ...beneficeData
-      };
-      
-      // Check if calculation for this product already exists
-      const existingIndex = benefices.findIndex(b => b.productId === beneficeData.productId);
-      if (existingIndex !== -1) {
-        // Update existing calculation
-        benefices[existingIndex] = { ...benefices[existingIndex], ...newBenefice, id: benefices[existingIndex].id };
-        console.log('✅ Benefit calculation updated successfully:', benefices[existingIndex]);
-      } else {
-        // Add new calculation
-        benefices.push(newBenefice);
-        console.log('✅ Benefit calculation created successfully:', newBenefice);
-      }
-      
-      // Write back to file with proper formatting
-      fs.writeFileSync(beneficePath, JSON.stringify(benefices, null, 2));
-      
-      console.log(`📊 Total benefit calculations in database: ${benefices.length}`);
-      
-      return existingIndex !== -1 ? benefices[existingIndex] : newBenefice;
-    } catch (error) {
-      console.error("❌ Error creating/updating benefit calculation:", error);
-      return null;
-    }
-  },
-
-  // Update benefit calculation
-  update: (id, beneficeData) => {
-    try {
-      console.log(`📝 Updating benefit calculation ${id}:`, beneficeData);
-      
-      const data = fs.readFileSync(beneficePath, 'utf8');
-      let benefices = JSON.parse(data);
-      
-      // Find calculation index
-      const beneficeIndex = benefices.findIndex(b => b.id === id);
-      if (beneficeIndex === -1) {
-        console.log(`❌ Benefit calculation not found for update: ${id}`);
-        return null;
-      }
-      
-      // Update calculation data
-      benefices[beneficeIndex] = { 
-        ...benefices[beneficeIndex], 
+        id: uuidv4(),
         ...beneficeData,
+        createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
       
-      // Write back to file with proper formatting
-      fs.writeFileSync(beneficePath, JSON.stringify(benefices, null, 2));
+      benefices.push(newBenefice);
+      fs.writeFileSync(DB_PATH, JSON.stringify(benefices, null, 2));
       
-      console.log('✅ Benefit calculation updated successfully:', benefices[beneficeIndex]);
-      return benefices[beneficeIndex];
+      return newBenefice;
     } catch (error) {
-      console.error("❌ Error updating benefit calculation:", error);
+      console.error('Error creating benefice:', error);
       return null;
     }
-  },
+  }
 
-  // Delete benefit calculation
-  delete: (id) => {
+  static update(id, updateData) {
     try {
-      console.log(`🗑️ Deleting benefit calculation ${id}`);
+      const benefices = this.getAll();
+      const index = benefices.findIndex(b => b.id === id);
       
-      const data = fs.readFileSync(beneficePath, 'utf8');
-      let benefices = JSON.parse(data);
+      if (index === -1) {
+        return null;
+      }
       
-      // Find calculation index
-      const beneficeIndex = benefices.findIndex(b => b.id === id);
-      if (beneficeIndex === -1) {
-        console.log(`❌ Benefit calculation not found for deletion: ${id}`);
+      benefices[index] = {
+        ...benefices[index],
+        ...updateData,
+        updatedAt: new Date().toISOString()
+      };
+      
+      fs.writeFileSync(DB_PATH, JSON.stringify(benefices, null, 2));
+      
+      return benefices[index];
+    } catch (error) {
+      console.error('Error updating benefice:', error);
+      return null;
+    }
+  }
+
+  static delete(id) {
+    try {
+      const benefices = this.getAll();
+      const filteredBenefices = benefices.filter(b => b.id !== id);
+      
+      if (filteredBenefices.length === benefices.length) {
         return false;
       }
       
-      // Store calculation info for logging
-      const deletedBenefice = benefices[beneficeIndex];
-      
-      // Remove calculation from array
-      benefices.splice(beneficeIndex, 1);
-      
-      // Write back to file with proper formatting
-      fs.writeFileSync(beneficePath, JSON.stringify(benefices, null, 2));
-      
-      console.log('✅ Benefit calculation deleted successfully:', deletedBenefice.productDescription);
-      console.log(`📊 Remaining benefit calculations in database: ${benefices.length}`);
+      fs.writeFileSync(DB_PATH, JSON.stringify(filteredBenefices, null, 2));
       
       return true;
     } catch (error) {
-      console.error("❌ Error deleting benefit calculation:", error);
+      console.error('Error deleting benefice:', error);
       return false;
     }
   }
-};
+}
 
 module.exports = Benefice;

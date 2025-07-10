@@ -1,18 +1,37 @@
+
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Calculator, TrendingUp, AlertCircle, DollarSign, Percent, Save, Search, Eye, Trash2, Edit3, Sparkles, Crown, Diamond } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import useCurrencyFormatter from '@/hooks/use-currency-formatter';
-import { useApp } from '@/contexts/AppContext';
-import { cn } from '@/lib/utils';
-import ProductSearchInput from '@/components/dashboard/ProductSearchInput';
 import { Product } from '@/types';
-import { ModernTable, ModernTableHeader, ModernTableRow, ModernTableHead, ModernTableCell, TableBody } from '@/components/dashboard/forms/ModernTable';
+import ProductSearchInput from '@/components/dashboard/ProductSearchInput';
 import { beneficeService } from '@/service/beneficeService';
+import ModernContainer from '@/components/dashboard/forms/ModernContainer';
+import ModernActionButton from '@/components/dashboard/forms/ModernActionButton';
+import { ModernTable, ModernTableHeader, ModernTableRow, ModernTableHead, ModernTableCell, TableBody } from '@/components/dashboard/forms/ModernTable';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { cn } from '@/lib/utils';
+import { 
+  Calculator, 
+  TrendingUp, 
+  AlertCircle, 
+  DollarSign, 
+  Percent, 
+  Save, 
+  Search, 
+  Eye, 
+  Trash2, 
+  Edit3, 
+  Sparkles, 
+  Crown, 
+  Diamond,
+  Target,
+  PiggyBank,
+  TrendingDown,
+  BarChart3,
+  Coins
+} from 'lucide-react';
 
 interface ProfitCalculation {
   prixAchat: number;
@@ -102,11 +121,6 @@ const ProfitCalculator: React.FC<ProfitCalculatorProps> = ({
     } catch (error) {
       console.error('❌ Erreur lors du chargement des bénéfices:', error);
       setBeneficesList([]);
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les données de bénéfices.",
-        variant: "destructive"
-      });
     }
   };
 
@@ -258,16 +272,13 @@ const ProfitCalculator: React.FC<ProfitCalculatorProps> = ({
 
   if (compact) {
     return (
-      <Card className={cn("bg-gradient-to-br from-emerald-50 via-blue-50 to-purple-50 dark:from-emerald-900/20 dark:via-blue-900/20 dark:to-purple-900/20 border-0 shadow-2xl", className)}>
-        <CardHeader className="pb-4 bg-gradient-to-r from-emerald-600 to-blue-600 text-white rounded-t-lg">
-          <CardTitle className="flex items-center gap-3 text-lg">
-            <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-              <Diamond className="h-6 w-6" />
-            </div>
-            Calcul Premium de Bénéfices
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4 p-6">
+      <ModernContainer
+        title="Calcul Premium de Bénéfices"
+        icon={Diamond}
+        gradient="purple"
+        className={className}
+      >
+        <div className="space-y-6">
           <ProductSearchInput
             onProductSelect={handleProductSelect}
             selectedProduct={selectedProduct}
@@ -276,86 +287,95 @@ const ProfitCalculator: React.FC<ProfitCalculatorProps> = ({
           {selectedProduct && (
             <>
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium flex items-center gap-2">
-                    <DollarSign className="h-4 w-4 text-emerald-600" />
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold flex items-center gap-2 text-emerald-700">
+                    <DollarSign className="h-4 w-4" />
                     Prix d'achat
                   </Label>
                   <Input
                     type="number"
                     value={values.prixAchat}
                     onChange={(e) => updateValue('prixAchat', Number(e.target.value))}
-                    className="mt-1 border-emerald-200 focus:border-emerald-500"
+                    className="border-emerald-200 focus:border-emerald-500 bg-white/80"
                     placeholder="0.00"
                   />
                 </div>
-                <div>
-                  <Label className="text-sm font-medium flex items-center gap-2">
-                    <Percent className="h-4 w-4 text-blue-600" />
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold flex items-center gap-2 text-blue-700">
+                    <Percent className="h-4 w-4" />
                     Marge désirée (%)
                   </Label>
                   <Input
                     type="number"
                     value={values.margeDesire}
                     onChange={(e) => updateValue('margeDesire', Number(e.target.value))}
-                    className="mt-1 border-blue-200 focus:border-blue-500"
+                    className="border-blue-200 focus:border-blue-500 bg-white/80"
                     placeholder="30"
                   />
                 </div>
               </div>
               
-              <div className="bg-gradient-to-r from-emerald-50 to-blue-50 dark:from-emerald-900/20 dark:to-blue-900/20 rounded-xl p-6 border border-emerald-200 dark:border-emerald-800">
-                <div className="flex justify-between items-center mb-3">
-                  <span className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                    <Crown className="h-4 w-4 text-amber-500" />
-                    Prix de vente recommandé:
-                  </span>
-                  <span className="text-xl font-bold text-emerald-600">
-                    {formatEuro(values.prixVenteRecommande)}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-purple-500" />
-                    Bénéfice net:
-                  </span>
-                  <span className={cn("text-xl font-bold", isRentable ? "text-emerald-600" : "text-red-600")}>
-                    {formatEuro(values.beneficeNet)}
-                  </span>
+              <div className="bg-gradient-to-r from-emerald-50 to-blue-50 dark:from-emerald-900/20 dark:to-blue-900/20 rounded-xl p-6 border-2 border-emerald-200 shadow-lg">
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                      <Crown className="h-4 w-4 text-amber-500" />
+                      Prix de vente recommandé:
+                    </span>
+                    <span className="text-xl font-bold text-emerald-600">
+                      {formatEuro(values.prixVenteRecommande)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-purple-500" />
+                      Bénéfice net:
+                    </span>
+                    <span className={cn("text-xl font-bold", isRentable ? "text-emerald-600" : "text-red-600")}>
+                      {formatEuro(values.beneficeNet)}
+                    </span>
+                  </div>
                 </div>
               </div>
             </>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </ModernContainer>
     );
   }
 
   return (
     <div className="space-y-8">
       {/* Calculateur Premium */}
-      <Card className={cn("bg-gradient-to-br from-emerald-50 via-blue-50 to-purple-50 dark:from-emerald-900/20 dark:via-blue-900/20 dark:to-purple-900/20 border-0 shadow-2xl", className)}>
-        <CardHeader className="bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600 text-white rounded-t-lg">
-          <CardTitle className="flex items-center gap-3 text-2xl">
-            <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-              <Diamond className="h-8 w-8" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold">Calculateur Premium de Bénéfices</h1>
-              <p className="text-emerald-100 text-sm mt-1">Optimisez vos marges avec précision</p>
-            </div>
-          </CardTitle>
-        </CardHeader>
-        
-        <CardContent className="space-y-8 p-8">
+      <ModernContainer
+        title="Calculateur Premium de Bénéfices"
+        icon={Diamond}
+        gradient="purple"
+        className={className}
+        headerActions={
+          <div className="flex items-center gap-2">
+            <ModernActionButton
+              icon={Target}
+              gradient="indigo"
+              buttonSize="sm"
+              onClick={() => console.log('Optimisation des marges')}
+            >
+              Optimiser
+            </ModernActionButton>
+          </div>
+        }
+      >
+        <div className="space-y-8">
           {/* Recherche de produit */}
           <div className="space-y-4">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-lg text-white">
-                <Search className="h-5 w-5" />
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-xl text-white shadow-lg">
+                <Search className="h-6 w-6" />
               </div>
-              Sélection du produit
-            </h3>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                Sélection du produit
+              </h3>
+            </div>
             
             <ProductSearchInput
               onProductSelect={handleProductSelect}
@@ -363,14 +383,17 @@ const ProfitCalculator: React.FC<ProfitCalculatorProps> = ({
             />
             
             {selectedProduct && (
-              <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl p-4 border border-blue-200">
-                <Label htmlFor="productDescription" className="font-semibold text-blue-800 dark:text-blue-300">Description du produit</Label>
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl p-6 border-2 border-blue-200 shadow-md">
+                <Label htmlFor="productDescription" className="font-semibold text-blue-800 dark:text-blue-300 flex items-center gap-2 mb-3">
+                  <Edit3 className="h-4 w-4" />
+                  Description du produit
+                </Label>
                 <Input
                   id="productDescription"
                   value={productDescription}
                   onChange={(e) => setProductDescription(e.target.value)}
                   placeholder="Description du produit"
-                  className="mt-2 border-blue-300 focus:border-blue-500"
+                  className="border-blue-300 focus:border-blue-500 bg-white/80"
                 />
               </div>
             )}
@@ -381,61 +404,76 @@ const ProfitCalculator: React.FC<ProfitCalculatorProps> = ({
               {/* Saisie des coûts */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div className="space-y-6">
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-                    <div className="p-2 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-lg text-white">
-                      <DollarSign className="h-5 w-5" />
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="p-3 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl text-white shadow-lg">
+                      <Coins className="h-6 w-6" />
                     </div>
-                    Coûts d'acquisition
-                  </h3>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                      Coûts d'acquisition
+                    </h3>
+                  </div>
                   
                   <div className="space-y-4">
-                    <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-emerald-200 shadow-sm">
-                      <Label htmlFor="prixAchat" className="font-semibold text-emerald-700 dark:text-emerald-300">Prix d'achat (€)</Label>
+                    <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border-2 border-emerald-200 shadow-lg hover:shadow-xl transition-shadow">
+                      <Label htmlFor="prixAchat" className="font-semibold text-emerald-700 dark:text-emerald-300 flex items-center gap-2 mb-3">
+                        <DollarSign className="h-4 w-4" />
+                        Prix d'achat (€)
+                      </Label>
                       <Input
                         id="prixAchat"
                         type="number"
                         value={values.prixAchat || ''}
                         onChange={(e) => updateValue('prixAchat', Number(e.target.value))}
                         placeholder="0.00"
-                        className="mt-2 border-emerald-300 focus:border-emerald-500"
+                        className="border-emerald-300 focus:border-emerald-500 bg-white/80 text-lg font-semibold"
                       />
                     </div>
                     
-                    <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-blue-200 shadow-sm">
-                      <Label htmlFor="taxeDouane" className="font-semibold text-blue-700 dark:text-blue-300">Taxes douanières (€)</Label>
+                    <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border-2 border-blue-200 shadow-lg hover:shadow-xl transition-shadow">
+                      <Label htmlFor="taxeDouane" className="font-semibold text-blue-700 dark:text-blue-300 flex items-center gap-2 mb-3">
+                        <BarChart3 className="h-4 w-4" />
+                        Taxes douanières (€)
+                      </Label>
                       <Input
                         id="taxeDouane"
                         type="number"
                         value={values.taxeDouane || ''}
                         onChange={(e) => updateValue('taxeDouane', Number(e.target.value))}
                         placeholder="0.00"
-                        className="mt-2 border-blue-300 focus:border-blue-500"
+                        className="border-blue-300 focus:border-blue-500 bg-white/80"
                       />
                     </div>
                     
-                    <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-purple-200 shadow-sm">
-                      <Label htmlFor="tva" className="font-semibold text-purple-700 dark:text-purple-300">TVA (%)</Label>
+                    <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border-2 border-purple-200 shadow-lg hover:shadow-xl transition-shadow">
+                      <Label htmlFor="tva" className="font-semibold text-purple-700 dark:text-purple-300 flex items-center gap-2 mb-3">
+                        <Percent className="h-4 w-4" />
+                        TVA (%)
+                      </Label>
                       <Input
                         id="tva"
                         type="number"
                         value={values.tva || ''}
                         onChange={(e) => updateValue('tva', Number(e.target.value))}
                         placeholder="20"
-                        className="mt-2 border-purple-300 focus:border-purple-500"
+                        className="border-purple-300 focus:border-purple-500 bg-white/80"
                       />
                     </div>
                     
-                    <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-orange-200 shadow-sm">
-                      <Label htmlFor="autresFrais" className="font-semibold text-orange-700 dark:text-orange-300">Autres frais (€)</Label>
+                    <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border-2 border-orange-200 shadow-lg hover:shadow-xl transition-shadow">
+                      <Label htmlFor="autresFrais" className="font-semibold text-orange-700 dark:text-orange-300 flex items-center gap-2 mb-3">
+                        <PiggyBank className="h-4 w-4" />
+                        Autres frais (€)
+                      </Label>
                       <Input
                         id="autresFrais"
                         type="number"
                         value={values.autresFrais || ''}
                         onChange={(e) => updateValue('autresFrais', Number(e.target.value))}
                         placeholder="0.00"
-                        className="mt-2 border-orange-300 focus:border-orange-500"
+                        className="border-orange-300 focus:border-orange-500 bg-white/80"
                       />
-                      <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
+                      <p className="text-xs text-orange-600 dark:text-orange-400 mt-2 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
                         Transport, stockage, manutention, etc.
                       </p>
                     </div>
@@ -443,55 +481,60 @@ const ProfitCalculator: React.FC<ProfitCalculatorProps> = ({
                 </div>
                 
                 <div className="space-y-6">
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-                    <div className="p-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg text-white">
-                      <Percent className="h-5 w-5" />
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="p-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl text-white shadow-lg">
+                      <TrendingUp className="h-6 w-6" />
                     </div>
-                    Calcul de marge
-                  </h3>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                      Calcul de marge
+                    </h3>
+                  </div>
                   
-                  <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-purple-200 shadow-sm">
-                    <Label htmlFor="margeDesire" className="font-semibold text-purple-700 dark:text-purple-300">Marge désirée (%)</Label>
+                  <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border-2 border-purple-200 shadow-lg hover:shadow-xl transition-shadow">
+                    <Label htmlFor="margeDesire" className="font-semibold text-purple-700 dark:text-purple-300 flex items-center gap-2 mb-3">
+                      <Target className="h-4 w-4" />
+                      Marge désirée (%)
+                    </Label>
                     <Input
                       id="margeDesire"
                       type="number"
                       value={values.margeDesire || ''}
                       onChange={(e) => updateValue('margeDesire', Number(e.target.value))}
                       placeholder="30"
-                      className="mt-2 border-purple-300 focus:border-purple-500"
+                      className="border-purple-300 focus:border-purple-500 bg-white/80 text-lg font-semibold"
                     />
                   </div>
                   
-                  <div className="bg-gradient-to-br from-emerald-50 via-blue-50 to-purple-50 dark:from-emerald-900/20 dark:via-blue-900/20 dark:to-purple-900/20 rounded-xl p-6 border-2 border-gradient-to-r border-emerald-300 shadow-lg">
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center">
+                  <div className="bg-gradient-to-br from-emerald-50 via-blue-50 to-purple-50 dark:from-emerald-900/20 dark:via-blue-900/20 dark:to-purple-900/20 rounded-xl p-8 border-2 border-gradient-to-r border-emerald-300 shadow-2xl">
+                    <div className="space-y-6">
+                      <div className="flex justify-between items-center p-4 bg-white/70 rounded-lg">
                         <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                          <Calculator className="h-4 w-4 text-blue-600" />
+                          <Calculator className="h-5 w-5 text-blue-600" />
                           Coût total (TTC):
                         </span>
-                        <span className="font-bold text-lg text-blue-600">{formatEuro(values.coutTotal || 0)}</span>
+                        <span className="font-bold text-xl text-blue-600">{formatEuro(values.coutTotal || 0)}</span>
                       </div>
-                      <div className="flex justify-between items-center">
+                      <div className="flex justify-between items-center p-4 bg-white/70 rounded-lg">
                         <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                          <Crown className="h-4 w-4 text-emerald-600" />
+                          <Crown className="h-5 w-5 text-emerald-600" />
                           Prix de vente recommandé:
                         </span>
                         <span className="font-bold text-emerald-600 text-2xl">
                           {formatEuro(values.prixVenteRecommande || 0)}
                         </span>
                       </div>
-                      <div className="flex justify-between items-center">
+                      <div className="flex justify-between items-center p-4 bg-white/70 rounded-lg">
                         <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                          <Sparkles className="h-4 w-4 text-purple-600" />
+                          <Sparkles className="h-5 w-5 text-purple-600" />
                           Bénéfice net:
                         </span>
                         <span className={cn("font-bold text-2xl", isRentable ? "text-emerald-600" : "text-red-600")}>
                           {formatEuro(values.beneficeNet || 0)}
                         </span>
                       </div>
-                      <div className="flex justify-between items-center">
+                      <div className="flex justify-between items-center p-4 bg-white/70 rounded-lg">
                         <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                          <TrendingUp className="h-4 w-4 text-indigo-600" />
+                          <TrendingUp className="h-5 w-5 text-indigo-600" />
                           Taux de marge:
                         </span>
                         <span className={cn("font-bold text-xl", isRentable ? "text-emerald-600" : "text-red-600")}>
@@ -502,63 +545,73 @@ const ProfitCalculator: React.FC<ProfitCalculatorProps> = ({
                   </div>
                   
                   {/* Bouton de sauvegarde */}
-                  <Button
+                  <ModernActionButton
+                    icon={Save}
                     onClick={handleSave}
-                    disabled={isLoading || !selectedProduct}
-                    className="w-full bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white font-bold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-                    size="lg"
+                    isLoading={isLoading}
+                    disabled={!selectedProduct}
+                    gradient="green"
+                    buttonSize="lg"
+                    className="w-full py-4 text-lg font-bold shadow-2xl"
                   >
-                    <Save className="h-5 w-5 mr-2" />
                     {isLoading ? 'Sauvegarde...' : 'Valider et Sauvegarder'}
-                  </Button>
+                  </ModernActionButton>
                 </div>
               </div>
 
               {/* Prix de vente personnalisé */}
-              <div className="border-t border-gray-200 pt-8">
+              <div className="border-t-2 border-gray-200 pt-8">
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-                    <div className="p-2 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg text-white">
-                      <Edit3 className="h-5 w-5" />
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl text-white shadow-lg">
+                      <Edit3 className="h-6 w-6" />
                     </div>
-                    Tester un prix de vente personnalisé
-                  </h3>
-                  <Button
-                    variant="outline"
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                      Tester un prix de vente personnalisé
+                    </h3>
+                  </div>
+                  <ModernActionButton
                     onClick={() => setShowCustomPrice(!showCustomPrice)}
-                    className="border-indigo-300 text-indigo-600 hover:bg-indigo-50"
+                    variant="outline"
+                    gradient="indigo"
+                    icon={showCustomPrice ? TrendingDown : TrendingUp}
                   >
                     {showCustomPrice ? 'Masquer' : 'Afficher'}
-                  </Button>
+                  </ModernActionButton>
                 </div>
                 
                 {showCustomPrice && (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl p-6 border border-indigo-200">
-                    <div>
-                      <Label htmlFor="prixVenteCustom" className="font-semibold text-indigo-700 dark:text-indigo-300">Prix de vente personnalisé (€)</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl p-8 border-2 border-indigo-200 shadow-lg">
+                    <div className="space-y-2">
+                      <Label htmlFor="prixVenteCustom" className="font-semibold text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
+                        <DollarSign className="h-4 w-4" />
+                        Prix de vente personnalisé (€)
+                      </Label>
                       <Input
                         id="prixVenteCustom"
                         type="number"
                         value={prixVenteCustom}
                         onChange={(e) => setPrixVenteCustom(Number(e.target.value))}
                         placeholder="0.00"
-                        className="mt-2 border-indigo-300 focus:border-indigo-500"
+                        className="border-indigo-300 focus:border-indigo-500 bg-white/80 text-lg font-semibold"
                       />
                     </div>
                     <div className="flex items-end">
-                      <Button 
-                        onClick={calculateWithCustomPrice} 
-                        className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+                      <ModernActionButton
+                        onClick={calculateWithCustomPrice}
+                        gradient="indigo"
+                        icon={Calculator}
+                        className="w-full"
+                        buttonSize="lg"
                       >
-                        <Calculator className="h-4 w-4 mr-2" />
                         Calculer
-                      </Button>
+                      </ModernActionButton>
                     </div>
-                    <div className="flex items-center">
+                    <div className="flex items-center justify-center">
                       {prixVenteCustom > 0 && (
-                        <div className="text-sm font-semibold">
-                          <span className="text-gray-600">Marge: </span>
-                          <span className={cn("font-bold text-lg", isRentable ? "text-emerald-600" : "text-red-600")}>
+                        <div className="text-center bg-white/70 rounded-lg p-4 w-full">
+                          <span className="text-sm text-gray-600 block mb-1">Marge calculée:</span>
+                          <span className={cn("font-bold text-2xl", isRentable ? "text-emerald-600" : "text-red-600")}>
                             {(values.tauxMarge || 0).toFixed(1)}%
                           </span>
                         </div>
@@ -570,69 +623,92 @@ const ProfitCalculator: React.FC<ProfitCalculatorProps> = ({
 
               {/* Alertes */}
               {!isRentable && values.prixAchat > 0 && (
-                <Alert className="border-red-200 bg-red-50 text-red-800">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    <strong>Attention:</strong> Votre marge est inférieure à 20%. 
+                <Alert className="border-red-200 bg-red-50 text-red-800 shadow-lg">
+                  <AlertCircle className="h-5 w-5" />
+                  <AlertDescription className="font-semibold">
+                    <strong>⚠️ Attention:</strong> Votre marge est inférieure à 20%. 
                     Considérez augmenter votre prix de vente ou réduire vos coûts.
                   </AlertDescription>
                 </Alert>
               )}
               
               {isRentable && values.prixAchat > 0 && (
-                <Alert className="border-emerald-200 bg-emerald-50 text-emerald-800">
-                  <TrendingUp className="h-4 w-4" />
-                  <AlertDescription>
-                    <strong>Excellent!</strong> Votre produit est rentable avec une marge de {(values.tauxMarge || 0).toFixed(1)}%.
+                <Alert className="border-emerald-200 bg-emerald-50 text-emerald-800 shadow-lg">
+                  <TrendingUp className="h-5 w-5" />
+                  <AlertDescription className="font-semibold">
+                    <strong>🎉 Excellent!</strong> Votre produit est rentable avec une marge de {(values.tauxMarge || 0).toFixed(1)}%.
                   </AlertDescription>
                 </Alert>
               )}
             </>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </ModernContainer>
 
       {/* Table des calculs de bénéfices */}
-      <Card className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 border-0 shadow-2xl">
-        <CardHeader className="bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-t-lg">
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-                <Eye className="h-6 w-6" />
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold">Calculs de Bénéfice avec Marge</h2>
-                <p className="text-purple-100 text-sm mt-1">Historique de vos calculs premium</p>
-              </div>
-            </div>
-            <Button
-              variant="ghost"
-              onClick={() => setShowTable(!showTable)}
-              className="text-white hover:bg-white/20"
-            >
-              {showTable ? 'Masquer' : 'Afficher'}
-            </Button>
-          </CardTitle>
-        </CardHeader>
-        
+      <ModernContainer
+        title="Historique des Calculs Premium"
+        icon={Eye}
+        gradient="indigo"
+        headerActions={
+          <ModernActionButton
+            onClick={() => setShowTable(!showTable)}
+            variant="ghost"
+            gradient="indigo"
+            icon={showTable ? TrendingDown : TrendingUp}
+          >
+            {showTable ? 'Masquer' : 'Afficher'}
+          </ModernActionButton>
+        }
+      >
         {showTable && (
-          <CardContent className="p-0">
+          <div className="overflow-hidden">
             {Array.isArray(beneficesList) && beneficesList.length > 0 ? (
               <ModernTable>
                 <ModernTableHeader>
                   <ModernTableRow>
-                    <ModernTableHead className="font-bold text-purple-700">Produit</ModernTableHead>
-                    <ModernTableHead className="font-bold text-emerald-700">Prix d'achat</ModernTableHead>
-                    <ModernTableHead className="font-bold text-blue-700">Coût total</ModernTableHead>
-                    <ModernTableHead className="font-bold text-indigo-700">Prix de vente</ModernTableHead>
-                    <ModernTableHead className="font-bold text-green-700">Bénéfice</ModernTableHead>
-                    <ModernTableHead className="font-bold text-orange-700">Marge %</ModernTableHead>
+                    <ModernTableHead className="font-bold text-purple-700">
+                      <div className="flex items-center gap-2">
+                        <Diamond className="h-4 w-4" />
+                        Produit
+                      </div>
+                    </ModernTableHead>
+                    <ModernTableHead className="font-bold text-emerald-700">
+                      <div className="flex items-center gap-2">
+                        <DollarSign className="h-4 w-4" />
+                        Prix d'achat
+                      </div>
+                    </ModernTableHead>
+                    <ModernTableHead className="font-bold text-blue-700">
+                      <div className="flex items-center gap-2">
+                        <Calculator className="h-4 w-4" />
+                        Coût total
+                      </div>
+                    </ModernTableHead>
+                    <ModernTableHead className="font-bold text-indigo-700">
+                      <div className="flex items-center gap-2">
+                        <Crown className="h-4 w-4" />
+                        Prix de vente
+                      </div>
+                    </ModernTableHead>
+                    <ModernTableHead className="font-bold text-green-700">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="h-4 w-4" />
+                        Bénéfice
+                      </div>
+                    </ModernTableHead>
+                    <ModernTableHead className="font-bold text-orange-700">
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="h-4 w-4" />
+                        Marge %
+                      </div>
+                    </ModernTableHead>
                     <ModernTableHead className="font-bold text-gray-700">Actions</ModernTableHead>
                   </ModernTableRow>
                 </ModernTableHeader>
                 <TableBody>
                   {beneficesList.map((benefice) => (
-                    <ModernTableRow key={benefice.id}>
+                    <ModernTableRow key={benefice.id} className="hover:bg-purple-50/50 transition-colors">
                       <ModernTableCell className="font-semibold text-purple-800 dark:text-purple-300">
                         {benefice.productDescription}
                       </ModernTableCell>
@@ -656,33 +732,37 @@ const ProfitCalculator: React.FC<ProfitCalculatorProps> = ({
                         {(benefice.tauxMarge || 0).toFixed(1)}%
                       </ModernTableCell>
                       <ModernTableCell>
-                        <Button
-                          variant="ghost"
+                        <ModernActionButton
                           onClick={() => benefice.id && handleDelete(benefice.id)}
-                          className="text-red-600 hover:text-red-800 hover:bg-red-50"
-                          size="sm"
+                          variant="ghost"
+                          gradient="red"
+                          icon={Trash2}
+                          buttonSize="sm"
+                          className="hover:bg-red-50"
                         >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                          Supprimer
+                        </ModernActionButton>
                       </ModernTableCell>
                     </ModernTableRow>
                   ))}
                 </TableBody>
               </ModernTable>
             ) : (
-              <div className="text-center py-12">
-                <div className="flex flex-col items-center gap-4">
-                  <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded-full">
-                    <Calculator className="h-8 w-8 text-gray-500" />
+              <div className="text-center py-16">
+                <div className="flex flex-col items-center gap-6">
+                  <div className="p-6 bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900/20 dark:to-blue-900/20 rounded-full">
+                    <Calculator className="h-12 w-12 text-purple-600" />
                   </div>
-                  <p className="text-lg text-gray-600 dark:text-gray-400">Aucun calcul de bénéfice enregistré</p>
-                  <p className="text-sm text-gray-500">Commencez par calculer et sauvegarder vos bénéfices</p>
+                  <div className="space-y-2">
+                    <p className="text-xl font-semibold text-gray-600 dark:text-gray-400">Aucun calcul de bénéfice enregistré</p>
+                    <p className="text-sm text-gray-500">Commencez par calculer et sauvegarder vos bénéfices premium</p>
+                  </div>
                 </div>
               </div>
             )}
-          </CardContent>
+          </div>
         )}
-      </Card>
+      </ModernContainer>
     </div>
   );
 };

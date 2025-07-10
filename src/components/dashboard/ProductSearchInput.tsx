@@ -34,10 +34,20 @@ const ProductSearchInput: React.FC<ProductSearchInputProps> = ({
   }, [searchTerm, products]);
 
   const handleProductSelect = (product: Product) => {
-    console.log('🎯 Produit sélectionné:', product);
+    console.log('🚀 DEBUT - ProductSearchInput handleProductSelect');
+    console.log('🎯 Produit sélectionné dans ProductSearchInput:', {
+      id: product.id,
+      description: product.description,
+      purchasePrice: product.purchasePrice,
+      quantity: product.quantity
+    });
+    
     setSearchTerm(product.description);
     setShowDropdown(false);
+    
+    console.log('📡 Calling onProductSelect callback');
     onProductSelect(product);
+    console.log('✅ FIN - ProductSearchInput handleProductSelect');
   };
 
   const handleClear = () => {

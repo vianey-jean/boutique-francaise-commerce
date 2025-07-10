@@ -21,7 +21,7 @@ interface BeneficeData {
 const getBaseURL = () => {
   const isDevelopment = import.meta.env.DEV;
   if (isDevelopment) {
-    return import.meta.env.VITE_API_BASE_URL;
+    return 'http://localhost:10000';
   }
   return import.meta.env.VITE_API_BASE_URL;
 };

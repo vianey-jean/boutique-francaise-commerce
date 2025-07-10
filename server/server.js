@@ -1,4 +1,3 @@
-
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -132,6 +131,7 @@ const pretFamillesRoutes = require('./routes/pretfamilles');
 const pretProduitsRoutes = require('./routes/pretproduits');
 const depensesRoutes = require('./routes/depenses');
 const syncRoutes = require('./routes/sync');
+const beneficesRoutes = require('./routes/benefices');
 
 // Use routes
 app.use('/api/auth', authRoutes);
@@ -141,6 +141,7 @@ app.use('/api/pretfamilles', pretFamillesRoutes);
 app.use('/api/pretproduits', pretProduitsRoutes);
 app.use('/api/depenses', depensesRoutes);
 app.use('/api/sync', syncRoutes);
+app.use('/api/benefices', beneficesRoutes);
 
 // Static file serving for uploaded files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 import ProductSearchInput from '@/components/dashboard/ProductSearchInput';
 import { Product } from '@/types';
 import { ModernTable, ModernTableHeader, ModernTableRow, ModernTableHead, ModernTableCell, TableBody } from '@/components/dashboard/forms/ModernTable';
-import axios from 'axios';
+import { beneficeService } from '@/service/beneficeService';
 
 interface ProfitCalculation {
   prixAchat: number;
@@ -82,7 +82,8 @@ const ProfitCalculator: React.FC<ProfitCalculatorProps> = ({
     setSelectedProduct(product);
     setProductDescription(product.description);
     
-    // Mettre à jour le prix d'achat
+    // Mettre à jour le prix d'achat avec les données du produit
+    console.log('💰 Prix d\'achat du produit:', product.purchasePrice);
     setValues(prev => ({
       ...prev,
       prixAchat: product.purchasePrice || 0
@@ -95,12 +96,7 @@ const ProfitCalculator: React.FC<ProfitCalculatorProps> = ({
   // Charger toutes les données de bénéfices
   const loadBeneficesData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get('/api/benefices', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      const data = Array.isArray(response.data) ? response.data : [];
+      const data = await beneficeService.getBenefices();
       setBeneficesList(data);
       console.log('✅ Données de bénéfices chargées:', data);
     } catch (error) {
@@ -117,13 +113,9 @@ const ProfitCalculator: React.FC<ProfitCalculatorProps> = ({
   // Charger les données de bénéfice existantes
   const loadExistingBeneficeData = async (productId: string) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`/api/benefices/product/${productId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const beneficeData = await beneficeService.getBeneficeByProductId(productId);
       
-      if (response.data) {
-        const beneficeData = response.data;
+      if (beneficeData) {
         setValues({
           prixAchat: beneficeData.prixAchat || 0,
           taxeDouane: beneficeData.taxeDouane || 0,
@@ -206,7 +198,7 @@ const ProfitCalculator: React.FC<ProfitCalculatorProps> = ({
     setIsLoading(true);
 
     try {
-      const beneficeData: BeneficeData = {
+      const beneficeData = {
         productId: selectedProduct.id,
         productDescription: productDescription || selectedProduct.description,
         prixAchat: values.prixAchat || 0,
@@ -220,10 +212,7 @@ const ProfitCalculator: React.FC<ProfitCalculatorProps> = ({
         tauxMarge: values.tauxMarge || 0
       };
 
-      const token = localStorage.getItem('token');
-      const response = await axios.post('/api/benefices', beneficeData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await beneficeService.createBenefice(beneficeData);
 
       toast({
         title: "Succès",
@@ -231,7 +220,7 @@ const ProfitCalculator: React.FC<ProfitCalculatorProps> = ({
       });
 
       await loadBeneficesData();
-      console.log('✅ Calcul de bénéfice sauvegardé:', response.data);
+      console.log('✅ Calcul de bénéfice sauvegardé:', response);
     } catch (error) {
       console.error('❌ Erreur lors de la sauvegarde:', error);
       toast({
@@ -247,10 +236,7 @@ const ProfitCalculator: React.FC<ProfitCalculatorProps> = ({
   // Supprimer un calcul de bénéfice
   const handleDelete = async (id: string) => {
     try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`/api/benefices/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await beneficeService.deleteBenefice(id);
 
       toast({
         title: "Succès",

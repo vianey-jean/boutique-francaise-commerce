@@ -1,66 +1,45 @@
 
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from '@/components/ui/toaster';
-import { AuthProvider } from '@/contexts/AuthContext';
-import { ThemeProvider } from '@/contexts/ThemeContext';
-import { AppProvider } from '@/contexts/AppContext';
-import { ErrorBoundary } from '@/components/common/ErrorBoundary';
-import { RealtimeWrapper } from '@/components/common/RealtimeWrapper';
-
-import HomePage from '@/pages/HomePage';
-import AboutPage from '@/pages/AboutPage';
-import ContactPage from '@/pages/ContactPage';
-import LoginPage from '@/pages/LoginPage';
-import RegisterPage from '@/pages/RegisterPage';
-import ResetPasswordPage from '@/pages/ResetPasswordPage';
-import DashboardPage from '@/pages/DashboardPage';
-import TendancesPage from '@/pages/TendancesPage';
-import NotFound from '@/pages/NotFound';
-
-import './App.css';
-
-// Create a client
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router } from 'react-router-dom';
+import { ThemeProvider } from "@/components/theme-provider"
+import { Toaster } from "@/components/ui/sonner"
+import Index from './pages/Index';
+import Navbar from './components/Navbar';
+import Footer from './components/Footer';
+import AutoLogout from './components/AutoLogout';
+import ScrollToTop from './components/ScrollToTop';
+import { AuthProvider } from './contexts/AuthContext';
+import { AdvancedNotificationService } from './services/AdvancedNotificationService';
 
 function App() {
+  // Initialize advanced notifications
+  useEffect(() => {
+    AdvancedNotificationService.initializeNotifications();
+    
+    // Cleanup on unmount
+    return () => {
+      AdvancedNotificationService.clearAllTimers();
+    };
+  }, []);
+
   return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
-          <AuthProvider>
-            <AppProvider>
-              <RealtimeWrapper>
-                <div className="App">
-                  <Router>
-                    <Routes>
-                      <Route path="/" element={<HomePage />} />
-                      <Route path="/about" element={<AboutPage />} />
-                      <Route path="/contact" element={<ContactPage />} />
-                      <Route path="/login" element={<LoginPage />} />
-                      <Route path="/register" element={<RegisterPage />} />
-                      <Route path="/reset-password" element={<ResetPasswordPage />} />
-                      <Route path="/dashboard" element={<DashboardPage />} />
-                      <Route path="/tendances" element={<TendancesPage />} />
-                      <Route path="/404" element={<NotFound />} />
-                      <Route path="*" element={<Navigate to="/404" replace />} />
-                    </Routes>
-                  </Router>
-                  <Toaster />
-                </div>
-              </RealtimeWrapper>
-            </AppProvider>
-          </AuthProvider>
-        </ThemeProvider>
-      </QueryClientProvider>
-    </ErrorBoundary>
+    <AuthProvider>
+      <ThemeProvider defaultTheme="system" storageKey="vite-react-theme">
+        <Router
+          future={{
+            v7_startTransition: true,
+            v7_relativeSplatPath: true
+          }}
+        >
+          <Navbar />
+          <Index />
+          <Footer />
+          <AutoLogout />
+          <ScrollToTop />
+          <Toaster />
+        </Router>
+      </ThemeProvider>
+    </AuthProvider>
   );
 }
 

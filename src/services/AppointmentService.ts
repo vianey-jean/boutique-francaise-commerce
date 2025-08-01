@@ -258,6 +258,29 @@ export const AppointmentService = {
   },
 
   /**
+   * Récupère les rendez-vous par plage de dates
+   * @param startDate - Date de début (YYYY-MM-DD)
+   * @param endDate - Date de fin (YYYY-MM-DD)
+   * @returns Promise<Appointment[]> Rendez-vous dans la plage
+   */
+  getAppointmentsByDateRange: async (startDate: string, endDate: string): Promise<Appointment[]> => {
+    try {
+      const currentUser = AuthService.getCurrentUser();
+      if (!currentUser) return [];
+
+      const response = await api.get(`/appointments/week/${startDate}/${endDate}`, {
+        headers: { 'user-id': currentUser.id.toString() }
+      });
+
+      // Filtrer seulement les rendez-vous validés pour l'affichage du calendrier
+      const appointments = response.data.appointments || [];
+      return appointments.filter((appointment: Appointment) => appointment.statut === 'validé');
+    } catch (error) {
+      return [];
+    }
+  },
+
+  /**
    * Génère les jours de la semaine courante pour l'affichage calendrier
    * Fonction pure qui ne dépend que de la date courante
    * @returns Array des jours avec métadonnées

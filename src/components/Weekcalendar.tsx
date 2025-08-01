@@ -75,7 +75,10 @@ const WeekCalendar = ({
   const fetchAppointments = async () => {
     try {
       setLoading(true);
-      const data = await AppointmentService.getCurrentWeekAppointments();
+      // Charger tous les rendez-vous de la semaine sélectionnée
+      const startDate = format(startOfCurrentWeek, 'yyyy-MM-dd');
+      const endDate = format(addDays(startOfCurrentWeek, 6), 'yyyy-MM-dd');
+      const data = await AppointmentService.getAppointmentsByDateRange(startDate, endDate);
       setAppointments(data);
     } catch (error) {
       console.error('Erreur lors du chargement des rendez-vous:', error);
@@ -116,23 +119,17 @@ const WeekCalendar = ({
       
       // Vérifier si la date ou l'heure a changé
       if (draggedAppointment.date !== newDate || draggedAppointment.heure !== newHour) {
-        console.log('Updating appointment position');
+        console.log('Opening edit form for dropped appointment');
         
-        try {
-          const updatedAppointment = {
-            ...draggedAppointment,
-            date: newDate,
-            heure: newHour
-          };
-
-          const success = await AppointmentService.update(updatedAppointment);
-          
-          if (success) {
-            console.log('Appointment updated successfully');
-            await fetchAppointments();
-          }
-        } catch (error) {
-          console.error('Error updating appointment:', error);
+        // Ouvrir le formulaire de modification avec la nouvelle date/heure
+        const appointmentWithNewDateTime = {
+          ...draggedAppointment,
+          date: newDate,
+          heure: newHour
+        };
+        
+        if (onEditAppointment) {
+          onEditAppointment(appointmentWithNewDateTime);
         }
       }
     }

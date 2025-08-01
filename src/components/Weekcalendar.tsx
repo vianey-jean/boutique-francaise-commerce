@@ -125,7 +125,8 @@ const WeekCalendar = ({
         const appointmentWithNewDateTime = {
           ...draggedAppointment,
           date: newDate,
-          heure: newHour
+          heure: newHour,
+          _isDragAndDrop: true // Marquer comme drag and drop
         };
         
         if (onEditAppointment) {

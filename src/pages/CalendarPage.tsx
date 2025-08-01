@@ -22,6 +22,7 @@ const CalendarPage: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [refreshKey, setRefreshKey] = useState(0);
+  const [isDragAndDrop, setIsDragAndDrop] = useState(false);
 
   const handleAppointmentClick = (appointment: Appointment) => {
     setSelectedAppointment(appointment);
@@ -35,6 +36,8 @@ const CalendarPage: React.FC = () => {
   const handleEdit = (appointment: Appointment) => {
     setSelectedAppointment(appointment);
     setShowAppointmentDetails(false);
+    // Détecter si c'est un drag and drop
+    setIsDragAndDrop(!!(appointment as any)._isDragAndDrop);
     setShowEditForm(true);
   };
 
@@ -239,14 +242,17 @@ const CalendarPage: React.FC = () => {
             <AppointmentForm
               mode="edit"
               appointment={selectedAppointment}
+              disableDate={isDragAndDrop}
               onSuccess={() => {
                 setRefreshKey(prev => prev + 1);
                 setShowEditForm(false);
                 setSelectedAppointment(null);
+                setIsDragAndDrop(false);
               }}
               onCancel={() => {
                 setShowEditForm(false);
                 setSelectedAppointment(null);
+                setIsDragAndDrop(false);
               }}
             />
           </AppointmentModal>

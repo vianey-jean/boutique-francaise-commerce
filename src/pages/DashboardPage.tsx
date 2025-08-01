@@ -71,7 +71,12 @@ const DashboardPage = () => {
     console.log('Opening edit modal', appointment);
     if (appointment) {
       setActiveAppointment(appointment);
-      setOriginalAppointment(null);
+      // Si c'est un drag and drop, marquer comme tel pour fixer la date
+      if ((appointment as any)._isDragAndDrop) {
+        setOriginalAppointment(appointment);
+      } else {
+        setOriginalAppointment(null);
+      }
       setSelectedDate(null);
       setIsEditModalOpen(false);
       setShowAppointmentDetails(false);

@@ -29,6 +29,7 @@ const Navbar = () => {
   const navItems: NavItem[] = [
     { name: 'Accueil', path: '/', icon: Home },
     { name: 'Dashbord', path: '/dashboard', icon: Calendar, protected: true },
+    { name: 'Premium', path: '/premium-dashboard', icon: Crown, protected: true },
     { name: 'Calendrier', path: '/calendar', icon: CalendarDays, protected: true },
     { name: 'Clients', path: '/clients', icon: Users, protected: true },
     { name: 'Àpropos', path: '/about', icon: Info },

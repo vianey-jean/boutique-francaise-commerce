@@ -8,6 +8,7 @@ import ForgotPasswordPage from './ForgotPasswordPage';
 import AboutPage from './AboutPage';
 import ContactPage from './ContactPage';
 import DashboardPage from './DashboardPage';
+import PremiumDashboardPage from './PremiumDashboardPage';
 import NotFoundPage from './NotFoundPage';
 import ClientsPage from './ClientsPage';
 import CalendarPage from './CalendarPage';
@@ -44,6 +45,14 @@ const Index = () => {
         element={
           <ProtectedRoute>
             <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/premium-dashboard"
+        element={
+          <ProtectedRoute>
+            <PremiumDashboardPage />
           </ProtectedRoute>
         }
       />

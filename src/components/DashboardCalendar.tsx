@@ -362,14 +362,14 @@ const DashboardCalendar: React.FC<DashboardCalendarProps> = ({
                                   <button
                                     onClick={(e) => handleEditClick(appointment, e)}
                                     className="w-4 h-4 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110"
-                                    title="Modifier"
+                                    title="Modifier ce rendez-vous"
                                   >
                                     <Edit className="w-2 h-2" />
                                   </button>
                                   <button
                                     onClick={(e) => handleDeleteClick(appointment, e)}
                                     className="w-4 h-4 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110"
-                                    title="Supprimer"
+                                    title="Supprimer ce rezndez-vous"
                                   >
                                     <Trash2 className="w-2 h-2" />
                                   </button>

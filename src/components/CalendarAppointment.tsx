@@ -184,7 +184,7 @@ const CalendarAppointment = ({
             <button
               onClick={handleEdit}
               className="w-8 h-8 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 premium-shadow"
-              title="Modifier"
+              title="Modifier ce rendez-vous"
             >
               <Edit className="w-4 h-4" />
             </button>
@@ -193,7 +193,7 @@ const CalendarAppointment = ({
             <button
               onClick={handleDelete}
               className="w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 premium-shadow"
-              title="Supprimer"
+              title="Supprimer ce rendez-vous"
             >
               <Trash2 className="w-4 h-4" />
             </button>

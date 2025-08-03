@@ -1,4 +1,3 @@
-
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import WeekCalendar from '@/components/Weekcalendar';
@@ -35,7 +34,7 @@ const HomePage = () => {
   };
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 overflow-hidden mt-[80px]">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 overflow-hidden mt-[80px] lg:mt-[120px]">
       {/* Éléments décoratifs d'arrière-plan */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
         <div className="absolute top-20 left-10 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
@@ -43,7 +42,7 @@ const HomePage = () => {
         <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse delay-2000"></div>
       </div>
 
-      <div className="container mx-auto px-4 py-12 relative">
+      <div className="container mx-auto px-4 py-12 lg:py-16 relative">
         <div className=" mx-auto">
           {/* Section héro modernisée */}
           <div className="text-center mb-16 animate-fade-in">

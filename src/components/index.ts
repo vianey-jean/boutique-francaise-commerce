@@ -7,6 +7,7 @@ export { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 export { Input } from './ui/input';
 export { Skeleton } from './ui/skeleton';
 export { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
+export { ThemeToggle } from './ui/theme-toggle';
 
 // Exports des composants personnalisés
 export { default as AppointmentDetails } from './AppointmentDetails';
@@ -19,3 +20,9 @@ export { default as WeekCalendar } from './Weekcalendar';
 export { default as DashboardCalendar } from './DashboardCalendar';
 export { default as PasswordStrengthIndicator } from './PasswordStrengthIndicator';
 export { default as ScrollToTop } from './ScrollToTop';
+
+// Exports des nouveaux composants dashboard
+export { default as DashboardHeader } from './dashboard/DashboardHeader';
+export { default as DashboardBackground } from './dashboard/DashboardBackground';
+export { default as PremiumCalendarSection } from './dashboard/PremiumCalendarSection';
+export { default as AppointmentModalsManager } from './dashboard/modals/AppointmentModalsManager';

@@ -29,6 +29,7 @@ app.use('/api/appointments', require('./routes/appointements'));
 app.use('/api/clients', require('./routes/clients'));
 app.use('/api/contact', require('./routes/contact'));
 app.use('/api/sms', require('./routes/sms'));
+app.use('/api/messages', require('./routes/messages'));
 
 // Route de base pour vérifier si le serveur fonctionne
 app.get('/', (req, res) => {

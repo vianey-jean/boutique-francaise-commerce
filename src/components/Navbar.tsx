@@ -26,14 +26,18 @@ const Navbar = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const navItems: NavItem[] = [
+  const publicNavItems: NavItem[] = [
     { name: 'Accueil', path: '/', icon: Home },
-    { name: 'Dashbord', path: '/dashboard', icon: Calendar, protected: true },
-    { name: 'Calendrier', path: '/calendar', icon: CalendarDays, protected: true },
-    { name: 'Clients', path: '/clients', icon: Users, protected: true },
-    { name: 'Àpropos', path: '/about', icon: Info },
     { name: 'Contact', path: '/contact', icon: Mail }
   ];
+
+  const privateNavItems: NavItem[] = [
+    { name: 'Dashboard', path: '/dashboard', icon: Calendar },
+    { name: 'Calendrier', path: '/calendar', icon: CalendarDays },
+    { name: 'Clients', path: '/clients', icon: Users }
+  ];
+
+  const navItems = user ? privateNavItems : publicNavItems;
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -94,21 +98,19 @@ const Navbar = () => {
           {/* Navigation Desktop */}
           <div className="hidden lg:flex items-center space-x-2">
             {navItems.map((item) => (
-              (!item.protected || user) && (
-                <NavLink
-                  key={item.name}
-                  to={item.path}
-                  className={({ isActive }) =>
-                    cn(
-                      "py-2 px-4 rounded-lg transition-all duration-200 hover:bg-white/20 hover:backdrop-blur-sm flex items-center space-x-2 text-white/90 hover:text-white premium-hover",
-                      isActive ? "bg-white/20 text-white font-semibold" : ""
-                    )
-                  }
-                >
-                  <item.icon className="w-5 h-5 text-white" />
-                  <span className="text-white font-bold">{item.name}</span>
-                </NavLink>
-              )
+              <NavLink
+                key={item.name}
+                to={item.path}
+                className={({ isActive }) =>
+                  cn(
+                    "py-2 px-4 rounded-lg transition-all duration-200 hover:bg-white/20 hover:backdrop-blur-sm flex items-center space-x-2 text-white/90 hover:text-white premium-hover",
+                    isActive ? "bg-white/20 text-white font-semibold" : ""
+                  )
+                }
+              >
+                <item.icon className="w-5 h-5 text-white" />
+                <span className="text-white font-bold">{item.name}</span>
+              </NavLink>
             ))}
           </div>
 
@@ -128,10 +130,24 @@ const Navbar = () => {
 <div className="hidden lg:flex items-center space-x-4">
   {user ? (
     <>
-      <div className="flex items-center gap-2 py-2 px-4 rounded-lg text-white/90 font-medium">
-        <User className="w-5 h-5" />
-        <span className="text-green-300 font-bold">{user.prenom} {user.nom}</span>
+      <div className="relative group">
+        <div className="flex items-center gap-2 py-2 px-4 rounded-lg text-white/90 font-medium cursor-pointer hover:bg-white/10 transition-all">
+          <User className="w-5 h-5" />
+          <span className="text-green-300 font-bold">{user.prenom} {user.nom}</span>
+        </div>
+        
+        {/* Menu déroulant Messages */}
+        <div className="absolute top-full right-0 mt-1 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-white/20 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+          <Link 
+            to="/messages" 
+            className="flex items-center gap-2 px-4 py-3 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors"
+          >
+            <Mail className="w-4 h-4" />
+            Messages
+          </Link>
+        </div>
       </div>
+      
       <button 
         onClick={logout} 
         className="py-2 px-4 rounded-lg bg-red-500/80 text-white border border-red-400/30 hover:bg-red-500/60 transition-all duration-200 font-medium"
@@ -147,12 +163,6 @@ const Navbar = () => {
       >
         Connexion
       </Link>
-      <Link 
-        to="/inscription" 
-        className="py-2 px-4 rounded-lg bg-white/20 text-white hover:bg-white/30 transition-all duration-200 font-medium backdrop-blur-sm border border-white/30"
-      >
-        Inscription
-      </Link>
     </>
   )}
 </div>
@@ -164,28 +174,38 @@ const Navbar = () => {
           <div className="lg:hidden mt-4 pb-4 border-t border-white/20 pt-4">
             <div className="flex flex-col space-y-2">
               {navItems.map((item) => (
-                (!item.protected || user) && (
-                  <NavLink
-                    key={item.name}
-                    to={item.path}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className={({ isActive }) =>
-                      cn(
-                        "py-3 px-4 rounded-lg transition-all duration-200 hover:bg-white/20 flex items-center space-x-3 text-white/90 hover:text-white",
-                        isActive ? "bg-white/20 text-white font-semibold" : ""
-                      )
-                    }
-                  >
-                    <item.icon className="w-5 h-5" />
-                    <span className="font-medium">{item.name}</span>
-                  </NavLink>
-                )
+                <NavLink
+                  key={item.name}
+                  to={item.path}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={({ isActive }) =>
+                    cn(
+                      "py-3 px-4 rounded-lg transition-all duration-200 hover:bg-white/20 flex items-center space-x-3 text-white/90 hover:text-white",
+                      isActive ? "bg-white/20 text-white font-semibold" : ""
+                    )
+                  }
+                >
+                  <item.icon className="w-5 h-5" />
+                  <span className="font-medium">{item.name}</span>
+                </NavLink>
               ))}
               
               {/* Auth Section Mobile */}
               <div className="mt-4 pt-4 border-t border-white/20">
                 {user ? (
                   <>
+                    <div className="mb-3 py-2 px-4 text-white/90 font-medium">
+                      <span className="text-green-300 font-bold">{user.prenom} {user.nom}</span>
+                    </div>
+                    
+                    <Link 
+                      to="/messages"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="block w-full py-3 px-4 rounded-lg hover:bg-white/20 text-white/90 hover:text-white font-medium transition-all duration-200 mb-2 flex items-center gap-2"
+                    >
+                      <Mail className="w-4 h-4" />
+                      Messages
+                    </Link>
                     
                     <button 
                       onClick={() => {
@@ -205,13 +225,6 @@ const Navbar = () => {
                       className="block w-full py-3 px-4 rounded-lg hover:bg-white/20 text-center text-white/90 hover:text-white font-medium transition-all duration-200"
                     >
                       Connexion
-                    </Link>
-                    <Link 
-                      to="/inscription"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="block w-full py-3 px-4 rounded-lg bg-white/20 text-center text-white hover:bg-white/30 transition-all duration-200 font-medium border border-white/30"
-                    >
-                      Inscription
                     </Link>
                   </div>
                 )}

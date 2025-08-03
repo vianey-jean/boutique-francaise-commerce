@@ -15,6 +15,7 @@ import MissionPage from './MissionPage';
 import PrivacyPage from './PrivacyPage';
 import TermsPage from './TermsPage';
 import SupportPage from './SupportPage';
+import MessagesPage from './MessagesPage';
 import { useAuth } from '@/contexts/AuthContext';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -60,6 +61,14 @@ const Index = () => {
         element={
           <ProtectedRoute>
             <ClientsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/messages"
+        element={
+          <ProtectedRoute>
+            <MessagesPage />
           </ProtectedRoute>
         }
       />

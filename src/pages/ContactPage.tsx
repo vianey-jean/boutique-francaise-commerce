@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Mail, Phone, MapPin, Send, MessageCircle, Clock } from 'lucide-react';
 import { ContactService } from '@/services/ContactService';
+import { MessageService } from '@/services/MessageService';
 import { toast } from 'sonner';
 
 const ContactPage = () => {
@@ -29,7 +30,17 @@ const ContactPage = () => {
     setIsSubmitting(true);
 
     try {
+      // Envoyer le message via le service de contact (pour email)
       await ContactService.send(formData);
+      
+      // Enregistrer le message dans la base de données pour les messages internes
+      await MessageService.sendContactMessage({
+        nom: formData.nom,
+        email: formData.email,
+        sujet: formData.sujet,
+        message: formData.message
+      });
+      
       toast.success('Message envoyé avec succès!', {
         style: {
           background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',

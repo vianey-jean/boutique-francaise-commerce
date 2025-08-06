@@ -19,7 +19,20 @@ const DashboardCalendar: React.FC<DashboardCalendarProps> = ({
   onEditAppointment
 }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const weekDays = AppointmentService.getWeekDays();
+  // Calculer les jours de la semaine basés sur currentDate
+  const { startOfWeek, addDays } = require('date-fns');
+  const startOfCurrentWeek = startOfWeek(currentDate, { weekStartsOn: 1 });
+  const weekDays = Array.from({ length: 7 }, (_, i) => {
+    const date = addDays(startOfCurrentWeek, i);
+    const dateStr = format(date, 'yyyy-MM-dd');
+    return {
+      fullDate: date,
+      dayName: format(date, 'EEEE', { locale: fr }),
+      dayNumber: format(date, 'd'),
+      month: format(date, 'MMMM', { locale: fr }),
+      isToday: format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
+    };
+  });
   const hours = AppointmentService.getHours();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
@@ -31,7 +44,7 @@ const DashboardCalendar: React.FC<DashboardCalendarProps> = ({
   
   useEffect(() => {
     fetchAppointments();
-  }, []);
+  }, [currentDate]);
   
   const previousWeek = () => {
     setCurrentDate(subWeeks(currentDate, 1));
@@ -43,7 +56,13 @@ const DashboardCalendar: React.FC<DashboardCalendarProps> = ({
   
   const fetchAppointments = async () => {
     try {
-      const data = await AppointmentService.getCurrentWeekAppointments();
+      setLoading(true);
+      // Utiliser la date sélectionnée pour récupérer les rendez-vous de la semaine
+      const { startOfWeek, addDays, format: formatDate } = await import('date-fns');
+      const startOfCurrentWeek = startOfWeek(currentDate, { weekStartsOn: 1 });
+      const startDate = formatDate(startOfCurrentWeek, 'yyyy-MM-dd');
+      const endDate = formatDate(addDays(startOfCurrentWeek, 6), 'yyyy-MM-dd');
+      const data = await AppointmentService.getAppointmentsByDateRange(startDate, endDate);
       setAppointments(data);
     } catch (error) {
       console.error('Error fetching appointments:', error);

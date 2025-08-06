@@ -1,3 +1,42 @@
+/**
+ * ============================================================================
+ * PAGE D'ACCUEIL - LANDING PAGE DE L'APPLICATION
+ * ============================================================================
+ * 
+ * Cette page sert de vitrine principale pour l'application Riziky Agendas.
+ * Elle présente les fonctionnalités clés et offre un aperçu du calendrier.
+ * 
+ * FONCTIONNALITÉS PRINCIPALES :
+ * - Section héro avec présentation de l'application
+ * - Statistiques visuelles avec icônes animées
+ * - Aperçu du calendrier hebdomadaire interactif
+ * - Boutons d'action conditionnels selon l'authentification
+ * - Design moderne avec effets de parallaxe et gradients
+ * 
+ * SECTIONS PRINCIPALES :
+ * 1. Hero Section : Titre principal avec slogan et badges premium
+ * 2. Features Grid : Cards avec fonctionnalités (Gestion, Collaboration, Rappels)
+ * 3. CTA Buttons : Appels à l'action pour inscription/connexion
+ * 4. Calendar Preview : Aperçu fonctionnel du calendrier
+ * 
+ * INTERACTIONS :
+ * - Clic sur rendez-vous affiche un toast avec détails
+ * - Animations au survol des cards
+ * - Redirection vers inscription/connexion
+ * - Calendrier en lecture seule (preview mode)
+ * 
+ * DESIGN SYSTÈME :
+ * - Gradients modernes et arrière-plans animés
+ * - Cards avec glass-morphism effect
+ * - Animations CSS avec delays et transitions smooth
+ * - Layout responsive avec grid system
+ * - Couleurs cohérentes avec la charte graphique
+ * 
+ * @author Riziky Agendas Team
+ * @version 1.0.0
+ * @lastModified 2024
+ */
+
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import WeekCalendar from '@/components/Weekcalendar';

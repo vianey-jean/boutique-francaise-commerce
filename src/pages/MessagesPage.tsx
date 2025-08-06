@@ -1,20 +1,83 @@
+
+/**
+ * ============================================================================
+ * PAGE DE GESTION DES MESSAGES - ADMINISTRATION DES CONTACTS
+ * ============================================================================
+ * 
+ * Cette page permet aux administrateurs de consulter, gérer et répondre
+ * aux messages reçus via le formulaire de contact.
+ * 
+ * FONCTIONNALITÉS PRINCIPALES :
+ * - Affichage de tous les messages reçus
+ * - Marquage des messages comme lu/non lu
+ * - Suppression de messages avec confirmation
+ * - Détail complet des messages dans une modale
+ * - Notifications en temps réel via WebSocket
+ * - Interface responsive et moderne
+ * 
+ * GESTION DES MESSAGES :
+ * - Liste paginée avec état lu/non lu
+ * - Badge de compteur pour messages non lus
+ * - Détails complets : nom, email, sujet, message, date
+ * - Actions : Marquer lu/non lu, Supprimer
+ * - Synchronisation temps réel avec WebSocket
+ * 
+ * FONCTIONNALITÉS AVANCÉES :
+ * - Filtrage par statut (lu/non lu)
+ * - Recherche dans les messages
+ * - Export des données (futur)
+ * - Statistiques des contacts
+ * 
+ * SÉCURITÉ :
+ * - Accès réservé aux administrateurs
+ * - Confirmation avant suppression
+ * - Validation des actions côté serveur
+ * - Protection contre les actions non autorisées
+ * 
+ * TEMPS RÉEL :
+ * - Mise à jour automatique via WebSocket
+ * - Notifications instantanées de nouveaux messages
+ * - Synchronisation entre plusieurs sessions admin
+ * - Compteur de non lus en temps réel
+ * 
+ * @author Riziky Agendas Team
+ * @version 1.0.0
+ * @lastModified 2024
+ */
+
 import React, { useState, useEffect } from 'react';
 import { MessageService, ContactMessage } from '@/services/MessageService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Mail, MailOpen, Calendar, User } from 'lucide-react';
+import { Mail, MailOpen, Calendar, User, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useUnreadMessages } from '@/hooks/useUnreadMessages';
+import ConfirmDeleteMessageModal from '@/components/ConfirmDeleteMessageModal';
 
 const MessagesPage = () => {
+  const { messages: messagesFromWebSocket, refreshUnreadCount } = useUnreadMessages();
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [selectedMessage, setSelectedMessage] = useState<ContactMessage | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Synchroniser avec les données WebSocket
+  useEffect(() => {
+    if (messagesFromWebSocket.length > 0 || messagesFromWebSocket.length === 0) {
+      setMessages(messagesFromWebSocket);
+      setLoading(false);
+    }
+  }, [messagesFromWebSocket]);
 
   useEffect(() => {
-    loadMessages();
+    // Chargement initial si WebSocket n'a pas encore de données
+    if (messages.length === 0) {
+      loadMessages();
+    }
   }, []);
 
   const loadMessages = async () => {
@@ -36,13 +99,54 @@ const MessagesPage = () => {
     if (!message.lu) {
       const success = await MessageService.markAsRead(message.id);
       if (success) {
+        // Les données seront mises à jour automatiquement via WebSocket
+        // Mais on peut aussi mettre à jour localement pour une réponse immédiate
         setMessages(prev => 
           prev.map(msg => 
             msg.id === message.id ? { ...msg, lu: true } : msg
           )
         );
+        setSelectedMessage(prev => prev ? { ...prev, lu: true } : null);
       }
     }
+  };
+
+  const handleMarkAsUnread = async () => {
+    if (!selectedMessage) return;
+    
+    const success = await MessageService.markAsUnread(selectedMessage.id);
+    if (success) {
+      // Les données seront mises à jour automatiquement via WebSocket
+      setMessages(prev => 
+        prev.map(msg => 
+          msg.id === selectedMessage.id ? { ...msg, lu: false } : msg
+        )
+      );
+      setSelectedMessage(prev => prev ? { ...prev, lu: false } : null);
+      toast.success('Message marqué comme non lu');
+    } else {
+      toast.error('Erreur lors de la mise à jour du message');
+    }
+  };
+
+  const handleDeleteMessage = async () => {
+    if (!selectedMessage) return;
+    
+    setIsDeleting(true);
+    const success = await MessageService.deleteMessage(selectedMessage.id);
+    
+    if (success) {
+      // Les données seront mises à jour automatiquement via WebSocket
+      setMessages(prev => prev.filter(msg => msg.id !== selectedMessage.id));
+      setIsDeleteModalOpen(false);
+      setIsDialogOpen(false);
+      setSelectedMessage(null);
+      toast.success('Message supprimé avec succès');
+    } else {
+      toast.error('Erreur lors de la suppression du message');
+    }
+    
+    setIsDeleting(false);
   };
 
   const formatDate = (dateString: string) => {
@@ -148,7 +252,7 @@ const MessagesPage = () => {
         )}
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl" aria-describedby="message-dialog-description">
             {selectedMessage && (
               <>
                 <DialogHeader>
@@ -157,7 +261,7 @@ const MessagesPage = () => {
                     {selectedMessage.sujet}
                   </DialogTitle>
                 </DialogHeader>
-                <div className="space-y-4">
+                <div className="space-y-4" id="message-dialog-description">
                   <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
                     <div>
                       <label className="text-sm font-medium text-muted-foreground">De:</label>
@@ -178,7 +282,26 @@ const MessagesPage = () => {
                       <p className="whitespace-pre-wrap">{selectedMessage.message}</p>
                     </div>
                   </div>
-                  <div className="flex justify-end">
+                  <div className="flex justify-between">
+                    <div className="flex gap-2">
+                      {selectedMessage.lu && (
+                        <Button 
+                          variant="outline" 
+                          onClick={handleMarkAsUnread}
+                          className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
+                        >
+                          Marquer comme non lu
+                        </Button>
+                      )}
+                      <Button
+                        variant="outline"
+                        onClick={() => setIsDeleteModalOpen(true)}
+                        className="bg-red-50 hover:bg-red-100 text-red-700 border-red-200 flex items-center gap-2"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Supprimer
+                      </Button>
+                    </div>
                     <Button onClick={() => setIsDialogOpen(false)}>
                       Fermer
                     </Button>
@@ -188,6 +311,16 @@ const MessagesPage = () => {
             )}
           </DialogContent>
         </Dialog>
+
+        {selectedMessage && (
+          <ConfirmDeleteMessageModal
+            isOpen={isDeleteModalOpen}
+            onClose={() => setIsDeleteModalOpen(false)}
+            onConfirm={handleDeleteMessage}
+            message={selectedMessage}
+            isDeleting={isDeleting}
+          />
+        )}
       </div>
     </div>
   );

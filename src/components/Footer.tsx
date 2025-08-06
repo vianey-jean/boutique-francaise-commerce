@@ -1,4 +1,44 @@
 
+/**
+ * ============================================================================
+ * PIED DE PAGE PRINCIPAL - FOOTER DE L'APPLICATION
+ * ============================================================================
+ * 
+ * Ce composant affiche le pied de page de l'application avec les liens de navigation,
+ * informations légales et branding de l'application Riziky Agendas.
+ * 
+ * SECTIONS DU FOOTER :
+ * 1. Logo et Description : Branding principal avec slogan
+ * 2. Liens Rapides : Navigation vers les pages principales (Dashboard, Calendar, Clients)
+ * 3. À Propos : Liens vers pages informatives (Mission, About, Contact)
+ * 4. Légal & Support : Liens vers pages légales et support
+ * 5. Copyright : Mentions légales et droits d'auteur
+ * 
+ * FONCTIONNALITÉS :
+ * - Navigation organisée en 4 colonnes responsives
+ * - Icônes Lucide pour améliorer la lisibilité
+ * - Effets de survol sur tous les liens
+ * - Design adaptatif (mobile, tablette, desktop)
+ * - Gradient background cohérent avec le header
+ * 
+ * DESIGN :
+ * - Gradient background bleu-violet cohérent
+ * - Grid layout responsive (1-4 colonnes selon écran)
+ * - Icônes contextuelles pour chaque lien
+ * - Transitions CSS douces sur interactions
+ * - Typographie hiérarchisée et lisible
+ * 
+ * ACCESSIBILITÉ :
+ * - Liens avec texte descriptif
+ * - Contraste de couleurs respecté
+ * - Navigation au clavier possible
+ * - Structure sémantique HTML
+ * 
+ * @author Riziky Agendas Team
+ * @version 1.0.0
+ * @lastModified 2024
+ */
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Crown, Heart, Shield, FileText, HelpCircle, Target } from 'lucide-react';

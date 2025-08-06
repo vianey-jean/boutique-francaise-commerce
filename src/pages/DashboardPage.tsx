@@ -1,4 +1,45 @@
 
+/**
+ * ============================================================================
+ * TABLEAU DE BORD PRINCIPAL - PAGE D'ACCUEIL ADMINISTRATEUR
+ * ============================================================================
+ * 
+ * Ce fichier contient le tableau de bord principal de l'application Riziky Agendas.
+ * Il sert de hub central pour toutes les fonctionnalités de gestion d'entreprise.
+ * 
+ * FONCTIONNALITÉS PRINCIPALES :
+ * - Vue d'ensemble des rendez-vous avec calendrier interactif
+ * - Gestion des ventes et produits avec interface premium
+ * - Tableau de bord exécutif avec analytics avancées
+ * - Liste complète des produits avec CRUD operations
+ * - Notifications en temps réel des messages non lus
+ * - Statistiques clients et rendez-vous en temps réel
+ * - Interface responsive et moderne
+ * 
+ * ARCHITECTURE MODULAIRE :
+ * - Composants séparés pour chaque section (Calendar, Stats, Products)
+ * - Hooks personnalisés pour la gestion d'état (useAuth, useUnreadMessages, useDashboardState)
+ * - Modales réutilisables pour les actions CRUD
+ * - Services API centralisés
+ * 
+ * DESIGN SYSTÈME :
+ * - Utilisation de Tabs pour l'organisation du contenu
+ * - Cards pour la présentation des données
+ * - Badges pour les indicateurs visuels
+ * - Animations et effets de gradient premium
+ * - Icônes Lucide pour la cohérence visuelle
+ * 
+ * SÉCURITÉ ET PERFORMANCE :
+ * - Authentification requise pour l'accès
+ * - Lazy loading des composants lourds
+ * - Optimisation des re-renders avec useMemo
+ * - Gestion d'état locale avec useState
+ * 
+ * @author Riziky Agendas Team
+ * @version 1.0.0
+ * @lastModified 2024
+ */
+
 import { useState } from 'react';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardBackground from '@/components/dashboard/DashboardBackground';

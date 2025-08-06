@@ -1,4 +1,46 @@
 
+/**
+ * ============================================================================
+ * ROUTES API RENDEZ-VOUS - GESTION DES ENDPOINTS RENDEZ-VOUS (BACKEND)
+ * ============================================================================
+ * 
+ * Ce fichier définit toutes les routes API pour la gestion des rendez-vous.
+ * Il fournit une interface RESTful complète avec sécurité et validation.
+ * 
+ * ENDPOINTS DISPONIBLES :
+ * - GET /api/appointments : Liste tous les rendez-vous de l'utilisateur
+ * - GET /api/appointments/:id : Détails d'un rendez-vous spécifique
+ * - POST /api/appointments : Création d'un nouveau rendez-vous
+ * - PUT /api/appointments/:id : Modification d'un rendez-vous existant
+ * - DELETE /api/appointments/:id : Suppression d'un rendez-vous
+ * - GET /api/appointments/search : Recherche de rendez-vous
+ * - GET /api/appointments/week : Rendez-vous d'une semaine
+ * - POST /api/appointments/:id/notify : Notification par email
+ * 
+ * SÉCURITÉ :
+ * - Middleware d'authentification sur toutes les routes
+ * - Vérification des droits d'accès par utilisateur
+ * - Validation des données entrantes
+ * - Protection contre les accès non autorisés
+ * 
+ * FONCTIONNALITÉS AVANCÉES :
+ * - Recherche full-text avec paramètres
+ * - Filtrage par période (semaine)
+ * - Notifications email automatiques
+ * - Gestion des conflits de créneaux
+ * - Validation des formats de date/heure
+ * 
+ * INTÉGRATIONS :
+ * - Service email via Nodemailer
+ * - Modèle Appointment pour persistance
+ * - Middleware d'authentification custom
+ * - Gestion d'erreurs centralisée
+ * 
+ * @author Riziky Agendas Team
+ * @version 1.0.0
+ * @lastModified 2024
+ */
+
 const express = require('express');
 const router = express.Router();
 const Appointment = require('../models/Appointment');

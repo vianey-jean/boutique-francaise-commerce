@@ -1,7 +1,47 @@
 
+/**
+ * ============================================================================
+ * BARRE DE NAVIGATION PRINCIPALE - COMPOSANT HEADER
+ * ============================================================================
+ * 
+ * Ce composant gère la navigation principale de l'application Riziky Agendas.
+ * Il s'adapte automatiquement selon l'état d'authentification de l'utilisateur.
+ * 
+ * FONCTIONNALITÉS PRINCIPALES :
+ * - Navigation responsive avec menu mobile hamburger
+ * - Logo animé avec effets premium (couronne, étoiles, diamants)
+ * - Affichage conditionnel des menus selon l'authentification
+ * - Badge de notification pour les messages non lus
+ * - Menu déroulant utilisateur avec accès aux messages
+ * - Effets de scroll avec backdrop blur et transparence
+ * - Déconnexion avec confirmation
+ * 
+ * ÉTATS DE NAVIGATION :
+ * - Navigation publique : Accueil, Contact
+ * - Navigation privée : Dashboard, Calendrier, Clients
+ * - Accès direct aux messages avec compteur de non-lus
+ * 
+ * DESIGN PREMIUM :
+ * - Gradient background avec transparence
+ * - Logo animé avec rotation et effets de scale
+ * - Icônes Lucide pour la cohérence visuelle
+ * - Animations smooth et transitions CSS
+ * - Responsive design avec breakpoints
+ * 
+ * SÉCURITÉ :
+ * - Gestion d'état authentification via Context
+ * - Protection des routes privées
+ * - Déconnexion sécurisée avec nettoyage d'état
+ * 
+ * @author Riziky Agendas Team
+ * @version 1.0.0
+ * @lastModified 2024
+ */
+
 import React, { useState, useEffect } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 import { cn } from "@/lib/utils";
 import { Home, Calendar, Info, Mail, Users, CalendarDays, Crown, Menu, X, User, Diamond, Star, Sparkles } from 'lucide-react';
 
@@ -14,6 +54,7 @@ interface NavItem {
 
 const Navbar = () => {
   const { user, logout } = useAuth();
+  const { unreadCount } = useUnreadMessages();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -140,10 +181,15 @@ const Navbar = () => {
         <div className="absolute top-full right-0 mt-1 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-white/20 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
           <Link 
             to="/messages" 
-            className="flex items-center gap-2 px-4 py-3 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors"
+            className="flex items-center gap-2 px-4 py-3 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors relative"
           >
             <Mail className="w-4 h-4" />
             Messages
+            {unreadCount > 0 && (
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                {unreadCount}
+              </span>
+            )}
           </Link>
         </div>
       </div>
@@ -201,10 +247,15 @@ const Navbar = () => {
                     <Link 
                       to="/messages"
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className="block w-full py-3 px-4 rounded-lg hover:bg-white/20 text-white/90 hover:text-white font-medium transition-all duration-200 mb-2 flex items-center gap-2"
+                      className="block w-full py-3 px-4 rounded-lg hover:bg-white/20 text-white/90 hover:text-white font-medium transition-all duration-200 mb-2 flex items-center gap-2 relative"
                     >
                       <Mail className="w-4 h-4" />
                       Messages
+                      {unreadCount > 0 && (
+                        <span className="absolute right-4 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                          {unreadCount}
+                        </span>
+                      )}
                     </Link>
                     
                     <button 

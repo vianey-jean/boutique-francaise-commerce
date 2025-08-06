@@ -1,3 +1,4 @@
+
 export interface ContactMessage {
   id: string;
   nom: string;
@@ -8,12 +9,12 @@ export interface ContactMessage {
   lu: boolean;
 }
 
-export class MessageService {
-  private static readonly BASE_URL = 'http://localhost:3001/api';
+const BASE_URL = (import.meta as any).env.VITE_API_BASE_URL;
 
+export class MessageService {
   static async getAllMessages(): Promise<ContactMessage[]> {
     try {
-      const response = await fetch(`${this.BASE_URL}/messages`);
+      const response = await fetch(`${BASE_URL}/api/messages`);
       if (!response.ok) {
         throw new Error('Erreur lors de la récupération des messages');
       }
@@ -24,29 +25,9 @@ export class MessageService {
     }
   }
 
-  static async sendContactMessage(messageData: Omit<ContactMessage, 'id' | 'dateEnvoi' | 'lu'>): Promise<boolean> {
-    try {
-      const response = await fetch(`${this.BASE_URL}/messages`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...messageData,
-          dateEnvoi: new Date().toISOString(),
-          lu: false
-        })
-      });
-      return response.ok;
-    } catch (error) {
-      console.error('Erreur MessageService.sendContactMessage:', error);
-      return false;
-    }
-  }
-
   static async markAsRead(messageId: string): Promise<boolean> {
     try {
-      const response = await fetch(`${this.BASE_URL}/messages/${messageId}/mark-read`, {
+      const response = await fetch(`${BASE_URL}/api/messages/${messageId}/mark-read`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -55,6 +36,36 @@ export class MessageService {
       return response.ok;
     } catch (error) {
       console.error('Erreur MessageService.markAsRead:', error);
+      return false;
+    }
+  }
+
+  static async markAsUnread(messageId: string): Promise<boolean> {
+    try {
+      const response = await fetch(`${BASE_URL}/api/messages/${messageId}/mark-unread`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      return response.ok;
+    } catch (error) {
+      console.error('Erreur MessageService.markAsUnread:', error);
+      return false;
+    }
+  }
+
+  static async deleteMessage(messageId: string): Promise<boolean> {
+    try {
+      const response = await fetch(`${BASE_URL}/api/messages/${messageId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      return response.ok;
+    } catch (error) {
+      console.error('Erreur MessageService.deleteMessage:', error);
       return false;
     }
   }

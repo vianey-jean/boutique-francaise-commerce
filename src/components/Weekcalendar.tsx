@@ -67,7 +67,7 @@ const WeekCalendar = ({
     };
   });
 
-  // Charger les rendez-vous
+  // Charger les rendez-vous quand la semaine change
   useEffect(() => {
     fetchAppointments();
   }, [currentDate]);

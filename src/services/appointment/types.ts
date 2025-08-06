@@ -2,9 +2,9 @@
 import { ReactNode } from 'react';
 
 export interface Appointment {
-  lieu: ReactNode;
+  lieu?: string;
   id: number;
-  userId: number;
+  userId: number | string;
   statut?: string;
   nom?: string;
   prenom?: string;

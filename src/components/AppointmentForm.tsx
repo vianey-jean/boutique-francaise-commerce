@@ -121,7 +121,7 @@ const AppointmentForm = ({
       date: getDefaultDate(),
       heure: appointment?.heure || '09:00',
       duree: appointment?.duree ?? 60,
-      location: appointment?.location || appointment?.lieu || '',
+      location: (appointment?.location || appointment?.lieu || '') as string,
     },
   });
 
@@ -257,7 +257,7 @@ const AppointmentForm = ({
         }
       } else {
         const newAppointmentData: Omit<Appointment, 'id'> & { userId: string } = {
-          userId: currentUser.id,
+          userId: currentUser.id.toString(),
           nom: values.nom,
           prenom: values.prenom,
           dateNaissance: values.dateNaissance,

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { AppointmentService, Appointment } from '@/services/AppointmentService';
-import { addWeeks, format, subWeeks } from 'date-fns';
+import { addWeeks, format, subWeeks, startOfWeek, addDays } from 'date-fns';
 import { Calendar, Clock, Sparkles, Zap, Crown, Star, ChevronLeft, ChevronRight, Plus, Edit, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -20,7 +20,6 @@ const DashboardCalendar: React.FC<DashboardCalendarProps> = ({
 }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   // Calculer les jours de la semaine basés sur currentDate
-  const { startOfWeek, addDays } = require('date-fns');
   const startOfCurrentWeek = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const date = addDays(startOfCurrentWeek, i);
@@ -58,10 +57,9 @@ const DashboardCalendar: React.FC<DashboardCalendarProps> = ({
     try {
       setLoading(true);
       // Utiliser la date sélectionnée pour récupérer les rendez-vous de la semaine
-      const { startOfWeek, addDays, format: formatDate } = await import('date-fns');
       const startOfCurrentWeek = startOfWeek(currentDate, { weekStartsOn: 1 });
-      const startDate = formatDate(startOfCurrentWeek, 'yyyy-MM-dd');
-      const endDate = formatDate(addDays(startOfCurrentWeek, 6), 'yyyy-MM-dd');
+      const startDate = format(startOfCurrentWeek, 'yyyy-MM-dd');
+      const endDate = format(addDays(startOfCurrentWeek, 6), 'yyyy-MM-dd');
       const data = await AppointmentService.getAppointmentsByDateRange(startDate, endDate);
       setAppointments(data);
     } catch (error) {

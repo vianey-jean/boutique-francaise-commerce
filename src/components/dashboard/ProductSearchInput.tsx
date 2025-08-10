@@ -10,11 +10,13 @@ import { beneficeService } from '@/service/beneficeService';
 interface ProductSearchInputProps {
   onProductSelect: (product: Product) => void;
   selectedProduct?: Product | null;
+  context?: 'sale' | 'edit'; // 'sale' pour ajouter une vente, 'edit' pour modifier un produit
 }
 
 const ProductSearchInput: React.FC<ProductSearchInputProps> = ({ 
   onProductSelect,
-  selectedProduct 
+  selectedProduct,
+  context = 'sale' // Par défaut pour ajouter une vente
 }) => {
   const { products } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
@@ -63,10 +65,19 @@ const ProductSearchInput: React.FC<ProductSearchInputProps> = ({
         !benefices.some(benefice => benefice.productId === product.id)
       );
       
-      // Exclure les produits avec stock = 0 et trier par stock décroissant
-      filtered = filtered
-        .filter(product => product.quantity > 0)
-        .sort((a, b) => (b.quantity || 0) - (a.quantity || 0));
+      if (context === 'sale') {
+        // Pour ajouter une vente : exclure les produits avec stock = 0
+        filtered = filtered
+          .filter(product => product.quantity > 0)
+          .sort((a, b) => (b.quantity || 0) - (a.quantity || 0));
+      } else {
+        // Pour modifier un produit : montrer tous les produits mais stock > 0 en premier
+        filtered = filtered.sort((a, b) => {
+          if (a.quantity > 0 && b.quantity === 0) return -1;
+          if (a.quantity === 0 && b.quantity > 0) return 1;
+          return (b.quantity || 0) - (a.quantity || 0);
+        });
+      }
       
       setFilteredProducts(filtered);
       setShowDropdown(true);

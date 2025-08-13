@@ -27,35 +27,35 @@ const SalesOverviewSection: React.FC<SalesOverviewSectionProps> = ({
   const stats = [
     {
       title: 'Total ventes du mois',
-      value: formatEuro(salesData.totalRevenue),
+      value: formatEuro(isNaN(salesData?.totalRevenue) ? 0 : (salesData?.totalRevenue || 0)),
       icon: DollarSign,
       gradient: 'blue',
       description: 'Chiffre d\'affaires total'
     },
     {
       title: 'Bénéfices du mois',
-      value: formatEuro(salesData.totalProfit),
+      value: formatEuro(isNaN(salesData?.totalProfit) ? 0 : (salesData?.totalProfit || 0)),
       icon: TrendingUp,
       gradient: 'green',
       description: 'Profit net réalisé'
     },
     {
       title: 'Produits vendus',
-      value: salesData.totalQuantity.toString(),
+      value: (isNaN(salesData?.totalQuantity) ? 0 : (salesData?.totalQuantity || 0)).toString(),
       icon: Package,
       gradient: 'blue',
       description: 'Unités vendues ce mois'
     },
     {
       title: 'Produits disponibles',
-      value: productData.availableProducts.length.toString(),
+      value: (productData?.availableProducts?.length || 0).toString(),
       icon: BarChart3,
       gradient: 'purple',
       description: 'Produits en stock'
     },
     {
       title: 'Stock total',
-      value: productData.totalItems.toString(),
+      value: (isNaN(productData?.totalItems) ? 0 : (productData?.totalItems || 0)).toString(),
       icon: Warehouse,
       gradient: 'orange',
       description: 'Total des unités en stock'

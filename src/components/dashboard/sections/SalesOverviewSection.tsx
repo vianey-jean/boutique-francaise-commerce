@@ -27,21 +27,21 @@ const SalesOverviewSection: React.FC<SalesOverviewSectionProps> = ({
   const stats = [
     {
       title: 'Total ventes du mois',
-      value: formatEuro(salesData?.totalRevenue || 0),
+      value: formatEuro(salesData.totalRevenue),
       icon: DollarSign,
       gradient: 'blue',
       description: 'Chiffre d\'affaires total'
     },
     {
       title: 'Bénéfices du mois',
-      value: formatEuro(salesData?.totalProfit || 0),
+      value: formatEuro(salesData.totalProfit),
       icon: TrendingUp,
       gradient: 'green',
       description: 'Profit net réalisé'
     },
     {
       title: 'Produits vendus',
-      value: (salesData?.totalQuantity || 0).toString(),
+      value: salesData.totalQuantity.toString(),
       icon: Package,
       gradient: 'blue',
       description: 'Unités vendues ce mois'

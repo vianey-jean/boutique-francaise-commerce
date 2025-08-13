@@ -10,6 +10,7 @@ import ConfirmDeleteDialog from './forms/ConfirmDeleteDialog';
 import { useSaleForm } from './forms/hooks/useSaleForm';
 import { calculateSaleProfit } from './forms/utils/saleCalculations';
 import SaleFormFields from './forms/SaleFormFields';
+import axios from 'axios';
 
 interface AddSaleFormProps {
   isOpen: boolean;
@@ -41,6 +42,174 @@ const AddSaleForm: React.FC<AddSaleFormProps> = ({ isOpen, onClose, editSale }) 
     handleProductSelect,
     initializeForm
   } = useSaleForm(editSale, products, isOpen);
+
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:10000';
+
+  // Fonction pour créer ou récupérer un client
+  const handleClientData = async (clientName: string, clientPhone: string, clientAddress: string) => {
+    if (!clientName.trim()) return null;
+
+    try {
+      const token = localStorage.getItem('token');
+      
+      // Vérifier si le client existe déjà
+      const existingClientsResponse = await axios.get(`${API_BASE_URL}/api/clients`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      const existingClient = existingClientsResponse.data.find((client: any) => 
+        client.nom.toLowerCase() === clientName.toLowerCase()
+      );
+      
+      if (existingClient) {
+        console.log('Client existant trouvé:', existingClient);
+        return existingClient;
+      }
+      
+      // Créer un nouveau client si les informations sont complètes
+      if (clientPhone.trim() && clientAddress.trim()) {
+        const newClientResponse = await axios.post(`${API_BASE_URL}/api/clients`, {
+          nom: clientName,
+          phone: clientPhone,
+          adresse: clientAddress
+        }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        console.log('Nouveau client créé:', newClientResponse.data);
+        toast({
+          title: "Client enregistré",
+          description: `Le client ${clientName} a été ajouté à votre base de données`,
+          className: "notification-success",
+        });
+        
+        return newClientResponse.data;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Erreur lors de la gestion du client:', error);
+      return null;
+    }
+  };
+
+  // Fonction pour mettre à jour un client existant
+  const updateClientData = async (clientId: string, clientName: string, clientPhone: string, clientAddress: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      const updatedClientResponse = await axios.put(`${API_BASE_URL}/api/clients/${clientId}`, {
+        nom: clientName,
+        phone: clientPhone,
+        adresse: clientAddress
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      console.log('Client mis à jour:', updatedClientResponse.data);
+      toast({
+        title: "Client mis à jour",
+        description: `Les informations du client ${clientName} ont été mises à jour`,
+        className: "notification-success",
+      });
+      
+      return updatedClientResponse.data;
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du client:', error);
+      return null;
+    }
+  };
+
+  // Fonction pour gérer les clients lors de la modification
+  const handleClientForUpdate = async (clientName: string, clientPhone: string, clientAddress: string) => {
+    if (!clientName.trim()) return null;
+
+    try {
+      const token = localStorage.getItem('token');
+      
+      // Vérifier si le client existe déjà
+      const existingClientsResponse = await axios.get(`${API_BASE_URL}/api/clients`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      const existingClient = existingClientsResponse.data.find((client: any) => 
+        client.nom.toLowerCase() === clientName.toLowerCase()
+      );
+      
+      if (existingClient) {
+        // Client existe, mettre à jour ses informations si elles ont changé
+        if (existingClient.phone !== clientPhone || existingClient.adresse !== clientAddress) {
+          return await updateClientData(existingClient.id, clientName, clientPhone, clientAddress);
+        }
+        return existingClient;
+      } else {
+        // Client n'existe pas, le créer si les informations sont complètes
+        if (clientPhone.trim() && clientAddress.trim()) {
+          const newClientResponse = await axios.post(`${API_BASE_URL}/api/clients`, {
+            nom: clientName,
+            phone: clientPhone,
+            adresse: clientAddress
+          }, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          
+          console.log('Nouveau client créé lors de la modification:', newClientResponse.data);
+          toast({
+            title: "Client enregistré",
+            description: `Le client ${clientName} a été ajouté à votre base de données`,
+            className: "notification-success",
+          });
+          
+          return newClientResponse.data;
+        }
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Erreur lors de la gestion du client pour modification:', error);
+      return null;
+    }
+  };
+
+  // Fonction pour gérer les clients lors de la suppression
+  const handleClientForDeletion = async (clientName: string, clientPhone: string, clientAddress: string) => {
+    if (!clientName.trim()) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      
+      // Vérifier si le client existe déjà
+      const existingClientsResponse = await axios.get(`${API_BASE_URL}/api/clients`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      const existingClient = existingClientsResponse.data.find((client: any) => 
+        client.nom.toLowerCase() === clientName.toLowerCase()
+      );
+      
+      if (!existingClient) {
+        // Client n'existe pas dans la base, l'ajouter avant de supprimer la vente
+        if (clientPhone.trim() && clientAddress.trim()) {
+          const newClientResponse = await axios.post(`${API_BASE_URL}/api/clients`, {
+            nom: clientName,
+            phone: clientPhone,
+            adresse: clientAddress
+          }, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          
+          console.log('Client ajouté avant suppression de la vente:', newClientResponse.data);
+          toast({
+            title: "Client sauvegardé",
+            description: `Le client ${clientName} a été sauvegardé avant la suppression de la vente`,
+            className: "notification-success",
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Erreur lors de la gestion du client pour suppression:', error);
+    }
+  };
 
   // Fonction pour calculer le profit selon la nouvelle logique
   const updateProfit = (priceUnit: string, quantity: string, purchasePriceUnit: string) => {
@@ -107,6 +276,19 @@ const AddSaleForm: React.FC<AddSaleFormProps> = ({ isOpen, onClose, editSale }) 
     setIsSubmitting(true);
 
     try {
+      // Gérer les données client
+      if (editSale) {
+        // Lors de la modification, gérer les clients différemment
+        if (formData.clientName.trim()) {
+          await handleClientForUpdate(formData.clientName, formData.clientPhone, formData.clientAddress);
+        }
+      } else {
+        // Pour les nouveaux ajouts
+        if (formData.clientName.trim()) {
+          await handleClientData(formData.clientName, formData.clientPhone, formData.clientAddress);
+        }
+      }
+
       const quantity = isAdvanceProduct ? 0 : Number(formData.quantitySold);
       const purchasePriceUnit = Number(formData.purchasePriceUnit);
       const sellingPriceUnit = Number(formData.sellingPriceUnit);
@@ -180,12 +362,20 @@ const AddSaleForm: React.FC<AddSaleFormProps> = ({ isOpen, onClose, editSale }) 
     }
   };
 
-  // Fonction pour gérer la suppression
   const handleDelete = async () => {
     if (!editSale || !deleteSale) return;
     
     setIsSubmitting(true);
     try {
+      // Gérer le client avant la suppression
+      if (editSale.clientName) {
+        await handleClientForDeletion(
+          editSale.clientName, 
+          editSale.clientPhone || '', 
+          editSale.clientAddress || ''
+        );
+      }
+
       const success = await deleteSale(editSale.id);
       if (success) {
         toast({

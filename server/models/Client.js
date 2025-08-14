@@ -1,6 +1,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const encryption = require('../utils/encryption');
 
 const clientsPath = path.join(__dirname, '../db/clients.json');
 
@@ -9,7 +10,7 @@ const Client = {
   getAll: () => {
     try {
       const clients = JSON.parse(fs.readFileSync(clientsPath, 'utf8'));
-      return clients;
+      return clients.map(client => encryption.decryptObject(client));
     } catch (error) {
       console.error("Error reading clients:", error);
       return [];
@@ -61,8 +62,11 @@ const Client = {
         dateCreation: new Date().toISOString()
       };
       
+      // Encrypt client data before storing
+      const encryptedClient = encryption.encryptObject(newClient);
+      
       // Add to clients array
-      clients.push(newClient);
+      clients.push(encryptedClient);
       
       // Write back to file
       fs.writeFileSync(clientsPath, JSON.stringify(clients, null, 2));

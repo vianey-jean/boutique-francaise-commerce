@@ -1,6 +1,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const encryption = require('../utils/encryption');
 
 const pretProduitsPath = path.join(__dirname, '../db/pretproduits.json');
 
@@ -11,7 +12,8 @@ const getAllPretProduits = () => {
       return [];
     }
     const data = fs.readFileSync(pretProduitsPath, 'utf8');
-    return JSON.parse(data);
+    const pretProduits = JSON.parse(data);
+    return pretProduits.map(item => encryption.decryptObject(item));
   } catch (error) {
     console.error('Erreur lors de la lecture des prêts produits:', error);
     return [];
@@ -39,7 +41,8 @@ const createPretProduit = (pretProduit) => {
       ...pretProduit
     };
     
-    pretProduits.push(newPretProduit);
+    const encryptedPretProduit = encryption.encryptObject(newPretProduit);
+    pretProduits.push(encryptedPretProduit);
     fs.writeFileSync(pretProduitsPath, JSON.stringify(pretProduits, null, 2));
     
     return newPretProduit;

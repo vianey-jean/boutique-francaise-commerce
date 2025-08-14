@@ -1,6 +1,7 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import axiosRetry from 'axios-retry';
 import { Product, Sale, User, LoginCredentials, RegisterCredentials, PretFamille, PretProduit, DepenseFixe, DepenseDuMois } from '@/types';
+import encryptionService from '@/utils/encryption';
 
 // Configuration de l'URL de base
 const getBaseURL = () => {
@@ -136,8 +137,9 @@ export const productService = {
     try {
       console.log('📦 Fetching products from API...');
       const response: AxiosResponse<Product[]> = await api.get('/api/products');
-      console.log(`✅ Retrieved ${response.data.length} products from API`);
-      return response.data;
+      const decryptedProducts = encryptionService.decryptArray<Product>(response.data);
+      console.log(`✅ Retrieved ${decryptedProducts.length} products from API`);
+      return decryptedProducts;
     } catch (error) {
       console.error('❌ Error fetching products:', error);
       throw error;
@@ -147,13 +149,23 @@ export const productService = {
   async addProduct(product: Omit<Product, 'id'>): Promise<Product> {
     try {
       console.log('📝 Adding new product:', product);
-      const response: AxiosResponse<Product> = await api.post('/api/products', product);
-      console.log('✅ Product added successfully:', response.data);
-      return response.data;
+      const sanitizedProduct = this.sanitizeProductData(product);
+      const response: AxiosResponse<Product> = await api.post('/api/products', sanitizedProduct);
+      const decryptedProduct = encryptionService.decryptObject<Product>(response.data);
+      console.log('✅ Product added successfully:', decryptedProduct);
+      return decryptedProduct;
     } catch (error) {
       console.error('❌ Error adding product:', error);
       throw error;
     }
+  },
+
+  sanitizeProductData(product: any): any {
+    const sanitized = { ...product };
+    if (sanitized.description) {
+      sanitized.description = encryptionService.sanitizeInput(sanitized.description);
+    }
+    return sanitized;
   },
 
   async updateProduct(product: Product): Promise<Product> {
@@ -189,18 +201,30 @@ export const salesService = {
       url += `/by-month?month=${month}&year=${year}`;
     }
     const response: AxiosResponse<Sale[]> = await api.get(url);
-    return response.data;
+    return encryptionService.decryptArray<Sale>(response.data);
   },
 
   // Nouvelle méthode pour récupérer TOUTES les ventes historiques
   async getAllSales(): Promise<Sale[]> {
     const response: AxiosResponse<Sale[]> = await api.get('/api/sales');
-    return response.data;
+    return encryptionService.decryptArray<Sale>(response.data);
   },
 
   async addSale(sale: Omit<Sale, 'id'>): Promise<Sale> {
-    const response: AxiosResponse<Sale> = await api.post('/api/sales', sale);
-    return response.data;
+    const sanitizedSale = this.sanitizeSaleData(sale);
+    const response: AxiosResponse<Sale> = await api.post('/api/sales', sanitizedSale);
+    return encryptionService.decryptObject<Sale>(response.data);
+  },
+
+  sanitizeSaleData(sale: any): any {
+    const sanitized = { ...sale };
+    if (sanitized.description) {
+      sanitized.description = encryptionService.sanitizeInput(sanitized.description);
+    }
+    if (sanitized.client) {
+      sanitized.client = encryptionService.sanitizeInput(sanitized.client);
+    }
+    return sanitized;
   },
 
   async updateSale(sale: Sale): Promise<Sale> {
@@ -261,7 +285,7 @@ export const depenseService = {
 export const pretFamilleService = {
   async getPretFamilles(): Promise<PretFamille[]> {
     const response: AxiosResponse<PretFamille[]> = await api.get('/api/pretfamilles');
-    return response.data;
+    return encryptionService.decryptArray<PretFamille>(response.data);
   },
 
   async addPretFamille(pret: Omit<PretFamille, 'id'>): Promise<PretFamille> {
@@ -289,7 +313,7 @@ export const pretFamilleService = {
 export const pretProduitService = {
   async getPretProduits(): Promise<PretProduit[]> {
     const response: AxiosResponse<PretProduit[]> = await api.get('/api/pretproduits');
-    return response.data;
+    return encryptionService.decryptArray<PretProduit>(response.data);
   },
 
   async addPretProduit(pret: Omit<PretProduit, 'id'>): Promise<PretProduit> {

@@ -5,6 +5,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { AppProvider } from './contexts/AppContext';
 import { AccessibilityProvider } from './components/accessibility/AccessibilityProvider';
+import { SecurityProvider } from './components/security/SecurityProvider';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
@@ -35,9 +36,10 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <AccessibilityProvider>
-          <AuthProvider>
-            <AppProvider>
+        <SecurityProvider>
+          <AccessibilityProvider>
+            <AuthProvider>
+              <AppProvider>
               <ErrorBoundary fallback={<ErrorPage errorCode="500" title="Erreur de l'application" message="Une erreur inattendue s'est produite. Veuillez rafraîchir la page." />}>
                 <Router>
                 <div className="min-h-screen bg-background">
@@ -97,9 +99,10 @@ function App() {
                   <Toaster />
                 </Router>
               </ErrorBoundary>
-            </AppProvider>
-          </AuthProvider>
-        </AccessibilityProvider>
+              </AppProvider>
+            </AuthProvider>
+          </AccessibilityProvider>
+        </SecurityProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

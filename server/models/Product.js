@@ -1,6 +1,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const encryption = require('../utils/encryption');
 
 const productsPath = path.join(__dirname, '../db/products.json');
 
@@ -10,8 +11,9 @@ const Product = {
     try {
       const data = fs.readFileSync(productsPath, 'utf8');
       const products = JSON.parse(data);
-      console.log(`📦 Retrieved ${products.length} products from database`);
-      return products;
+      const decryptedProducts = products.map(product => encryption.decryptObject(product));
+      console.log(`📦 Retrieved ${decryptedProducts.length} products from database`);
+      return decryptedProducts;
     } catch (error) {
       console.error("❌ Error reading products:", error);
       return [];
@@ -65,8 +67,11 @@ const Product = {
         ...productData
       };
       
+      // Encrypt product data before storing
+      const encryptedProduct = encryption.encryptObject(newProduct);
+      
       // Add to products array
-      products.push(newProduct);
+      products.push(encryptedProduct);
       
       // Write back to file with proper formatting
       fs.writeFileSync(productsPath, JSON.stringify(products, null, 2));

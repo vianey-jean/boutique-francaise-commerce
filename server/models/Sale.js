@@ -1,6 +1,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const encryption = require('../utils/encryption');
 
 const salesPath = path.join(__dirname, '../db/sales.json');
 const Product = require('./Product');
@@ -10,7 +11,7 @@ const Sale = {
   getAll: () => {
     try {
       const sales = JSON.parse(fs.readFileSync(salesPath, 'utf8'));
-      return sales;
+      return sales.map(sale => encryption.decryptObject(sale));
     } catch (error) {
       console.error("Error reading sales:", error);
       return [];
@@ -81,8 +82,11 @@ const Sale = {
         console.log('💾 Sauvegarde vente single-produit:', newSale);
       }
       
+      // Encrypt sale data before storing
+      const encryptedSale = encryption.encryptObject(newSale);
+      
       // Add to sales array
-      sales.push(newSale);
+      sales.push(encryptedSale);
       
       // Write back to file
       fs.writeFileSync(salesPath, JSON.stringify(sales, null, 2));

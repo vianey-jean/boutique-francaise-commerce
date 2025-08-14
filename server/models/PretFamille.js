@@ -1,6 +1,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const encryption = require('../utils/encryption');
 
 const pretFamillesPath = path.join(__dirname, '../db/pretfamilles.json');
 
@@ -11,7 +12,8 @@ const getAllPretFamilles = () => {
       return [];
     }
     const data = fs.readFileSync(pretFamillesPath, 'utf8');
-    return JSON.parse(data);
+    const pretFamilles = JSON.parse(data);
+    return pretFamilles.map(item => encryption.decryptObject(item));
   } catch (error) {
     console.error('Erreur lors de la lecture des prêts familles:', error);
     return [];
@@ -39,7 +41,8 @@ const createPretFamille = (pretFamille) => {
       ...pretFamille
     };
     
-    pretFamilles.push(newPretFamille);
+    const encryptedPretFamille = encryption.encryptObject(newPretFamille);
+    pretFamilles.push(encryptedPretFamille);
     fs.writeFileSync(pretFamillesPath, JSON.stringify(pretFamilles, null, 2));
     
     return newPretFamille;

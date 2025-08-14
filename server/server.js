@@ -6,6 +6,9 @@ const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
 const bcrypt = require('bcryptjs');
+const helmet = require('helmet');
+const session = require('express-session');
+const { securityMiddlewares, validationSchemas } = require('./middleware/security');
 
 // Load environment variables
 dotenv.config();
@@ -14,27 +17,51 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// Configuration CORS simplifiée pour le développement
-const corsOptions = {
-  origin: true, // Permet toutes les origines en développement
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: [
-    'Content-Type', 
-    'Authorization', 
-    'Cache-Control',
-    'X-Requested-With',
-    'Accept',
-    'Origin'
-  ],
-  optionsSuccessStatus: 200
-};
+// Trust proxy for secure headers
+app.set('trust proxy', 1);
 
-// Middleware CORS global
-app.use(cors(corsOptions));
+// Security middlewares
+app.use(securityMiddlewares.helmet);
 
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+// Session configuration with security
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'S7@nK4#pL9$wQ2*vF6&xR8!zT3%yU5^jH0+cG1-bN7~aE9',
+  resave: false,
+  saveUninitialized: false,
+  name: 'sessionId',
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    sameSite: 'strict'
+  }
+}));
+
+// Rate limiting
+app.use('/api/auth', securityMiddlewares.authLimiter);
+app.use('/api', securityMiddlewares.apiLimiter);
+app.use(securityMiddlewares.generalLimiter);
+
+// Security middlewares
+app.use(securityMiddlewares.sanitizeInput);
+app.use(securityMiddlewares.sqlInjectionProtection);
+app.use(securityMiddlewares.generateCSRFToken);
+
+// CORS configuration with security
+app.use(cors(securityMiddlewares.corsOptions));
+
+// Body parsing with limits
+app.use(bodyParser.json({ 
+  limit: '10mb',
+  verify: (req, res, buf) => {
+    req.rawBody = buf;
+  }
+}));
+app.use(bodyParser.urlencoded({ 
+  extended: true, 
+  limit: '10mb',
+  parameterLimit: 20
+}));
 
 // Create db directory if it doesn't exist
 const dbPath = path.join(__dirname, 'db');

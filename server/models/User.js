@@ -2,6 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 const bcrypt = require('bcryptjs');
+const encryption = require('../utils/encryption');
 
 const usersPath = path.join(__dirname, '../db/users.json');
 
@@ -10,7 +11,7 @@ const User = {
   getAll: () => {
     try {
       const users = JSON.parse(fs.readFileSync(usersPath, 'utf8'));
-      return users;
+      return users.map(user => encryption.decryptObject(user));
     } catch (error) {
       console.error("Error reading users:", error);
       return [];
@@ -21,7 +22,8 @@ const User = {
   getByEmail: (email) => {
     try {
       const users = JSON.parse(fs.readFileSync(usersPath, 'utf8'));
-      return users.find(user => user.email.toLowerCase() === email.toLowerCase()) || null;
+      const decryptedUsers = users.map(user => encryption.decryptObject(user));
+      return decryptedUsers.find(user => user.email.toLowerCase() === email.toLowerCase()) || null;
     } catch (error) {
       console.error("Error finding user by email:", error);
       return null;
@@ -32,7 +34,8 @@ const User = {
   getById: (id) => {
     try {
       const users = JSON.parse(fs.readFileSync(usersPath, 'utf8'));
-      return users.find(user => user.id === id) || null;
+      const user = users.find(user => user.id === id);
+      return user ? encryption.decryptObject(user) : null;
     } catch (error) {
       console.error("Error finding user by id:", error);
       return null;
@@ -61,8 +64,11 @@ const User = {
         password: hashedPassword
       };
       
+      // Encrypt user data before storing
+      const encryptedUser = encryption.encryptObject(newUser);
+      
       // Add to users array
-      users.push(newUser);
+      users.push(encryptedUser);
       
       // Write back to file
       fs.writeFileSync(usersPath, JSON.stringify(users, null, 2));

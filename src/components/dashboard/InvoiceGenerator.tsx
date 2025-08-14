@@ -1,3 +1,4 @@
+
 // Résumé :
 // Ce composant React affiche une interface moderne pour générer des factures PDF à partir des ventes historiques.
 // Il permet de filtrer les ventes par année et par nom de client, d'afficher les détails d'une vente sélectionnée,
@@ -19,7 +20,7 @@ import {
   Card, CardContent, CardHeader, CardTitle
 } from '@/components/ui/card';
 import { useApp } from '@/contexts/AppContext';
-import { Sale } from '@/types';
+import { Sale, SaleProduct } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import {
   FileText, Search, Calendar, User, MapPin,
@@ -73,10 +74,11 @@ const InvoiceGenerator: React.FC<InvoiceGeneratorProps> = ({ isOpen, onClose }) 
     const pageWidth = doc.internal.pageSize.width;
     const pageHeight = doc.internal.pageSize.height;
 
-    const primaryViolet = [153, 51, 204];
-    const primaryBlue = [51, 153, 204];
-    const lightGray = [248, 249, 250];
-    const darkGray = [52, 58, 64];
+    // Couleurs définies comme des tuples [r, g, b]
+    const primaryViolet: [number, number, number] = [153, 51, 204];
+    const primaryBlue: [number, number, number] = [51, 153, 204];
+    const lightGray: [number, number, number] = [248, 249, 250];
+    const darkGray: [number, number, number] = [52, 58, 64];
 
     // === EN-TÊTE ===
     doc.setFillColor(...primaryViolet);
@@ -142,18 +144,19 @@ const InvoiceGenerator: React.FC<InvoiceGeneratorProps> = ({ isOpen, onClose }) 
     if (sale.clientPhone) doc.text(`Tél: ${sale.clientPhone}`, 120, clientY + 30);
 
     // === PRODUITS ===
-    const products = sale.products && sale.products.length > 0
-      ? sale.products
-      : [{
-          description: sale.description || '',
-          quantitySold: sale.quantitySold || 0,
-          sellingPrice: sale.sellingPrice || 0
-        }];
+    const products: SaleProduct[] =
+      sale.products && sale.products.length > 0
+        ? sale.products
+        : [{
+            description: sale.description || '',
+            quantitySold: sale.quantitySold || 0,
+            sellingPrice: sale.sellingPrice || 0
+          } as SaleProduct];
 
     const tableData = products.map(prod => [
       prod.description || '',
-      prod.quantitySold?.toString() || '0',
-      formatEuro(prod.sellingPrice && prod.quantitySold ? prod.sellingPrice / prod.quantitySold : 0),
+      (prod.quantitySold || 0).toString(),
+      formatEuro(prod.quantitySold ? (prod.sellingPrice || 0) / prod.quantitySold : 0),
       formatEuro(prod.sellingPrice || 0)
     ]);
 
@@ -172,7 +175,9 @@ const InvoiceGenerator: React.FC<InvoiceGeneratorProps> = ({ isOpen, onClose }) 
     });
 
     const finalY = (doc as any).lastAutoTable.finalY + 10;
-    const totalAmount = products.reduce((sum, p) => sum + (p.sellingPrice || 0), 0);
+
+    // Calcul du total correctement typé
+    const totalAmount = products.reduce((sum: number, product: SaleProduct) => sum + (product.sellingPrice || 0), 0);
 
     // === TOTAUX ===
     const totalsX = pageWidth - 100;
@@ -189,12 +194,10 @@ const InvoiceGenerator: React.FC<InvoiceGeneratorProps> = ({ isOpen, onClose }) 
 
     // === PIED DE PAGE EN 2 COLONNES ===
     const footerStartY = pageHeight - 40;
-
-    // Ligne de séparation
     doc.setDrawColor(...primaryBlue).setLineWidth(1);
     doc.line(20, footerStartY, pageWidth - 20, footerStartY);
 
-    // Colonne gauche - Infos de paiement
+    // Colonne gauche
     doc.setTextColor(...darkGray).setFont('helvetica', 'bold').setFontSize(10);
     doc.text('Informations de paiement :', 20, footerStartY + 10);
 
@@ -203,7 +206,7 @@ const InvoiceGenerator: React.FC<InvoiceGeneratorProps> = ({ isOpen, onClose }) 
     doc.text('Mode de paiement : Espèces', 20, footerStartY + 26);
     doc.text('Paiement à réception de facture', 20, footerStartY + 34);
 
-    // Colonne droite - Merci + mentions
+    // Colonne droite
     doc.setFont('helvetica', 'bold').setTextColor(...primaryBlue).setFontSize(10);
     doc.text('Merci de votre confiance !', pageWidth - 20, footerStartY + 10, { align: 'right' });
 
@@ -211,13 +214,13 @@ const InvoiceGenerator: React.FC<InvoiceGeneratorProps> = ({ isOpen, onClose }) 
     doc.text('Riziky Beauté - Votre partenaire beauté à La Réunion', pageWidth - 20, footerStartY + 18, { align: 'right' });
     doc.text('TVA non applicable - Article 293B du CGI', pageWidth - 20, footerStartY + 26, { align: 'right' });
 
-    // Sauvegarde du PDF
     doc.save(`Facture_${sale.clientName?.replace(/\s+/g, '_')}_${sale.id}.pdf`);
     toast({
       title: 'Facture générée',
       description: `La facture pour ${sale.clientName} a été générée avec succès.`,
     });
   };
+
   return (
    <>
   {/* Dialogue principal */}
@@ -232,10 +235,8 @@ const InvoiceGenerator: React.FC<InvoiceGeneratorProps> = ({ isOpen, onClose }) 
         </DialogTitle>
       </DialogHeader>
 
-      {/* Zone scrollable */}
       <ScrollArea className="h-[calc(90vh-100px)] px-6 pb-6">
         <div className="space-y-6">
-          {/* Recherche par année */}
           <Card className="border-2 border-gradient-to-r from-blue-200 to-indigo-200">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2 text-blue-700">
@@ -265,7 +266,6 @@ const InvoiceGenerator: React.FC<InvoiceGeneratorProps> = ({ isOpen, onClose }) 
             </CardContent>
           </Card>
 
-          {/* Recherche par nom client */}
           <Card className="border-2 border-gradient-to-r from-emerald-200 to-teal-200">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2 text-emerald-700">
@@ -292,7 +292,6 @@ const InvoiceGenerator: React.FC<InvoiceGeneratorProps> = ({ isOpen, onClose }) 
             </CardContent>
           </Card>
 
-          {/* Liste des ventes filtrées */}
           {searchName.length >= 3 && (
             <Card className="border-2 border-gradient-to-r from-purple-200 to-pink-200">
               <CardHeader className="pb-3">
@@ -341,7 +340,7 @@ const InvoiceGenerator: React.FC<InvoiceGeneratorProps> = ({ isOpen, onClose }) 
                               </div>
                               <div className="text-sm text-gray-500">
                                 Qté: {sale.products && sale.products.length > 0
-                                  ? sale.products.reduce((sum, p) => sum + (p.quantitySold || 0), 0)
+                                  ? sale.products.reduce((sum: number, p) => sum + (p.quantitySold || 0), 0)
                                   : (sale.quantitySold || 0)}
                               </div>
                             </div>
@@ -377,11 +376,9 @@ const InvoiceGenerator: React.FC<InvoiceGeneratorProps> = ({ isOpen, onClose }) 
         </DialogTitle>
       </DialogHeader>
 
-      {/* Scroll pour le contenu des détails */}
       <ScrollArea className="h-[calc(90vh-100px)] px-6 pb-6">
         {selectedSale && (
           <div className="space-y-6">
-            {/* Informations client */}
             <Card className="border-2 border-gradient-to-r from-blue-200 to-indigo-200">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2 text-blue-700">
@@ -409,7 +406,6 @@ const InvoiceGenerator: React.FC<InvoiceGeneratorProps> = ({ isOpen, onClose }) 
               </CardContent>
             </Card>
 
-            {/* Détails du produit */}
             <Card className="border-2 border-gradient-to-r from-emerald-200 to-teal-200">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2 text-emerald-700">
@@ -427,7 +423,7 @@ const InvoiceGenerator: React.FC<InvoiceGeneratorProps> = ({ isOpen, onClose }) 
                     <Label className="text-sm font-medium text-gray-600">Quantité Total</Label>
                     <div className="text-lg font-semibold">
                       {selectedSale.products && selectedSale.products.length > 0
-                        ? selectedSale.products.reduce((sum, p) => sum + (p.quantitySold || 0), 0)
+                        ? selectedSale.products.reduce((sum: number, p) => sum + (p.quantitySold || 0), 0)
                         : (selectedSale.quantitySold || 0)}
                     </div>
                   </div>
@@ -472,7 +468,6 @@ const InvoiceGenerator: React.FC<InvoiceGeneratorProps> = ({ isOpen, onClose }) 
               </CardContent>
             </Card>
 
-            {/* Bouton de génération */}
             <div className="flex justify-center pt-4">
               <Button
                 onClick={() => generateInvoicePDF(selectedSale)}
@@ -493,7 +488,6 @@ const InvoiceGenerator: React.FC<InvoiceGeneratorProps> = ({ isOpen, onClose }) 
     </DialogContent>
   </Dialog>
 </>
-
   );
 };
 

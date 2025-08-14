@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import Layout from '@/components/Layout';
 import { AlertTriangle, Home, RefreshCw, ArrowLeft, Zap } from 'lucide-react';
 import { motion, type Variants } from 'framer-motion';
 
@@ -74,6 +75,7 @@ const ErrorPage: React.FC<ErrorPageProps> = ({
   };
 
   return (
+    <Layout>
     <div className="min-h-screen bg-gradient-to-br from-background via-card to-muted flex items-center justify-center p-4 relative overflow-hidden">
       {/* Background effects */}
       <div className="absolute inset-0 overflow-hidden">
@@ -197,7 +199,9 @@ const ErrorPage: React.FC<ErrorPageProps> = ({
         </Card>
       </motion.div>
     </div>
+    </Layout>
   );
+  
 };
 
 export default ErrorPage;

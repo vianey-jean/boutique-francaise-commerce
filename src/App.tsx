@@ -5,6 +5,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { AppProvider } from './contexts/AppContext';
 import { AccessibilityProvider } from './components/accessibility/AccessibilityProvider';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -18,6 +19,7 @@ import PretProduits from './pages/PretProduits';
 import Depenses from './pages/Depenses';
 import TendancesPage from './pages/TendancesPage';
 import Comptabilite from './pages/Comptabilite';
+import ErrorPage from './pages/ErrorPage';
 import { Toaster } from './components/ui/sonner';
 
 const queryClient = new QueryClient({
@@ -36,7 +38,8 @@ function App() {
         <AccessibilityProvider>
           <AuthProvider>
             <AppProvider>
-              <Router>
+              <ErrorBoundary fallback={<ErrorPage errorCode="500" title="Erreur de l'application" message="Une erreur inattendue s'est produite. Veuillez rafraîchir la page." />}>
+                <Router>
                 <div className="min-h-screen bg-background">
                   <Routes>
                     <Route path="/login" element={<LoginPage />} />
@@ -87,11 +90,13 @@ function App() {
                         <Comptabilite />
                       </ProtectedRoute>
                     } />
-                    <Route path="*" element={<Navigate to="/" replace />} />
+                    <Route path="/error/:errorCode?" element={<ErrorPage />} />
+                    <Route path="*" element={<ErrorPage />} />
                   </Routes>
                 </div>
-                <Toaster />
-              </Router>
+                  <Toaster />
+                </Router>
+              </ErrorBoundary>
             </AppProvider>
           </AuthProvider>
         </AccessibilityProvider>

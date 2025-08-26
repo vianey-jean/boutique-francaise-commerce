@@ -250,6 +250,43 @@ router.post('/reset-password', async (req, res) => {
   }
 });
 
+// Verify password endpoint
+router.post('/verify-password', async (req, res) => {
+  try {
+    const { userId, encryptedPassword } = req.body;
+    
+    if (!userId || !encryptedPassword) {
+      return res.status(400).json({ message: 'ID utilisateur et mot de passe requis' });
+    }
+    
+    const users = JSON.parse(fs.readFileSync(usersFilePath));
+    const user = users.find(u => u.id === userId);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'Utilisateur non trouvé' });
+    }
+    
+    // Décrypter le mot de passe envoyé pour le comparer
+    const { decrypt } = require('../utils/encryption');
+    const decryptedPassword = decrypt(encryptedPassword);
+    
+    let isPasswordValid = false;
+    
+    if (user.password.startsWith('$2')) {
+      // Le mot de passe est hashé avec bcrypt
+      isPasswordValid = await bcrypt.compare(decryptedPassword, user.password);
+    } else {
+      // Mot de passe en clair (pour rétrocompatibilité)
+      isPasswordValid = (user.password === decryptedPassword);
+    }
+    
+    res.json({ valid: isPasswordValid });
+  } catch (error) {
+    console.error('Erreur de vérification du mot de passe:', error);
+    res.status(500).json({ message: 'Erreur lors de la vérification du mot de passe' });
+  }
+});
+
 // Forgot password endpoint
 router.post('/forgot-password', async (req, res) => {
   try {

@@ -21,8 +21,8 @@ export const authAPI = {
   resetPasswordWithTempCode: (userId: string, passwordUnique: string, newPassword: string) =>
     API.put(`/users/${userId}/password`, { passwordUnique, newPassword }),
   getUserProfile: (userId: string) => API.get(`/users/${userId}`),
-  verifyPassword: (userId: string, encryptedPassword: string) => 
-    API.post('/auth/verify-password', { userId, encryptedPassword }),
+  verifyPassword: (userId: string, password: string) => 
+    API.post(`/users/${userId}/verify-password`, { password }),
   setTempPassword: (userId: string, passwordUnique: string) =>
     API.put(`/users/${userId}/temp-password`, { passwordUnique }),
 };

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -19,7 +19,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import PasswordStrengthIndicator from '../auth/PasswordStrengthIndicator';
 import { toast } from '@/components/ui/sonner';
 import { authAPI } from '@/services/api';
-import { encrypt } from '@/utils/encryption';
 
 const passwordSchema = z.object({
   currentPassword: z.string().min(1, 'Mot de passe actuel requis'),
@@ -43,12 +42,6 @@ const passwordSchema = z.object({
       'Le mot de passe doit contenir au moins un caractère spécial'
     ),
   confirmPassword: z.string().min(1, 'Confirmation du mot de passe requise'),
-}).refine((data) => data.newPassword === data.confirmPassword, {
-  message: 'Les mots de passe ne correspondent pas',
-  path: ['confirmPassword'],
-}).refine((data) => data.newPassword !== data.currentPassword, {
-  message: 'Le nouveau mot de passe doit être différent de l\'ancien',
-  path: ['newPassword'],
 });
 
 type PasswordFormValues = z.infer<typeof passwordSchema>;
@@ -59,14 +52,16 @@ type PasswordFormProps = {
 };
 
 const PasswordForm = ({ loading: externalLoading, onPasswordChange }: PasswordFormProps = {}) => {
-  const { user, updatePassword, logout } = useAuth();
+  const { user, logout } = useAuth();
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [currentPasswordValid, setCurrentPasswordValid] = useState(false);
   const [failedAttempts, setFailedAttempts] = useState(0);
-  const [isVerifyingPassword, setIsVerifyingPassword] = useState(false);
+  const [isButtonEnabled, setIsButtonEnabled] = useState(false);
+  const [hasShownSuccessNotification, setHasShownSuccessNotification] = useState(false);
+  const [hasShownErrorNotification, setHasShownErrorNotification] = useState(false);
 
   const actualLoading = externalLoading || isLoading;
 
@@ -79,56 +74,97 @@ const PasswordForm = ({ loading: externalLoading, onPasswordChange }: PasswordFo
     },
   });
 
-  // Fonction pour vérifier le mot de passe actuel en temps réel
-  const verifyCurrentPassword = useCallback(async (currentPassword: string) => {
-    if (!currentPassword || !user) return;
+  const watchedValues = form.watch();
+
+  // Vérifier si le bouton doit être activé
+  useEffect(() => {
+    const { currentPassword, newPassword, confirmPassword } = watchedValues;
     
-    setIsVerifyingPassword(true);
+    const isValid = 
+      currentPasswordValid &&
+      newPassword.length >= 8 &&
+      /[A-Z]/.test(newPassword) &&
+      /[a-z]/.test(newPassword) &&
+      /[0-9]/.test(newPassword) &&
+      /[^A-Za-z0-9]/.test(newPassword) &&
+      newPassword === confirmPassword &&
+      newPassword !== currentPassword;
+
+    setIsButtonEnabled(isValid);
+  }, [watchedValues, currentPasswordValid]);
+
+  // Vérifier le mot de passe actuel quand on commence à taper le nouveau
+  useEffect(() => {
+    const { currentPassword, newPassword } = watchedValues;
+    
+    if (currentPassword && newPassword.length > 0 && !currentPasswordValid) {
+      verifyCurrentPassword(currentPassword);
+    }
+  }, [watchedValues.newPassword]);
+
+  const verifyCurrentPassword = async (password: string) => {
+    if (!user || !password) return;
+
     try {
-      const encryptedPassword = encrypt(currentPassword);
-      const response = await authAPI.verifyPassword(user.id, encryptedPassword);
+      const response = await authAPI.verifyPassword(user.id, password);
       
       if (response.data.valid) {
         setCurrentPasswordValid(true);
-        setFailedAttempts(0);
-      } else {
-        setCurrentPasswordValid(false);
-        const newFailedAttempts = failedAttempts + 1;
-        setFailedAttempts(newFailedAttempts);
+        setHasShownErrorNotification(false); // Réinitialiser le flag d'erreur
         
-        toast.error('Le mot de passe actuel ne ressemble pas à votre mot de passe', {
-          style: { backgroundColor: 'red', color: 'white' }
-        });
-        
-        // Déconnexion après 3 tentatives
-        if (newFailedAttempts >= 3) {
-          toast.error('Trop de tentatives incorrectes. Déconnexion en cours...', {
-            style: { backgroundColor: 'red', color: 'white' }
+        // Afficher la notification une seule fois
+        if (!hasShownSuccessNotification) {
+          toast.success('Mot de passe actuel correct', {
+            style: { backgroundColor: 'green', color: 'white' },
           });
-          setTimeout(() => {
-            logout();
-          }, 2000);
+          setHasShownSuccessNotification(true);
         }
+      } else {
+        handleIncorrectPassword();
       }
     } catch (error) {
-      setCurrentPasswordValid(false);
-      console.error('Erreur lors de la vérification du mot de passe:', error);
-    } finally {
-      setIsVerifyingPassword(false);
+      handleIncorrectPassword();
     }
-  }, [user, failedAttempts, logout]);
+  };
 
-  // Vérifier le mot de passe actuel dès qu'on commence à saisir le nouveau
-  useEffect(() => {
-    const currentPassword = form.watch('currentPassword');
-    const newPassword = form.watch('newPassword');
+  const handleIncorrectPassword = () => {
+    setCurrentPasswordValid(false);
+    setHasShownSuccessNotification(false);
+    setFailedAttempts(prev => prev + 1);
     
-    if (newPassword && currentPassword) {
-      verifyCurrentPassword(currentPassword);
-    } else {
-      setCurrentPasswordValid(false);
+    // Réinitialiser le champ mot de passe actuel
+    form.setValue('currentPassword', '');
+    
+    // Afficher la notification d'erreur une seule fois
+    if (!hasShownErrorNotification) {
+      toast.error('Mot de passe erroné', {
+        style: { backgroundColor: 'red', color: 'white' },
+      });
+      setHasShownErrorNotification(true);
     }
-  }, [form.watch('currentPassword'), form.watch('newPassword'), verifyCurrentPassword]);
+
+    // Déconnecter après 3 tentatives échouées
+    if (failedAttempts >= 2) {
+      toast.error('Trop de tentatives échouées. Déconnexion...', {
+        style: { backgroundColor: 'red', color: 'white' },
+      });
+      setTimeout(() => {
+        logout();
+      }, 2000);
+    }
+  };
+
+  // Vérifier si le nouveau mot de passe est identique au mot de passe actuel
+  useEffect(() => {
+    const { currentPassword, newPassword } = watchedValues;
+    
+    if (currentPasswordValid && newPassword && newPassword === currentPassword) {
+      toast.error('Le nouveau mot de passe est pareil au mot de passe actuel', {
+        style: { backgroundColor: 'red', color: 'white' },
+      });
+      return;
+    }
+  }, [watchedValues.newPassword, currentPasswordValid]);
 
   const onSubmit = async (data: PasswordFormValues) => {
     if (!user) {
@@ -136,43 +172,36 @@ const PasswordForm = ({ loading: externalLoading, onPasswordChange }: PasswordFo
       return;
     }
 
-    if (!currentPasswordValid) {
-      toast.error('Le mot de passe actuel ne ressemble pas à votre mot de passe', {
-        style: { backgroundColor: 'red', color: 'white' }
+    // Vérifier si les mots de passe correspondent au moment de la validation
+    if (data.newPassword !== data.confirmPassword) {
+      toast.error('Le nouveau mot de passe et confirmation ne sont pas pareils. Veuillez bien vérifier le nouveau mot de passe.', {
+        style: { backgroundColor: 'red', color: 'white' },
       });
       return;
     }
     
     setIsLoading(true);
     try {
-      // Vérifier que le nouveau mot de passe est différent de l'actuel
-      const encryptedCurrentPassword = encrypt(data.currentPassword);
-      const encryptedNewPassword = encrypt(data.newPassword);
-      
-      if (encryptedCurrentPassword === encryptedNewPassword) {
-        toast.error('Le nouveau mot de passe est pareil que le mot de passe actuelle', {
-          style: { backgroundColor: 'red', color: 'white' }
-        });
-        setIsLoading(false);
-        return;
-      }
-      
-      // Mettre à jour le mot de passe
+      // Si une fonction de mise à jour personnalisée est fournie, l'utiliser
       if (onPasswordChange) {
         await onPasswordChange(data.currentPassword, data.newPassword);
       } else {
-        await updatePassword(data.currentPassword, data.newPassword);
+        // Sinon, utiliser l'API directement
+        await authAPI.updatePassword(user.id, data.currentPassword, data.newPassword);
       }
       
-      // Réinitialiser le formulaire
+      // Réinitialiser le formulaire et les états
       form.reset();
       setCurrentPasswordValid(false);
+      setHasShownSuccessNotification(false);
+      setHasShownErrorNotification(false);
+      setFailedAttempts(0);
       
-      toast.success('Votre nouveau mot de passe est bien enregistré', {
+      toast.success('Mot de passe mis à jour avec succès. Redirection vers la page de connexion...', {
         style: { backgroundColor: 'green', color: 'white' },
       });
 
-      // Déconnexion automatique après succès
+      // Déconnecter l'utilisateur et rediriger vers la page de connexion
       setTimeout(() => {
         logout();
       }, 2000);
@@ -344,23 +373,13 @@ const PasswordForm = ({ loading: externalLoading, onPasswordChange }: PasswordFo
               <div className="pt-6">
                 <Button 
                   type="submit" 
-                  className="w-full h-12 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed" 
-                  disabled={actualLoading || !currentPasswordValid || isVerifyingPassword}
+                  className="w-full h-12 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]" 
+                  disabled={actualLoading || !isButtonEnabled}
                 >
                   {actualLoading ? (
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                       Mise à jour en cours...
-                    </div>
-                  ) : isVerifyingPassword ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Vérification...
-                    </div>
-                  ) : !currentPasswordValid ? (
-                    <div className="flex items-center gap-2">
-                      <Lock className="h-4 w-4" />
-                      Mettre à jour le mot de passe (Désactivé)
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">

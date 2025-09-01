@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useSecureNavigation } from '@/hooks/useSecureNavigation';
 import Layout from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { useStore } from '@/contexts/StoreContext';
@@ -20,7 +20,7 @@ const CartPage = () => {
     setSelectedCartItems 
   } = useStore();
   const { isAuthenticated } = useAuth();
-  const navigate = useNavigate();
+  const { navigateSecure } = useSecureNavigation();
   const [selectedItems, setSelectedItems] = useState<Record<string, boolean>>({});
   const [dataLoaded, setDataLoaded] = useState(false);
 
@@ -75,7 +75,7 @@ const CartPage = () => {
       !(item.product.stock !== undefined && item.product.stock <= 0)
     );
     setSelectedCartItems(selectedProducts);
-    navigate('/paiement');
+    navigateSecure('/paiement');
   };
 
   return (

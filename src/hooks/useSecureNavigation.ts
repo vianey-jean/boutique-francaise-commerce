@@ -18,7 +18,8 @@ export const useSecureNavigation = () => {
   const navigateSecure = (path: string, options?: { replace?: boolean }) => {
     try {
       const securePath = getSecureRoute(path);
-      navigate(`/${securePath}`, options);
+      const secureDestination = securePath.startsWith('/') ? securePath : `/${securePath}`;
+      navigate(secureDestination, options);
     } catch (error) {
       console.error('Erreur lors de la navigation sécurisée:', error);
       // Fallback vers la navigation normale
@@ -33,7 +34,8 @@ export const useSecureNavigation = () => {
   const setSecureRedirect = (path: string) => {
     try {
       const securePath = getSecureRoute(path);
-      setRedirectAfterLogin(`/${securePath}`);
+      const secureDestination = securePath.startsWith('/') ? securePath : `/${securePath}`;
+      setRedirectAfterLogin(secureDestination);
     } catch (error) {
       console.error('Erreur lors de la définition de la redirection sécurisée:', error);
       setRedirectAfterLogin(path);

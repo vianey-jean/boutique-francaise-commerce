@@ -1,8 +1,8 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ShoppingBag } from 'lucide-react';
+import SecureLink from '@/components/SecureLink';
 
 interface EmptyCartMessageProps {
   isAuthenticated: boolean;
@@ -20,7 +20,7 @@ const EmptyCartMessage: React.FC<EmptyCartMessageProps> = ({ isAuthenticated }) 
           Connectez-vous pour accéder à votre panier et profiter d'une expérience personnalisée
         </p>
         <Button asChild size="lg">
-          <Link to="/login">Se connecter</Link>
+          <SecureLink to="/login">Se connecter</SecureLink>
         </Button>
       </div>
     );
@@ -36,7 +36,7 @@ const EmptyCartMessage: React.FC<EmptyCartMessageProps> = ({ isAuthenticated }) 
         Ajoutez des produits à votre panier pour commencer votre commande
       </p>
       <Button asChild size="lg" className="bg-red-800 hover:bg-red-700">
-        <Link to="/">Découvrir nos produits</Link>
+        <SecureLink to="/">Découvrir nos produits</SecureLink>
       </Button>
     </div>
   );

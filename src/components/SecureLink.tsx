@@ -29,10 +29,12 @@ const SecureLink: React.FC<SecureLinkProps> = ({
       // Stocker la destination sécurisée pour redirection après connexion
       try {
         const securePath = getSecureRoute(to);
-        setRedirectAfterLogin(`/${securePath}`);
+        const secureDestination = securePath.startsWith('/') ? securePath : `/${securePath}`;
+        setRedirectAfterLogin(secureDestination);
         // Naviguer vers la page de connexion sécurisée
         const secureLoginPath = getSecureRoute('/login');
-        window.location.href = `/${secureLoginPath}`;
+        const secureLogin = secureLoginPath.startsWith('/') ? secureLoginPath : `/${secureLoginPath}`;
+        window.location.href = secureLogin;
       } catch (error) {
         console.error('Erreur lors de la sécurisation de la redirection:', error);
         setRedirectAfterLogin(to);
@@ -50,7 +52,8 @@ const SecureLink: React.FC<SecureLinkProps> = ({
   // Transformer la route en route sécurisée
   let secureTo: string;
   try {
-    secureTo = `/${getSecureRoute(to)}`;
+    const secureRoute = getSecureRoute(to);
+    secureTo = secureRoute.startsWith('/') ? secureRoute : `/${secureRoute}`;
   } catch (error) {
     console.error('Erreur lors de la sécurisation du lien:', error);
     secureTo = to; // Fallback vers le chemin original

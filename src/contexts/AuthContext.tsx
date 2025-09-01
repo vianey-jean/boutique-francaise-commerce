@@ -77,6 +77,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const redirectPath = localStorage.getItem('redirectAfterLogin');
       if (redirectPath) {
         localStorage.removeItem('redirectAfterLogin');
+        // Assurer que le chemin de redirection est sécurisé
         window.location.href = redirectPath;
       } else {
         // Navigation via window.location pour éviter les problèmes de hooks

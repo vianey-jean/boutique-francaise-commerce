@@ -6,6 +6,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { chatFilesAPI, type FileAttachment } from '@/services/chatFilesAPI';
 import { toast } from 'sonner';
+import { getSecureChatFileUrl } from '@/utils/secureFileUrl';
 
 interface FilePreviewProps {
   attachment: FileAttachment;
@@ -74,8 +75,10 @@ const FilePreview: React.FC<FilePreviewProps> = ({
   };
 
   const handlePreview = () => {
+    // Utiliser une URL sécurisée pour les fichiers de chat
     const fileUrl = chatFilesAPI.getFileUrl(url);
-    window.open(fileUrl, '_blank');
+    const secureFileUrl = getSecureChatFileUrl(fileUrl);
+    window.open(secureFileUrl, '_blank');
   };
 
   const handleDelete = () => {
@@ -204,36 +207,36 @@ const FilePreview: React.FC<FilePreviewProps> = ({
       {/* Prévisualisation pour les images */}
       {mimetype.startsWith('image/') && (
         <div className="mt-2">
-          <img
-            src={chatFilesAPI.getFileUrl(url)}
-            alt={originalName}
-            className="max-w-full h-32 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
-            onClick={handlePreview}
-          />
+           <img
+             src={getSecureChatFileUrl(chatFilesAPI.getFileUrl(url))}
+             alt={originalName}
+             className="max-w-full h-32 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
+             onClick={handlePreview}
+           />
         </div>
       )}
 
       {/* Lecteur pour les audios */}
       {mimetype.startsWith('audio/') && (
         <div className="mt-2">
-          <audio
-            controls
-            className="w-full h-8"
-            src={chatFilesAPI.getFileUrl(url)}
-            preload="metadata"
-          />
+           <audio
+             controls
+             className="w-full h-8"
+             src={getSecureChatFileUrl(chatFilesAPI.getFileUrl(url))}
+             preload="metadata"
+           />
         </div>
       )}
 
       {/* Lecteur pour les vidéos */}
       {mimetype.startsWith('video/') && (
         <div className="mt-2">
-          <video
-            controls
-            className="max-w-full h-32 rounded border"
-            src={chatFilesAPI.getFileUrl(url)}
-            preload="metadata"
-          />
+           <video
+             controls
+             className="max-w-full h-32 rounded border"
+             src={getSecureChatFileUrl(chatFilesAPI.getFileUrl(url))}
+             preload="metadata"
+           />
         </div>
       )}
 
@@ -241,12 +244,12 @@ const FilePreview: React.FC<FilePreviewProps> = ({
       {isReadableText() && (
         <div className="mt-2">
           <div className="max-h-32 overflow-y-auto bg-gray-100 dark:bg-gray-900 p-2 rounded border text-xs">
-            <iframe
-              src={chatFilesAPI.getFileUrl(url)}
-              className="w-full h-24 border-0"
-              title={originalName}
-              sandbox="allow-same-origin"
-            />
+             <iframe
+               src={getSecureChatFileUrl(chatFilesAPI.getFileUrl(url))}
+               className="w-full h-24 border-0"
+               title={originalName}
+               sandbox="allow-same-origin"
+             />
           </div>
         </div>
       )}
@@ -255,12 +258,12 @@ const FilePreview: React.FC<FilePreviewProps> = ({
       {mimetype === 'application/pdf' && (
         <div className="mt-2">
           <div className="bg-gray-100 dark:bg-gray-900 rounded border p-2">
-            <iframe
-              src={`${chatFilesAPI.getFileUrl(url)}#toolbar=0&navpanes=0&scrollbar=0`}
-              className="w-full h-40 border-0 rounded"
-              title={originalName}
-              sandbox="allow-same-origin allow-scripts"
-            />
+             <iframe
+               src={`${getSecureChatFileUrl(chatFilesAPI.getFileUrl(url))}#toolbar=0&navpanes=0&scrollbar=0`}
+               className="w-full h-40 border-0 rounded"
+               title={originalName}
+               sandbox="allow-same-origin allow-scripts"
+             />
           </div>
         </div>
       )}

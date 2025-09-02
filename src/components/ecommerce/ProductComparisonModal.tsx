@@ -41,11 +41,14 @@ const ProductComparisonModal: React.FC<ProductComparisonModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto" aria-describedby="product-comparison-description">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">
             Comparaison de produits
           </DialogTitle>
+          <div id="product-comparison-description" className="sr-only">
+            Modal de comparaison permettant de comparer plusieurs produits côte à côte
+          </div>
         </DialogHeader>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">

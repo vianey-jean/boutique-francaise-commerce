@@ -46,7 +46,7 @@ const ReviewDetail: React.FC<ReviewDetailProps> = ({ reviewId, onClose, isOpen }
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="max-w-3xl" aria-describedby="review-detail-description">
         <DialogHeader>
           <DialogTitle>Détails du commentaire</DialogTitle>
           <DialogDescription>Informations détaillées sur l'avis client</DialogDescription>

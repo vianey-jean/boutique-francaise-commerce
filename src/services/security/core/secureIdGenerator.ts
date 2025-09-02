@@ -32,10 +32,10 @@ export const generateSecureId = (realId: string, type: EntityType = 'product'): 
 
 /**
  * Génère une route sécurisée pour les pages statiques
- * @returns Route sécurisée aléatoire (sans slash initial)
+ * @returns Route sécurisée aléatoire
  */
 export const generateSecureRoute = (): string => {
-  return nanoid(24);
+  return `/${nanoid(24)}`;
 };
 
 /**

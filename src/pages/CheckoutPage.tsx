@@ -12,6 +12,7 @@ import ShippingForm from '@/components/checkout/ShippingForm';
 import PaymentForm from '@/components/checkout/PaymentForm';
 import OrderSummary from '@/components/checkout/OrderSummary';
 import LoadingOrderState from '@/components/checkout/LoadingOrderState';
+import SecurePaymentModal from '@/components/payment/SecurePaymentModal';
 import { ShippingAddress, codePromosAPI } from '@/services/api';
 import { Link } from 'react-router-dom';
 import { ShoppingCart, Shield } from 'lucide-react';
@@ -55,6 +56,7 @@ const CheckoutPage = () => {
   const [deliveryCity, setDeliveryCity] = useState<string>("");
   const [deliveryPrice, setDeliveryPrice] = useState<number>(0);
   const [step, setStep] = useState<'shipping' | 'payment'>('shipping');
+  const [showSecurePayment, setShowSecurePayment] = useState(false);
   
   // État pour le code promo
   const [codePromo, setCodePromo] = useState<string>('');
@@ -189,7 +191,7 @@ const CheckoutPage = () => {
     e.preventDefault();
     
     if (paymentMethod === 'card') {
-      setShowCardForm(true);
+      setShowSecurePayment(true);
     } else {
       // Traiter les autres méthodes de paiement
       processOrder();
@@ -401,6 +403,24 @@ const CheckoutPage = () => {
             </div>
           )}
         </div>
+        
+        {/* Modal de paiement sécurisé */}
+        <SecurePaymentModal
+          isOpen={showSecurePayment}
+          onClose={() => setShowSecurePayment(false)}
+          amount={Math.round(orderTotal * 100)} // Convertir en centimes
+          currency="EUR"
+          orderData={{
+            items: selectedCartItems,
+            shipping: shippingData,
+            promoCode: verifiedPromo
+          }}
+          onPaymentSuccess={(paymentRef) => {
+            setShowSecurePayment(false);
+            toast.success(`Paiement validé ! Référence: ${paymentRef}`);
+            navigate('/commandes');
+          }}
+        />
       </div>
     </Layout>
   );

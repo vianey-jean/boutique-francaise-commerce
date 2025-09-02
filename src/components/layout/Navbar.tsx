@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import SecureLink from '@/components/SecureLink';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -210,12 +209,12 @@ const Navbar = () => {
     <nav aria-label="Navigation principale" className="border-b border-neutral-200/50 dark:border-neutral-700/50 py-3 bg-gradient-to-r from-white via-slate-50 to-white dark:from-neutral-900 dark:via-black dark:to-neutral-900 sticky top-0 z-40 backdrop-blur-lg bg-white/90 dark:bg-neutral-900/90 shadow-sm">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between">
-          <SecureLink to="/" className="flex items-center group" aria-label="Page d'accueil">
+          <Link to="/" className="flex items-center group" aria-label="Page d'accueil">
             <div className="relative">
               <img src={logo} alt="Riziky Boutique" className="h-20 w-auto transition-transform duration-300 group-hover:scale-105" />
               <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 to-pink-500/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10"></div>
             </div>
-          </SecureLink>
+          </Link>
 
           {/* Recherche desktop améliorée */}
           <div className="hidden md:flex items-center space-x-4 flex-1 max-w-2xl mx-8">
@@ -253,7 +252,7 @@ const Navbar = () => {
 
           {/* Icônes utilisateur pour desktop améliorées */}
           <div className="hidden md:flex items-center space-x-4">
-            <SecureLink to="/favoris" requireAuth={true} className="relative group">
+            <Link to="/favoris" className="relative group">
               <Button variant="ghost" size="icon" className="nav-icon rounded-2xl bg-gradient-to-br from-teal-50 to-cyan-50 hover:from-teal-100 hover:to-cyan-100 dark:from-teal-900/20 dark:to-cyan-900/20 dark:hover:from-teal-900/40 dark:hover:to-cyan-900/40 h-12 w-12 transition-all duration-300 hover:scale-110 hover:shadow-lg border border-teal-200/50 dark:border-teal-700/50">
                 <Heart className="h-5 w-5 text-teal-600 dark:text-teal-400 transition-transform group-hover:scale-110" />
               </Button>
@@ -262,9 +261,9 @@ const Navbar = () => {
                   {favoriteCount}
                 </Badge>
               }
-            </SecureLink>
+            </Link>
 
-            <SecureLink to="/panier" requireAuth={true} className="relative group">
+            <Link to="/panier" className="relative group">
               <Button variant="ghost" size="icon" className="nav-icon rounded-2xl bg-gradient-to-br from-violet-50 to-purple-50 hover:from-violet-100 hover:to-purple-100 dark:from-violet-900/20 dark:to-purple-900/20 dark:hover:from-violet-900/40 dark:hover:to-purple-900/40 h-12 w-12 transition-all duration-300 hover:scale-110 hover:shadow-lg border border-violet-200/50 dark:border-violet-700/50">
                 <ShoppingCart className="h-5 w-5 text-violet-600 dark:text-violet-400 transition-transform group-hover:scale-110" />
               </Button>
@@ -273,7 +272,7 @@ const Navbar = () => {
                   {cartItemsCount}
                 </Badge>
               }
-            </SecureLink>
+            </Link>
 
             {isAuthenticated ? (
               <DropdownMenu>
@@ -290,34 +289,34 @@ const Navbar = () => {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator className="my-2" />
-                   <DropdownMenuItem asChild className="rounded-xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 transition-all duration-200">
-                     <SecureLink to="/profil" className="flex items-center px-4 py-3">
+                  <DropdownMenuItem asChild className="rounded-xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 transition-all duration-200">
+                    <Link to="/profil" className="flex items-center px-4 py-3">
                       <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mr-3">
                          <div className="mr-2">
                                     <UserAvatar user={user!} size="sm" />
                                   </div>
                       </div>
-                       <span className="font-medium">Profil</span>
-                     </SecureLink>
+                      <span className="font-medium">Profil</span>
+                    </Link>
                   </DropdownMenuItem>
-                   <DropdownMenuItem asChild className="rounded-xl hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 dark:hover:from-green-900/20 dark:hover:to-emerald-900/20 transition-all duration-200">
-                     <SecureLink to="/commandes" className="flex items-center px-4 py-3">
+                  <DropdownMenuItem asChild className="rounded-xl hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 dark:hover:from-green-900/20 dark:hover:to-emerald-900/20 transition-all duration-200">
+                    <Link to="/commandes" className="flex items-center px-4 py-3">
                       <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center mr-3">
                         <Package className="h-4 w-4 text-green-600 dark:text-green-400" />
                       </div>
-                       <span className="font-medium">Mes commandes</span>
-                     </SecureLink>
+                      <span className="font-medium">Mes commandes</span>
+                    </Link>
                   </DropdownMenuItem>
                   {isAdmin && (
                     <>
                       <DropdownMenuSeparator className="my-2" />
-                       <DropdownMenuItem asChild className="rounded-xl hover:bg-gradient-to-r hover:from-purple-50 hover:to-violet-50 dark:hover:from-purple-900/20 dark:hover:to-violet-900/20 transition-all duration-200">
-                         <SecureLink to="/admin/produits" className="flex items-center px-4 py-3">
+                      <DropdownMenuItem asChild className="rounded-xl hover:bg-gradient-to-r hover:from-purple-50 hover:to-violet-50 dark:hover:from-purple-900/20 dark:hover:to-violet-900/20 transition-all duration-200">
+                        <Link to="/admin/produits" className="flex items-center px-4 py-3">
                           <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center mr-3">
                             <Settings className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                           </div>
-                           <span className="font-medium">Administration</span>
-                         </SecureLink>
+                          <span className="font-medium">Administration</span>
+                        </Link>
                       </DropdownMenuItem>
                     </>
                   )}
@@ -333,26 +332,26 @@ const Navbar = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-               <SecureLink to="/login" className="group">
+              <Link to="/login" className="group">
                 <Button variant="ghost" size="icon" className="nav-icon rounded-2xl bg-gradient-to-br from-rose-50 to-pink-50 hover:from-rose-100 hover:to-pink-100 dark:from-rose-900/20 dark:to-pink-900/20 dark:hover:from-rose-900/40 dark:hover:to-pink-900/40 h-12 w-12 transition-all duration-300 hover:scale-110 hover:shadow-lg border border-rose-200/50 dark:border-rose-700/50">
                   <User className="h-5 w-5 text-rose-600 dark:text-rose-400 transition-transform group-hover:scale-110" />
-                 </Button>
-               </SecureLink>
+                </Button>
+              </Link>
             )}
           </div>
 
-           {/* Menu mobile amélioré */}
-           <div className="flex md:hidden items-center space-x-3">
-             <SecureLink to="/panier" requireAuth={true} className="relative group">
+          {/* Menu mobile amélioré */}
+          <div className="flex md:hidden items-center space-x-3">
+            <Link to="/panier" className="relative group">
               <Button variant="ghost" size="icon" className="nav-icon bg-violet-50 hover:bg-violet-100 dark:bg-violet-900/20 dark:hover:bg-violet-900/40 rounded-xl h-10 w-10 transition-all duration-300 hover:scale-105">
                 <ShoppingCart className="h-5 w-5 text-violet-600 dark:text-violet-400" />
               </Button>
               {cartItemsCount > 0 && 
                 <Badge variant="destructive" className="absolute -top-2 -right-2 w-5 h-5 flex items-center justify-center p-0 text-xs rounded-full animate-bounce">
                   {cartItemsCount}
-                 </Badge>
-               }
-             </SecureLink>
+                </Badge>
+              }
+            </Link>
 
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
               <SheetTrigger asChild>
@@ -375,48 +374,48 @@ const Navbar = () => {
                     </div>
 
                     <div className="space-y-6">    
-                       <div>
-                         <SheetClose asChild>
-                           <SecureLink to="/favoris" requireAuth={true} className="flex items-center hover:text-primary">
+                      <div>
+                        <SheetClose asChild>
+                          <Link to="/favoris" className="flex items-center hover:text-primary">
                             <Heart className="mr-2 h-6 w-6 text-teal-600 dark:text-teal-400" />
                             <span>Mes favoris</span>
                             {favoriteCount > 0 && 
                               <Badge variant="outline" className="ml-2 text-red-600">
                                 {favoriteCount}
                               </Badge>
-                             }
-                           </SecureLink>
+                            }
+                          </Link>
                         </SheetClose>
                       </div>
                       {isAuthenticated && (
                         <div className="pb-4 border-b">
                           <h3 className="text-sm font-medium mb-3">Mon compte</h3>
                           <ul className="space-y-3">
-                             <li>
-                               <SheetClose asChild>
-                                 <SecureLink to="/profil" className="flex items-center text-sm hover:text-primary">
+                            <li>
+                              <SheetClose asChild>
+                                <Link to="/profil" className="flex items-center text-sm hover:text-primary">
                                   <div className="mr-2">
                                     <UserAvatar user={user!} size="sm" />
                                   </div>
-                                   <span>Profil</span>
-                                 </SecureLink>
+                                  <span>Profil</span>
+                                </Link>
                               </SheetClose>
                             </li>
-                             <li>
-                               <SheetClose asChild>
-                                 <SecureLink to="/commandes" className="flex items-center text-sm hover:text-primary">
+                            <li>
+                              <SheetClose asChild>
+                                <Link to="/commandes" className="flex items-center text-sm hover:text-primary">
                                   <Package className="mr-2 h-6 w-6" />
-                                   <span>Mes commandes</span>
-                                 </SecureLink>
+                                  <span>Mes commandes</span>
+                                </Link>
                               </SheetClose>
                             </li>
                             {isAdmin && (
-                               <li>
-                                 <SheetClose asChild>
-                                   <SecureLink to="/admin/produits" className="flex items-center text-sm hover:text-primary">
+                              <li>
+                                <SheetClose asChild>
+                                  <Link to="/admin/produits" className="flex items-center text-sm hover:text-primary">
                                     <Settings className="mr-2 h-6 w-6" />
-                                     <span>Administration</span>
-                                   </SecureLink>
+                                    <span>Administration</span>
+                                  </Link>
                                 </SheetClose>
                               </li>
                             )}
@@ -437,11 +436,11 @@ const Navbar = () => {
                       )}
 
                       {!isAuthenticated && (
-                         <div className="pb-4 border-b">
-                           <SheetClose asChild>
-                             <SecureLink to="/login" className="flex w-full justify-center items-center py-2 px-4 bg-red-700 text-white rounded hover:bg-red-800 transition-colors">
-                               Se connecter
-                             </SecureLink>
+                        <div className="pb-4 border-b">
+                          <SheetClose asChild>
+                            <Link to="/login" className="flex w-full justify-center items-center py-2 px-4 bg-red-700 text-white rounded hover:bg-red-800 transition-colors">
+                              Se connecter
+                            </Link>
                           </SheetClose>
                         </div>
                       )}
@@ -488,15 +487,15 @@ const Navbar = () => {
                   Catégories
                 </AccordionTrigger>
                 <AccordionContent className="px-4 pb-4">
-                   <div className="grid grid-cols-2 gap-2 pt-2 text-red-800 font-bold">
-                     {categories.map(cat => (
-                       <SecureLink
+                  <div className="grid grid-cols-2 gap-2 pt-2 text-red-800 font-bold">
+                    {categories.map(cat => (
+                      <Link 
                         key={cat.id} 
                         to={`/categorie/${cat.name}`} 
                         className="text-sm py-2 px-3 rounded-xl bg-white dark:bg-neutral-800 hover:bg-red-100 dark:hover:bg-red-900/30 capitalize text-center transition-all duration-200 hover:scale-105 shadow-sm border border-red-200/30 dark:border-red-700/30"
                       >
-                         {cat.name.charAt(0).toUpperCase() + cat.name.slice(1)}
-                       </SecureLink>
+                        {cat.name.charAt(0).toUpperCase() + cat.name.slice(1)}
+                      </Link>
                     ))}
                   </div>
                 </AccordionContent>

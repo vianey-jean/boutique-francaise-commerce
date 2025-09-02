@@ -3,7 +3,6 @@ import React, { createContext, useState, useContext, useEffect, ReactNode } from
 import { authAPI, User } from '../services/api';
 import { UpdateProfileData } from '@/types/auth';
 import { useToast } from '@/hooks/use-toast';
-import { getSecureRoute } from '@/services/secureIds';
 
 interface AuthContextType {
   user: User | null;
@@ -78,12 +77,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const redirectPath = localStorage.getItem('redirectAfterLogin');
       if (redirectPath) {
         localStorage.removeItem('redirectAfterLogin');
-        // Assurer que le chemin de redirection est sécurisé
         window.location.href = redirectPath;
       } else {
-        // Navigation sécurisée vers la page d'accueil
-        const secureHomePath = getSecureRoute('/');
-        window.location.href = `/${secureHomePath}`;
+        // Navigation via window.location pour éviter les problèmes de hooks
+        window.location.href = '/';
       }
     } catch (error: any) {
       console.error("Erreur de connexion:", error);
@@ -108,9 +105,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       variant: 'destructive',
     });
 
-    // Navigation sécurisée vers la page de connexion
-    const secureLoginPath = getSecureRoute('/login');
-    window.location.href = `/${secureLoginPath}`;
+    // Navigation via window.location pour éviter les problèmes de hooks
+    window.location.href = '/login';
   };
 
   const register = async (nom: string, email: string, password: string) => {
@@ -129,9 +125,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         localStorage.removeItem('redirectAfterLogin');
         window.location.href = redirectPath;
       } else {
-        // Navigation sécurisée vers la page d'accueil
-        const secureHomePath = getSecureRoute('/');
-        window.location.href = `/${secureHomePath}`;
+        // Navigation via window.location pour éviter les problèmes de hooks
+        window.location.href = '/';
       }
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || 'Erreur lors de l\'inscription';
@@ -181,8 +176,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           title: 'Votre session a expiré, veuillez vous reconnecter',
           variant: 'destructive',
         });
-        const secureLoginPath = getSecureRoute('/login');
-        window.location.href = `/${secureLoginPath}`;
+        window.location.href = '/login';
         throw new Error('Session expirée');
       }
       
@@ -214,8 +208,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           title: 'Votre session a expiré, veuillez vous reconnecter',
           variant: 'destructive',
         });
-        const secureLoginPath = getSecureRoute('/login');
-        window.location.href = `/${secureLoginPath}`;
+        window.location.href = '/login';
         throw new Error('Session expirée');
       }
       

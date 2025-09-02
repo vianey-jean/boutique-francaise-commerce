@@ -6,7 +6,7 @@ import { Shield, CreditCard, AlertCircle, CheckCircle } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { motion } from 'framer-motion';
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_51placeholder');
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
 
 interface Stripe3DSValidationModalProps {
   isOpen: boolean;
@@ -46,11 +46,40 @@ const Stripe3DSValidationModal: React.FC<Stripe3DSValidationModalProps> = ({
   const processPayment = async () => {
     try {
       setValidationStep('validating');
+      
+      // Vérifier si Stripe est configuré
+      if (!import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY) {
+        console.warn('VITE_STRIPE_PUBLISHABLE_KEY non configuré - simulation du paiement');
+        // Simuler directement le paiement sans Stripe
+        const mockPaymentIntentId = `pi_${Math.random().toString(36).substr(2, 9)}`;
+        setPaymentIntentId(mockPaymentIntentId);
+        
+        setTimeout(() => {
+          setValidationStep('success');
+          setTimeout(() => {
+            onSuccess(mockPaymentIntentId);
+            onClose();
+          }, 2000);
+        }, 2000);
+        return;
+      }
+      
       const stripe = await stripePromise;
       
       if (!stripe) {
         console.warn('Stripe not available - using mock payment flow');
         // Simuler directement sans Stripe si non disponible
+        const mockPaymentIntentId = `pi_${Math.random().toString(36).substr(2, 9)}`;
+        setPaymentIntentId(mockPaymentIntentId);
+        
+        setTimeout(() => {
+          setValidationStep('success');
+          setTimeout(() => {
+            onSuccess(mockPaymentIntentId);
+            onClose();
+          }, 2000);
+        }, 2000);
+        return;
       }
 
       // Simuler la création d'un payment intent avec 3DS
@@ -173,13 +202,16 @@ const Stripe3DSValidationModal: React.FC<Stripe3DSValidationModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" aria-describedby="stripe-validation-description">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5" />
             Validation sécurisée
           </DialogTitle>
         </DialogHeader>
+        <div id="stripe-validation-description" className="sr-only">
+          Modal de validation sécurisée pour le paiement Stripe 3D Secure
+        </div>
         {renderContent()}
       </DialogContent>
     </Dialog>

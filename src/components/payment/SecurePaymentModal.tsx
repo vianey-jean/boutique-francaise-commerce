@@ -70,18 +70,15 @@ const SecurePaymentModal: React.FC<SecurePaymentModalProps> = ({
   return (
     <>
       <Dialog open={isOpen && !show3DS} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto" aria-describedby="secure-payment-description">
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-2xl">
               <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
                 <Lock className="h-4 w-4 text-white" />
               </div>
               Paiement sécurisé
-          </DialogTitle>
-          <div id="secure-payment-description" className="sr-only">
-            Modal de paiement sécurisé pour traiter votre commande
-          </div>
-        </DialogHeader>
+            </DialogTitle>
+          </DialogHeader>
 
           <div className="space-y-6">
             {/* Résumé de commande */}

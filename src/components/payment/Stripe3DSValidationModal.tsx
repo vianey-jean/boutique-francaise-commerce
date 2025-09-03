@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { loadStripe } from '@stripe/stripe-js';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Shield, CreditCard, AlertCircle, CheckCircle } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { motion } from 'framer-motion';
 
-// Supprimer complètement l'import de Stripe pour éviter les erreurs de chargement
-// const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 interface Stripe3DSValidationModalProps {
   isOpen: boolean;
@@ -46,14 +46,18 @@ const Stripe3DSValidationModal: React.FC<Stripe3DSValidationModalProps> = ({
   const processPayment = async () => {
     try {
       setValidationStep('validating');
+      const stripe = await stripePromise;
       
-      // Simulation complète du paiement sans Stripe.js
-      console.log('Simulation du paiement 3D Secure');
+      if (!stripe) {
+        throw new Error('Stripe non disponible');
+      }
+
+      // Simuler la création d'un payment intent avec 3DS
       const mockPaymentIntentId = `pi_${Math.random().toString(36).substr(2, 9)}`;
       setPaymentIntentId(mockPaymentIntentId);
 
-      // Simuler la validation 3DS (70% de chance de succès)
-      const isValid = Math.random() > 0.3;
+      // Simuler la validation 3DS (en réalité, cela se ferait via votre backend)
+      const isValid = Math.random() > 0.3; // 70% de chance de succès
 
       setTimeout(() => {
         if (isValid) {
@@ -168,16 +172,13 @@ const Stripe3DSValidationModal: React.FC<Stripe3DSValidationModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md" aria-describedby="stripe-validation-description">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5" />
             Validation sécurisée
           </DialogTitle>
         </DialogHeader>
-        <div id="stripe-validation-description" className="sr-only">
-          Modal de validation sécurisée pour le paiement Stripe 3D Secure
-        </div>
         {renderContent()}
       </DialogContent>
     </Dialog>

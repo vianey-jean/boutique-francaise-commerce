@@ -156,22 +156,27 @@
     @apply relative bg-gradient-to-r from-primary to-secondary text-primary-foreground font-semibold py-3 px-6 rounded-xl shadow-neural hover:shadow-glow transform hover:scale-105 transition-all duration-300 overflow-hidden;
   }
   
-  .cyber-button::before {
-    @apply absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700;
-    content: '';
-  }
+.cyber-button::before {
+  @apply absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full transition-transform duration-700;
+  content: '';
+}
+
+/* animate scan on hover without using group variants in @apply */
+.cyber-button:hover::before {
+  transform: translateX(100%);
+}
   
   .hologram-badge {
     @apply relative bg-gradient-to-r from-accent via-primary to-secondary text-white text-xs font-bold px-4 py-2 rounded-full shadow-glow animate-pulse;
   }
   
-  .neo-card {
-    @apply relative overflow-hidden rounded-2xl bg-gradient-to-br from-card via-card/95 to-card/90 border border-border/50 shadow-neural hover:shadow-luxury transition-all duration-500 group backdrop-blur-sm;
-  }
+.neo-card {
+  @apply relative overflow-hidden rounded-2xl bg-gradient-to-br from-card via-card/95 to-card/90 border border-border/50 shadow-neural hover:shadow-luxury transition-all duration-500 backdrop-blur-sm;
+}
   
-  .product-card-enhanced {
-    @apply neural-card hover:transform hover:scale-[1.02] hover:-translate-y-2 transition-all duration-500 cursor-pointer group;
-  }
+.product-card-enhanced {
+  @apply neural-card hover:transform hover:scale-[1.02] hover:-translate-y-2 transition-all duration-500 cursor-pointer;
+}
   
   .hero-neural {
     @apply relative bg-gradient-to-br from-background via-background/95 to-background/90 text-foreground overflow-hidden;
@@ -258,11 +263,11 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-luxury-rose rounded-full;
+  @apply bg-gradient-to-b from-primary to-secondary rounded-full;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-luxury-rose-dark;
+  @apply from-primary-glow to-secondary-glow;
 }
 
 /* Animations */

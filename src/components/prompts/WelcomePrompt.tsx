@@ -3,6 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { X, MessageSquareText } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { getSecureRoute } from '@/services/secureIds';
 
 interface WelcomePromptProps {
   title?: string;
@@ -22,24 +25,38 @@ const WelcomePrompt: React.FC<WelcomePromptProps> = ({
   delay = 3000
 }) => {
   const [isVisible, setIsVisible] = useState(false);
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   
   useEffect(() => {
-    // Vérifier si le message a déjà été fermé
-    const isDismissed = localStorage.getItem(dismissKey) === 'true';
+    // Gérer l'affichage basé sur l'état de connexion
+    const authDismissKey = `${dismissKey}-${isAuthenticated ? 'authenticated' : 'unauthenticated'}`;
+    const isDismissed = localStorage.getItem(authDismissKey) === 'true';
     
-    if (!isDismissed) {
-      // Afficher après un délai
+    if (!isDismissed && !isAuthenticated) {
+      // Afficher seulement si utilisateur non connecté et pas déjà fermé
       const timer = setTimeout(() => {
         setIsVisible(true);
       }, delay);
       
       return () => clearTimeout(timer);
+    } else {
+      // Cacher si utilisateur connecté
+      setIsVisible(false);
     }
-  }, [delay, dismissKey]);
+  }, [delay, dismissKey, isAuthenticated]);
   
   const handleClose = () => {
-    localStorage.setItem(dismissKey, 'true');
+    const authDismissKey = `${dismissKey}-${isAuthenticated ? 'authenticated' : 'unauthenticated'}`;
+    localStorage.setItem(authDismissKey, 'true');
     setIsVisible(false);
+    
+    // Rediriger vers la page service client sécurisée
+    const secureServiceRoute = getSecureRoute('/service-client');
+    if (secureServiceRoute) {
+      navigate(secureServiceRoute);
+    }
+    
     if (onClose) onClose();
   };
   

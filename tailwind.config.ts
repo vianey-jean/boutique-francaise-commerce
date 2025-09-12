@@ -20,9 +20,10 @@ export default {
 		},
 		extend: {
 			fontFamily: {
-				poppins: ['Poppins', 'sans-serif'],
-				inter: ['Inter', 'sans-serif'],
-				playfair: ['Playfair Display', 'serif'],
+				sans: ['Inter', 'system-ui', 'sans-serif'],
+				display: ['Orbitron', 'system-ui', 'sans-serif'],
+				mono: ['JetBrains Mono', 'Consolas', 'monospace'],
+				neural: ['Exo 2', 'system-ui', 'sans-serif'],
 			},
 			colors: {
 				border: 'hsl(var(--border))',
@@ -32,11 +33,14 @@ export default {
 				foreground: 'hsl(var(--foreground))',
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
-					foreground: 'hsl(var(--primary-foreground))'
+					foreground: 'hsl(var(--primary-foreground))',
+					glow: 'hsl(var(--primary-glow))',
+					shadow: 'hsl(var(--primary-shadow))'
 				},
 				secondary: {
 					DEFAULT: 'hsl(var(--secondary))',
-					foreground: 'hsl(var(--secondary-foreground))'
+					foreground: 'hsl(var(--secondary-foreground))',
+					glow: 'hsl(var(--secondary-glow))'
 				},
 				destructive: {
 					DEFAULT: 'hsl(var(--destructive))',
@@ -48,7 +52,8 @@ export default {
 				},
 				accent: {
 					DEFAULT: 'hsl(var(--accent))',
-					foreground: 'hsl(var(--accent-foreground))'
+					foreground: 'hsl(var(--accent-foreground))',
+					glow: 'hsl(var(--accent-glow))'
 				},
 				popover: {
 					DEFAULT: 'hsl(var(--popover))',
@@ -68,32 +73,36 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// Luxury E-commerce Design System
-				luxury: {
-					gold: 'hsl(42, 78%, 60%)',
-					'gold-dark': 'hsl(42, 78%, 45%)',
-					'gold-light': 'hsl(42, 78%, 85%)',
-					rose: 'hsl(350, 89%, 60%)',
-					'rose-dark': 'hsl(350, 89%, 45%)',
-					'rose-light': 'hsl(350, 89%, 95%)',
-					deep: 'hsl(240, 21%, 15%)',
-					elegant: 'hsl(240, 9%, 89%)',
-					premium: 'hsl(271, 91%, 65%)',
-					'premium-dark': 'hsl(271, 91%, 45%)',
+				// Neural Network Color System
+				neural: {
+					primary: 'hsl(263, 100%, 65%)',
+					secondary: 'hsl(200, 100%, 55%)',
+					accent: 'hsl(45, 100%, 60%)',
+					success: 'hsl(142, 85%, 55%)',
+					warning: 'hsl(38, 100%, 60%)',
+					danger: 'hsl(0, 85%, 60%)',
+					info: 'hsl(217, 91%, 60%)',
+					glow: 'hsl(263, 100%, 65% / 0.3)',
+					shadow: 'hsl(263, 100%, 15% / 0.6)',
 				},
-				// Product Categories Colors
-				categories: {
-					wigs: 'hsl(320, 100%, 70%)',
-					weaves: 'hsl(280, 100%, 75%)',
-					ponytails: 'hsl(200, 100%, 70%)',
-					tools: 'hsl(150, 100%, 60%)',
-					adhesives: 'hsl(35, 100%, 65%)',
-					tech: 'hsl(250, 100%, 70%)',
+				// Cyber Colors
+				cyber: {
+					neon: 'hsl(180, 100%, 50%)',
+					'neon-pink': 'hsl(320, 100%, 50%)',
+					'neon-green': 'hsl(120, 100%, 50%)',
+					'neon-blue': 'hsl(240, 100%, 50%)',
+					'neon-orange': 'hsl(30, 100%, 50%)',
+					matrix: 'hsl(120, 100%, 25%)',
 				},
-				// Status Colors
-				success: 'hsl(142, 76%, 36%)',
-				warning: 'hsl(38, 92%, 50%)',
-				error: 'hsl(0, 84%, 60%)',
+				// Glass Morphism
+				glass: {
+					bg: 'hsl(var(--glass-bg))',
+					border: 'hsl(var(--glass-border))',
+				},
+				// Status Enhanced
+				success: 'hsl(var(--success))',
+				warning: 'hsl(var(--warning))',
+				error: 'hsl(0, 85%, 60%)',
 				info: 'hsl(217, 91%, 60%)',
 			},
 			borderRadius: {
@@ -102,12 +111,18 @@ export default {
 				sm: 'calc(var(--radius) - 4px)'
 			},
 			boxShadow: {
-				'luxury': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-				'luxury-lg': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-				'luxury-xl': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-				'premium': '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-				'glow': '0 0 20px rgba(255, 215, 0, 0.3)',
-				'glow-rose': '0 0 20px rgba(244, 63, 94, 0.3)',
+				'neural': 'var(--shadow-neural)',
+				'glow': 'var(--shadow-glow)',
+				'luxury': 'var(--shadow-luxury)',
+				'cyber': '0 0 30px hsl(180 100% 50% / 0.5), 0 0 60px hsl(180 100% 50% / 0.2)',
+				'neon': '0 0 20px currentColor, 0 0 40px currentColor, 0 0 60px currentColor',
+				'hologram': '0 0 40px hsl(var(--primary) / 0.4), inset 0 0 40px hsl(var(--secondary) / 0.1)',
+				'glass': '0 8px 32px hsl(0 0% 0% / 0.3), inset 0 1px 0 hsl(0 0% 100% / 0.1)',
+				'depth': '0 20px 40px -12px hsl(0 0% 0% / 0.4), 0 0 0 1px hsl(0 0% 100% / 0.05)',
+			},
+			backdropBlur: {
+				'neural': 'var(--blur-subtle)',
+				'strong': 'var(--blur-strong)',
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
@@ -118,6 +133,13 @@ export default {
 				'shimmer': 'shimmer 2s linear infinite',
 				'float': 'float 6s ease-in-out infinite',
 				'gradient': 'gradient 15s ease infinite',
+				'neural-pulse': 'neural-pulse 3s ease-in-out infinite',
+				'cyber-scan': 'cyber-scan 2s linear infinite',
+				'hologram': 'hologram 4s ease-in-out infinite',
+				'matrix-rain': 'matrix-rain 20s linear infinite',
+				'glow-pulse': 'glow-pulse 2s ease-in-out infinite alternate',
+				'data-flow': 'data-flow 3s linear infinite',
+				'neural-wave': 'neural-wave 6s ease-in-out infinite',
 			},
 			keyframes: {
 				'accordion-down': {
@@ -151,12 +173,87 @@ export default {
 				'gradient': {
 					'0%, 100%': { backgroundPosition: '0% 50%' },
 					'50%': { backgroundPosition: '100% 50%' }
+				},
+				'neural-pulse': {
+					'0%, 100%': { 
+						opacity: '1', 
+						boxShadow: '0 0 20px hsl(var(--primary) / 0.4)' 
+					},
+					'50%': { 
+						opacity: '0.8', 
+						boxShadow: '0 0 40px hsl(var(--primary) / 0.6), 0 0 60px hsl(var(--secondary) / 0.3)' 
+					}
+				},
+				'cyber-scan': {
+					'0%': { transform: 'translateX(-100%) skewX(-15deg)' },
+					'100%': { transform: 'translateX(200%) skewX(-15deg)' }
+				},
+				'hologram': {
+					'0%, 100%': { 
+						opacity: '1',
+						filter: 'hue-rotate(0deg) brightness(1)'
+					},
+					'25%': { 
+						opacity: '0.8',
+						filter: 'hue-rotate(90deg) brightness(1.2)'
+					},
+					'50%': { 
+						opacity: '0.9',
+						filter: 'hue-rotate(180deg) brightness(0.9)'
+					},
+					'75%': { 
+						opacity: '0.85',
+						filter: 'hue-rotate(270deg) brightness(1.1)'
+					}
+				},
+				'matrix-rain': {
+					'0%': { transform: 'translateY(-100%)' },
+					'100%': { transform: 'translateY(100vh)' }
+				},
+				'glow-pulse': {
+					'0%': { 
+						boxShadow: '0 0 5px hsl(var(--primary) / 0.5)'
+					},
+					'100%': { 
+						boxShadow: '0 0 25px hsl(var(--primary) / 0.8), 0 0 50px hsl(var(--secondary) / 0.4)'
+					}
+				},
+				'data-flow': {
+					'0%': { 
+						transform: 'translateX(-100%) scaleX(0)',
+						opacity: '0'
+					},
+					'50%': { 
+						transform: 'translateX(0%) scaleX(1)',
+						opacity: '1'
+					},
+					'100%': { 
+						transform: 'translateX(100%) scaleX(0)',
+						opacity: '0'
+					}
+				},
+				'neural-wave': {
+					'0%, 100%': { 
+						transform: 'translateY(0px) rotate(0deg)',
+						borderRadius: '50%'
+					},
+					'33%': { 
+						transform: 'translateY(-10px) rotate(120deg)',
+						borderRadius: '30%'
+					},
+					'66%': { 
+						transform: 'translateY(5px) rotate(240deg)',
+						borderRadius: '70%'
+					}
 				}
 			},
 			backgroundImage: {
-				'luxury-gradient': 'linear-gradient(135deg, hsl(42, 78%, 60%) 0%, hsl(350, 89%, 60%) 100%)',
-				'premium-gradient': 'linear-gradient(135deg, hsl(271, 91%, 65%) 0%, hsl(320, 100%, 70%) 100%)',
-				'hero-gradient': 'linear-gradient(135deg, hsl(240, 21%, 15%) 0%, hsl(271, 91%, 45%) 100%)',
+				'neural-gradient': 'var(--gradient-primary)',
+				'luxury-gradient': 'var(--gradient-luxury)',
+				'hero-neural': 'var(--gradient-neural)',
+				'cyber-grid': 'linear-gradient(90deg, transparent 24%, hsl(var(--primary) / 0.1) 25%, hsl(var(--primary) / 0.1) 26%, transparent 27%, transparent 74%, hsl(var(--primary) / 0.1) 75%, hsl(var(--primary) / 0.1) 76%, transparent 77%, transparent), linear-gradient(transparent 24%, hsl(var(--primary) / 0.1) 25%, hsl(var(--primary) / 0.1) 26%, transparent 27%, transparent 74%, hsl(var(--primary) / 0.1) 75%, hsl(var(--primary) / 0.1) 76%, transparent 77%, transparent)',
+				'hologram-mesh': 'radial-gradient(circle at 20% 50%, hsl(var(--primary) / 0.2) 0%, transparent 50%), radial-gradient(circle at 80% 20%, hsl(var(--secondary) / 0.2) 0%, transparent 50%), radial-gradient(circle at 40% 80%, hsl(var(--accent) / 0.2) 0%, transparent 50%)',
+				'data-stream': 'linear-gradient(90deg, transparent, hsl(var(--primary) / 0.1), transparent)',
 			}
 		}
 	},

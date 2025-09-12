@@ -5,25 +5,27 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 relative overflow-hidden transform hover:-translate-y-1 active:translate-y-0",
+  "relative inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-semibold ring-offset-background transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 overflow-hidden transform hover:scale-105 hover:-translate-y-1 active:scale-95 active:translate-y-0",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground shadow-[0_4px_0_0_rgba(0,0,0,0.2)] hover:shadow-[0_6px_0_0_rgba(0,0,0,0.2)] active:shadow-[0_2px_0_0_rgba(0,0,0,0.2)]",
-        destructive: "bg-destructive text-destructive-foreground shadow-[0_4px_0_0_rgba(0,0,0,0.2)] hover:shadow-[0_6px_0_0_rgba(0,0,0,0.2)] active:shadow-[0_2px_0_0_rgba(0,0,0,0.2)]",
-        outline: "border-2 border-input bg-background shadow-[0_4px_0_0_rgba(0,0,0,0.1)] hover:shadow-[0_6px_0_0_rgba(0,0,0,0.1)] active:shadow-[0_2px_0_0_rgba(0,0,0,0.1)] hover:bg-accent hover:text-accent-foreground",
-        secondary: "bg-secondary text-secondary-foreground shadow-[0_4px_0_0_rgba(0,0,0,0.1)] hover:shadow-[0_6px_0_0_rgba(0,0,0,0.1)] active:shadow-[0_2px_0_0_rgba(0,0,0,0.1)]",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
-        gradient: "bg-gradient-to-br from-primary to-purple-600 text-white shadow-[0_4px_0_0_rgba(0,0,0,0.2)] hover:shadow-[0_6px_0_0_rgba(0,0,0,0.2)] active:shadow-[0_2px_0_0_rgba(0,0,0,0.2)]",
-        shine: "bg-primary text-primary-foreground overflow-hidden shadow-[0_4px_0_0_rgba(0,0,0,0.2)] hover:shadow-[0_6px_0_0_rgba(0,0,0,0.2)] active:shadow-[0_2px_0_0_rgba(0,0,0,0.2)] before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_2s_infinite] before:border-t before:border-white/10 before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent",
+        default: "bg-neural-gradient text-primary-foreground shadow-neural hover:shadow-glow",
+        destructive: "bg-gradient-to-r from-red-500 to-red-600 text-white shadow-neural hover:shadow-glow",
+        outline: "border-2 border-primary/20 bg-background/50 backdrop-blur-sm shadow-glass hover:shadow-glow hover:bg-primary/5 hover:border-primary/40",
+        secondary: "bg-secondary/80 backdrop-blur-sm text-secondary-foreground shadow-glass hover:shadow-neural hover:bg-secondary",
+        ghost: "hover:bg-primary/10 hover:text-primary transition-all duration-300",
+        link: "text-primary underline-offset-4 hover:underline hover:text-primary-glow",
+        neural: "bg-neural-gradient text-white shadow-neural hover:shadow-glow animate-neural-pulse",
+        cyber: "bg-transparent border-2 border-neural-primary text-neural-primary hover:bg-neural-primary hover:text-background shadow-cyber",
+        neon: "bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-neon hover:shadow-glow animate-glow-pulse",
+        hologram: "bg-gradient-to-r from-primary/20 via-secondary/20 to-accent/20 backdrop-blur-md border border-white/20 text-foreground hover:from-primary/30 hover:via-secondary/30 hover:to-accent/30 shadow-hologram",
       },
       size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8",
-        icon: "h-10 w-10",
-        xl: "h-12 rounded-md px-10 text-base",
+        default: "h-11 px-6 py-2 rounded-xl",
+        sm: "h-9 px-4 text-sm rounded-lg",
+        lg: "h-12 px-8 text-base rounded-xl",
+        icon: "h-11 w-11 rounded-xl",
+        xl: "h-14 px-10 text-lg rounded-2xl",
       },
     },
     defaultVariants: {

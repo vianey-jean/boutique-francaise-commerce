@@ -24,12 +24,15 @@ const AISalesPredictor: React.FC = () => {
 
   // Fonction utilitaire pour calculer les valeurs d'une vente
   const getSaleValues = (sale: Sale) => {
-    // Nouveau format multi-produits
+    // Nouveau format multi-produits - priorité au totalSellingPrice puis calcul manuel
     if (sale.products && Array.isArray(sale.products) && sale.products.length > 0) {
-      return {
-        revenue: sale.totalSellingPrice || sale.products.reduce((sum, p) => sum + (p.sellingPrice * p.quantitySold), 0),
-        quantity: sale.products.reduce((sum, p) => sum + p.quantitySold, 0)
-      };
+      const revenue = sale.totalSellingPrice !== undefined && sale.totalSellingPrice !== null
+        ? sale.totalSellingPrice
+        : sale.products.reduce((sum, p) => sum + (p.sellingPrice * p.quantitySold), 0);
+      
+      const quantity = sale.products.reduce((sum, p) => sum + p.quantitySold, 0);
+      
+      return { revenue, quantity };
     }
     // Ancien format single-produit
     else if (sale.sellingPrice !== undefined && sale.quantitySold !== undefined) {

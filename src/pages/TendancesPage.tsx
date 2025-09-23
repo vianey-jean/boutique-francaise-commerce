@@ -59,29 +59,27 @@ const TendancesPage = () => {
 
   // Fonction utilitaire pour calculer les valeurs d'une vente (CORRIGÉE)
   const getSaleValues = (sale: any) => {
-    // Nouveau format multi-produits
+    // Nouveau format multi-produits - priorité au totalSellingPrice puis calcul manuel
     if (sale.products && Array.isArray(sale.products) && sale.products.length > 0) {
-      let revenue = 0;
-      let quantity = 0;
-      let profit = 0;
-      
       // Filtrer les produits non-avance
       const validProducts = sale.products.filter(p => {
         const category = getProductCategory(p.description);
         return category !== null;
       });
       
-      validProducts.forEach(product => {
-        revenue += product.sellingPrice 
-        quantity += product.quantitySold;
-        profit += product.profit || 0;
-      });
+      // Prioriser totalSellingPrice si disponible
+      const revenue = sale.totalSellingPrice !== undefined && sale.totalSellingPrice !== null
+        ? sale.totalSellingPrice
+        : validProducts.reduce((sum, product) => sum + (product.sellingPrice * product.quantitySold), 0);
+      
+      const quantity = validProducts.reduce((sum, product) => sum + product.quantitySold, 0);
+      const profit = validProducts.reduce((sum, product) => sum + (product.profit || 0), 0);
       
       return { revenue, quantity, profit };
     }
     // Ancien format single-produit
     else if (sale.sellingPrice !== undefined && sale.quantitySold !== undefined) {
-      const revenue = sale.sellingPrice ;
+      const revenue = sale.sellingPrice * sale.quantitySold;
       const quantity = sale.quantitySold;
       const profit = sale.profit || 0;
       

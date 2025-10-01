@@ -199,7 +199,8 @@ const CheckoutPage = () => {
   const processOrder = async () => {
     setLoading(true);
     try {
-      console.log('Traitement de commande avec données:', {
+      // Sauvegarder les données de commande dans sessionStorage pour le callback
+      const orderData = {
         shippingAddress: shippingData,
         paymentMethod: paymentMethod,
         cartItems: selectedCartItems.map(item => ({ 
@@ -210,8 +211,14 @@ const CheckoutPage = () => {
           code: verifiedPromo.code,
           productId: verifiedPromo.productId,
           pourcentage: verifiedPromo.pourcentage
-        } : undefined
-      });
+        } : undefined,
+        deliveryPrice,
+        taxAmount
+      };
+      
+      sessionStorage.setItem('pendingOrder', JSON.stringify(orderData));
+      
+      console.log('Traitement de commande avec données:', orderData);
       
       // Ensure we're actually sending items to the server
       if (selectedCartItems.length === 0) {
@@ -232,6 +239,7 @@ const CheckoutPage = () => {
       
       if (order) {
         toast.success("Commande effectuée avec succès !");
+        sessionStorage.removeItem('pendingOrder');
         navigate(`/commandes`);  // Redirect to orders page
       } else {
         toast.error("Erreur lors de la création de la commande");
@@ -338,7 +346,23 @@ const CheckoutPage = () => {
                   <h2 className="text-2xl font-bold text-gray-900 mb-2">Paiement sécurisé</h2>
                   <p className="text-gray-600">Vos données sont protégées par cryptage SSL</p>
                 </div>
-                <PaymentMethodSelector onPaymentSuccess={handlePaymentSuccess} />
+                <PaymentMethodSelector 
+                  onPaymentSuccess={handlePaymentSuccess}
+                  orderData={{
+                    shippingAddress: shippingData,
+                    cartItems: selectedCartItems.map(item => ({
+                      productId: item.product.id,
+                      quantity: item.quantity
+                    })),
+                    promoDetails: verifiedPromo ? {
+                      code: verifiedPromo.code,
+                      productId: verifiedPromo.productId,
+                      pourcentage: verifiedPromo.pourcentage
+                    } : undefined,
+                    deliveryPrice,
+                    taxAmount
+                  }}
+                />
                 <Button 
                   variant="outline" 
                   className="mt-6 w-full border-gray-300 hover:border-gray-400"

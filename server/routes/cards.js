@@ -101,4 +101,45 @@ router.delete('/:cardId', isAuthenticated, (req, res) => {
   }
 });
 
+// Créer un Payment Intent Stripe
+router.post('/payment-intent', isAuthenticated, async (req, res) => {
+  try {
+    const { cardId } = req.body;
+    const userId = req.user.id;
+
+    if (!cardId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'L\'ID de la carte est requis' 
+      });
+    }
+
+    // Vérifier que la carte appartient à l'utilisateur
+    const card = cardsService.getCardById(cardId, userId);
+    if (!card) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Carte non trouvée' 
+      });
+    }
+
+    // Générer un client secret fictif pour la démo
+    const clientSecret = `pi_${Date.now()}_secret_${Math.random().toString(36).substring(7)}`;
+
+    console.log('✅ Payment Intent créé:', { clientSecret, cardId });
+
+    res.json({ 
+      success: true, 
+      clientSecret,
+      cardId
+    });
+  } catch (error) {
+    console.error('❌ Erreur lors de la création du Payment Intent:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erreur serveur lors de la création du paiement' 
+    });
+  }
+});
+
 module.exports = router;

@@ -10,6 +10,13 @@ import { cardsAPI } from '@/services/cards';
 interface CreditCardFormProps {
   onSuccess: () => void;
   onSaveCard?: (cardData: any) => void;
+  orderData?: {
+    shippingAddress: any;
+    cartItems: any[];
+    promoDetails?: any;
+    deliveryPrice: number;
+    taxAmount: number;
+  };
 }
 
 const detectCardType = (number: string) => {
@@ -39,7 +46,7 @@ const isValidLuhn = (number: string) => {
   return sum % 10 === 0;
 };
 
-const CreditCardForm: React.FC<CreditCardFormProps> = ({ onSuccess, onSaveCard }) => {
+const CreditCardForm: React.FC<CreditCardFormProps> = ({ onSuccess, onSaveCard, orderData }) => {
   const [cardNumber, setCardNumber] = useState('');
   const [cardType, setCardType] = useState('Inconnue');
   const [cardName, setCardName] = useState('');
@@ -125,19 +132,33 @@ const CreditCardForm: React.FC<CreditCardFormProps> = ({ onSuccess, onSaveCard }
     setLoading(true);
 
     try {
+      let cardId: string;
+      
       if (saveCard) {
-        await cardsAPI.addCard({ cardNumber, cardName, expiryDate, cvv });
+        cardId = await cardsAPI.addCard({ cardNumber, cardName, expiryDate, cvv }, true);
         toast.success("Carte sauvegardée");
+      } else {
+        // Créer une carte temporaire pour le paiement
+        cardId = await cardsAPI.addCard({ cardNumber, cardName, expiryDate, cvv }, false);
       }
-      setTimeout(() => {
-        setLoading(false);
-        toast.success("Paiement accepté");
-        onSuccess();
-      }, 1500);
+      
+      console.log('Redirection vers Stripe pour validation du paiement...');
+      
+      // Sauvegarder les données de commande dans sessionStorage
+      if (orderData) {
+        sessionStorage.setItem('pendingOrder', JSON.stringify(orderData));
+      }
+      
+      // Créer le payment intent et rediriger vers Stripe
+      const { clientSecret } = await cardsAPI.createPaymentIntent({ cardId });
+      
+      // Rediriger vers Stripe pour confirmation
+      const returnUrl = `${window.location.origin}/payment-callback`;
+      window.location.href = `https://hooks.stripe.com/redirect/authenticate/${clientSecret}?return_url=${encodeURIComponent(returnUrl)}`;
     } catch (error) {
       console.error(error);
       setLoading(false);
-      toast.error("Erreur lors du paiement");
+      toast.error("Erreur lors de la préparation du paiement");
     }
   };
 

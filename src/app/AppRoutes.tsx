@@ -41,6 +41,7 @@ const OrdersPage = lazy(() => import('@/pages/OrdersPage'));
 const OrderPage = lazy(() => import('@/pages/OrderPage'));
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'));
 const FlashSalePage = lazy(() => import('@/pages/FlashSalePage'));
+const PaymentCallbackPage = lazy(() => import('@/pages/PaymentCallbackPage'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 
 // Pages Admin
@@ -282,6 +283,14 @@ const AppRoutes: React.FC = () => {
           </MaintenanceChecker>
         } />
         <Route path="/paiement" element={<Navigate to={secureRoutes.get('/paiement') || '/'} replace />} />
+        
+        <Route path="/payment-callback" element={
+          <MaintenanceChecker>
+            <ProtectedRoute>
+              <PaymentCallbackPage />
+            </ProtectedRoute>
+          </MaintenanceChecker>
+        } />
         
         <Route path={secureRoutes.get('/commandes')?.substring(1)} element={
           <MaintenanceChecker>

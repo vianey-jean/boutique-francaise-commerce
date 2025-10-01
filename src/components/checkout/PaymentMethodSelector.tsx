@@ -11,9 +11,16 @@ import { toast } from '@/components/ui/sonner';
 
 interface PaymentMethodSelectorProps {
   onPaymentSuccess: () => void;
+  orderData?: {
+    shippingAddress: any;
+    cartItems: any[];
+    promoDetails?: any;
+    deliveryPrice: number;
+    taxAmount: number;
+  };
 }
 
-const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({ onPaymentSuccess }) => {
+const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({ onPaymentSuccess, orderData }) => {
   const [selectedCardId, setSelectedCardId] = useState<string>('');
   const [activeTab, setActiveTab] = useState('saved');
   const [hasSavedCards, setHasSavedCards] = useState(false);
@@ -50,16 +57,22 @@ const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({ onPayment
 
     try {
       const card = await cardsAPI.getCard(selectedCardId);
-      console.log('Paiement avec carte sauvegardée:', card.id);
+      console.log('Redirection vers Stripe pour validation du paiement...');
       
-      // Simuler le paiement
-      setTimeout(() => {
-        toast.success("Paiement accepté avec la carte sauvegardée");
-        onPaymentSuccess();
-      }, 1500);
+      // Sauvegarder les données de commande dans sessionStorage
+      if (orderData) {
+        sessionStorage.setItem('pendingOrder', JSON.stringify(orderData));
+      }
+      
+      // Créer le payment intent et rediriger vers Stripe
+      const { clientSecret } = await cardsAPI.createPaymentIntent({ cardId: selectedCardId });
+      
+      // Rediriger vers Stripe pour confirmation
+      const returnUrl = `${window.location.origin}/payment-callback`;
+      window.location.href = `https://hooks.stripe.com/redirect/authenticate/${clientSecret}?return_url=${encodeURIComponent(returnUrl)}`;
     } catch (error) {
       console.error('Erreur lors du paiement:', error);
-      toast.error('Erreur lors du paiement');
+      toast.error('Erreur lors de la préparation du paiement');
     }
   };
 
@@ -103,6 +116,7 @@ const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({ onPayment
                 checkSavedCards();
                 onPaymentSuccess();
               }}
+              orderData={orderData}
             />
           </TabsContent>
         </Tabs>

@@ -1,11 +1,11 @@
 {
-  "enableCreditCard": true,
-  "enablePaypal": true,
-  "enableBankTransfer": true,
+  "enableCreditCard": false,
+  "enablePaypal": false,
+  "enableBankTransfer": false,
   "enableCash": true,
-  "stripeEnabled": true,
-  "stripePublicKey": "pk_test_YOUR_PUBLISHABLE_KEY",
+  "stripeEnabled": false,
+  "stripePublicKey": "",
   "paypalEnabled": false,
   "paypalClientId": "",
-  "enableApplePay": true
+  "enableApplePay": false
 }

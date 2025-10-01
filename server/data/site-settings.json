@@ -36,15 +36,15 @@
     "outOfStockBehavior": "hide"
   },
   "payment": {
-    "enableCreditCard": false,
-    "enablePaypal": false,
-    "enableBankTransfer": false,
+    "enableCreditCard": true,
+    "enablePaypal": true,
+    "enableBankTransfer": true,
     "enableCash": true,
-    "stripeEnabled": false,
-    "stripePublicKey": "",
+    "stripeEnabled": true,
+    "stripePublicKey": "pk_test_YOUR_PUBLISHABLE_KEY",
     "paypalEnabled": false,
     "paypalClientId": "",
-    "enableApplePay": false
+    "enableApplePay": true
   },
   "shipping": {
     "enableFreeShipping": true,

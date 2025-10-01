@@ -188,10 +188,16 @@ const CheckoutPage = () => {
   const handlePaymentSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     
+    if (!paymentMethod) {
+      toast.error("Veuillez sélectionner un mode de paiement");
+      return;
+    }
+    
     if (paymentMethod === 'card') {
+      // Afficher le formulaire de sélection/ajout de carte
       setShowCardForm(true);
     } else {
-      // Traiter les autres méthodes de paiement
+      // Traiter les autres méthodes de paiement (cash, paypal, bank, applepay)
       processOrder();
     }
   };

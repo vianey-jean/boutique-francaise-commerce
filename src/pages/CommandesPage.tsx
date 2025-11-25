@@ -12,6 +12,8 @@ import { Commande, CommandeProduit } from '@/types/commande';
 import api from '@/service/api';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import Layout from '@/components/Layout';
+import PremiumLoading from '@/components/ui/premium-loading';
 
 interface Client {
   id: string;
@@ -30,6 +32,7 @@ export default function CommandesPage() {
   const [commandes, setCommandes] = useState<Commande[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCommande, setEditingCommande] = useState<Commande | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -53,9 +56,13 @@ export default function CommandesPage() {
   const [showProductSuggestions, setShowProductSuggestions] = useState(false);
 
   useEffect(() => {
-    fetchCommandes();
-    fetchClients();
-    fetchProducts();
+    const loadData = async () => {
+      setIsLoading(true);
+      await Promise.all([fetchCommandes(), fetchClients(), fetchProducts()]);
+      setIsLoading(false);
+    };
+    
+    loadData();
     
     // Check for notifications
     const interval = setInterval(checkNotifications, 60000); // Check every minute
@@ -343,8 +350,22 @@ export default function CommandesPage() {
     }
   };
 
+  if (isLoading) {
+    return (
+      <Layout>
+        <PremiumLoading 
+          text="Bienvenue sur La page commandes ou reservation"
+          size="xl"
+          overlay={true}
+          variant="default"
+        />
+      </Layout>
+    );
+  }
+
   return (
-    <div className="container mx-auto p-4 md:p-6 lg:p-8 space-y-6">
+    <Layout>
+      <div className="container mx-auto p-4 md:p-6 lg:p-8 space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
@@ -675,6 +696,7 @@ export default function CommandesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+      </div>
+    </Layout>
   );
 }

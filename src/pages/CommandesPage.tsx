@@ -64,7 +64,7 @@ export default function CommandesPage() {
 
   const fetchCommandes = async () => {
     try {
-      const response = await api.get('/commandes');
+      const response = await api.get('/api/commandes');
       setCommandes(response.data);
     } catch (error) {
       console.error('Error fetching commandes:', error);
@@ -78,7 +78,7 @@ export default function CommandesPage() {
 
   const fetchClients = async () => {
     try {
-      const response = await api.get('/clients');
+      const response = await api.get('/api/clients');
       setClients(response.data);
     } catch (error) {
       console.error('Error fetching clients:', error);
@@ -87,7 +87,7 @@ export default function CommandesPage() {
 
   const fetchProducts = async () => {
     try {
-      const response = await api.get('/products');
+      const response = await api.get('/api/products');
       setProducts(response.data);
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -120,7 +120,7 @@ export default function CommandesPage() {
 
   const updateNotificationStatus = async (id: string) => {
     try {
-      await api.put(`/commandes/${id}`, { notificationEnvoyee: true });
+      await api.put(`/api/commandes/${id}`, { notificationEnvoyee: true });
       fetchCommandes();
     } catch (error) {
       console.error('Error updating notification status:', error);
@@ -223,14 +223,36 @@ export default function CommandesPage() {
     }
 
     try {
+      // Créer le client s'il n'existe pas
+      const existingClient = clients.find(c => c.nom.toLowerCase() === clientNom.toLowerCase());
+      if (!existingClient) {
+        await api.post('/api/clients', {
+          nom: clientNom,
+          phone: clientPhone,
+          adresse: clientAddress
+        });
+        await fetchClients();
+      }
+
+      // Créer le produit s'il n'existe pas
+      const existingProduct = products.find(p => p.description.toLowerCase() === produitNom.toLowerCase());
+      if (!existingProduct) {
+        await api.post('/api/products', {
+          description: produitNom,
+          purchasePrice: parseFloat(prixUnitaire),
+          quantity: parseInt(quantite)
+        });
+        await fetchProducts();
+      }
+
       if (editingCommande) {
-        await api.put(`/commandes/${editingCommande.id}`, commandeData);
+        await api.put(`/api/commandes/${editingCommande.id}`, commandeData);
         toast({
           title: 'Succès',
           description: 'Commande modifiée avec succès',
         });
       } else {
-        await api.post('/commandes', commandeData);
+        await api.post('/api/commandes', commandeData);
         toast({
           title: 'Succès',
           description: 'Commande ajoutée avec succès',
@@ -273,7 +295,7 @@ export default function CommandesPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      await api.delete(`/commandes/${id}`);
+      await api.delete(`/api/commandes/${id}`);
       toast({
         title: 'Succès',
         description: 'Commande supprimée avec succès',
@@ -292,7 +314,7 @@ export default function CommandesPage() {
 
   const handleStatusChange = async (id: string, newStatus: 'en_route' | 'arrive' | 'en_attente') => {
     try {
-      await api.put(`/commandes/${id}`, { statut: newStatus });
+      await api.put(`/api/commandes/${id}`, { statut: newStatus });
       toast({
         title: 'Succès',
         description: 'Statut mis à jour',

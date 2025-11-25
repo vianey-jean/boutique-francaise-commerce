@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useClientSync } from '@/hooks/useClientSync';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -42,6 +42,10 @@ const ClientsPage: React.FC = () => {
   // État pour la recherche
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
+
   // Dialogues de confirmation
   const [showAddConfirm, setShowAddConfirm] = useState(false);
   const [showEditConfirm, setShowEditConfirm] = useState(false);
@@ -58,6 +62,25 @@ const ClientsPage: React.FC = () => {
         client.adresse.toLowerCase().includes(searchQuery.toLowerCase())
       )
     : clients;
+
+  const totalPages = Math.max(1, Math.ceil(filteredClients.length / itemsPerPage));
+
+  // Réinitialiser la page courante quand la recherche change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  // Ajuster la page si le nombre de pages diminue
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  const paginatedClients = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredClients.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredClients, currentPage, itemsPerPage]);
 
   const resetForm = () => {
     setFormData({ nom: '', phone: '', adresse: '' });
@@ -326,7 +349,7 @@ const ClientsPage: React.FC = () => {
 
         {/* Clients Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
-          {filteredClients.map((client, index) => (
+          {paginatedClients.map((client, index) => (
             <Card 
               key={client.id} 
               className="group hover:shadow-2xl transition-all duration-700 transform hover:-translate-y-4 hover:rotate-1 bg-gradient-to-br from-white via-gray-50 to-purple-50/30 dark:from-gray-800 dark:via-gray-900 dark:to-purple-900/30 backdrop-blur-sm border-0 shadow-xl hover:shadow-purple-500/25 relative overflow-hidden"

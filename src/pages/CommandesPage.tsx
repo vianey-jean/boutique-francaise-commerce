@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ModernTable, ModernTableHeader, ModernTableRow, ModernTableHead, ModernTableCell, TableBody } from '@/components/dashboard/forms/ModernTable';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
@@ -572,76 +572,92 @@ export default function CommandesPage() {
         </Dialog>
       </div>
 
-      <Card className="shadow-xl">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
-            Liste des Commandes et Réservations
+      <Card className="border-0 shadow-2xl bg-gradient-to-br from-background via-background/95 to-primary/10 dark:from-background dark:via-background/95 dark:to-primary/20 rounded-2xl overflow-hidden">
+        <CardHeader className="border-b border-border/40 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent">
+          <CardTitle className="flex items-center gap-3 text-xl md:text-2xl font-bold tracking-tight">
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary shadow-md">
+              <Package className="h-5 w-5" />
+            </span>
+            <span>Liste des Commandes et Réservations</span>
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="mt-1 text-sm md:text-base text-muted-foreground">
             Total: {commandes.length} {commandes.length > 1 ? 'commandes' : 'commande'}
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Client</TableHead>
-                  <TableHead>Contact</TableHead>
-                  <TableHead>Produit</TableHead>
-                  <TableHead>Prix</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Statut</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
+            <ModernTable className="min-w-full">
+              <ModernTableHeader>
+                <ModernTableRow>
+                  <ModernTableHead>Client</ModernTableHead>
+                  <ModernTableHead>Contact</ModernTableHead>
+                  <ModernTableHead>Produit</ModernTableHead>
+                  <ModernTableHead>Prix</ModernTableHead>
+                  <ModernTableHead>Type</ModernTableHead>
+                  <ModernTableHead>Date</ModernTableHead>
+                  <ModernTableHead>Statut</ModernTableHead>
+                  <ModernTableHead>Actions</ModernTableHead>
+                </ModernTableRow>
+              </ModernTableHeader>
               <TableBody>
                 {commandes.map((commande) => (
-                  <TableRow key={commande.id}>
-                    <TableCell className="font-medium">
-                      <div>{commande.clientNom}</div>
-                      <div className="text-xs text-muted-foreground">{commande.clientAddress}</div>
-                    </TableCell>
-                    <TableCell>{commande.clientPhone}</TableCell>
-                    <TableCell>
+                  <ModernTableRow
+                    key={commande.id}
+                    className="bg-background/40 hover:bg-primary/5 transition-colors"
+                  >
+                    <ModernTableCell className="align-top">
+                      <div className="font-medium">{commande.clientNom}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {commande.clientAddress}
+                      </div>
+                    </ModernTableCell>
+                    <ModernTableCell className="align-top">
+                      <span className="text-sm">{commande.clientPhone}</span>
+                    </ModernTableCell>
+                    <ModernTableCell className="align-top">
                       {commande.produits.map((p, idx) => (
-                        <div key={idx} className="text-sm">
+                        <div key={idx} className="text-sm space-y-0.5">
                           <div className="font-medium">{p.nom}</div>
-                          <div className="text-muted-foreground">Qté: {p.quantite}</div>
+                          <div className="text-xs text-muted-foreground">
+                            Qté: {p.quantite}
+                          </div>
                         </div>
                       ))}
-                    </TableCell>
-                    <TableCell>
+                    </ModernTableCell>
+                    <ModernTableCell className="align-top">
                       {commande.produits.map((p, idx) => (
-                        <div key={idx} className="text-sm">
+                        <div key={idx} className="text-sm space-y-0.5">
                           <div>Unitaire: {p.prixUnitaire}€</div>
-                          <div className="font-medium">Vente: {p.prixVente}€</div>
+                          <div className="font-semibold">
+                            Vente: {p.prixVente}€
+                          </div>
                         </div>
                       ))}
-                    </TableCell>
-                    <TableCell>
+                    </ModernTableCell>
+                    <ModernTableCell className="align-top">
                       <Badge variant={commande.type === 'commande' ? 'default' : 'secondary'}>
                         {commande.type === 'commande' ? 'Commande' : 'Réservation'}
                       </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm">
+                    </ModernTableCell>
+                    <ModernTableCell className="align-top text-sm">
                       {commande.type === 'commande' ? (
                         <div>
-                          <div className="text-muted-foreground">Arrivage:</div>
+                          <div className="text-xs text-muted-foreground">Arrivage:</div>
                           <div>{new Date(commande.dateArrivagePrevue || '').toLocaleDateString()}</div>
                         </div>
                       ) : (
                         <div>
-                          <div className="text-muted-foreground">Échéance:</div>
+                          <div className="text-xs text-muted-foreground">Échéance:</div>
                           <div>{new Date(commande.dateEcheance || '').toLocaleDateString()}</div>
                         </div>
                       )}
-                    </TableCell>
-                    <TableCell>
+                    </ModernTableCell>
+                    <ModernTableCell className="align-top">
                       {commande.type === 'commande' ? (
-                        <Select value={commande.statut} onValueChange={(value) => handleStatusChange(commande.id, value as any)}>
+                        <Select
+                          value={commande.statut}
+                          onValueChange={(value) => handleStatusChange(commande.id, value as any)}
+                        >
                           <SelectTrigger className="w-32">
                             <SelectValue />
                           </SelectTrigger>
@@ -653,13 +669,14 @@ export default function CommandesPage() {
                       ) : (
                         getStatusBadge(commande.statut)
                       )}
-                    </TableCell>
-                    <TableCell>
+                    </ModernTableCell>
+                    <ModernTableCell className="align-top">
                       <div className="flex gap-2">
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => handleEdit(commande)}
+                          className="hover:bg-primary/10"
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -667,15 +684,16 @@ export default function CommandesPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => setDeleteId(commande.id)}
+                          className="hover:bg-destructive/10"
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>
-                    </TableCell>
-                  </TableRow>
+                    </ModernTableCell>
+                  </ModernTableRow>
                 ))}
               </TableBody>
-            </Table>
+            </ModernTable>
           </div>
         </CardContent>
       </Card>

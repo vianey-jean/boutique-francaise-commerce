@@ -101,14 +101,26 @@ export default function CommandesPage() {
     }
   };
 
-  // Filtrer les commandes pour exclure celles avec statut "valide"
-  const nonValidatedCommandes = useMemo(() => {
-    return commandes.filter(c => c.statut !== 'valide');
-  }, [commandes]);
-
-  // Tri des commandes par date (échéance ou arrivage)
-  const sortedCommandes = useMemo(() => {
-    return [...nonValidatedCommandes].sort((a, b) => {
+  // Filtrer et trier les commandes selon la recherche
+  const filteredCommandes = useMemo(() => {
+    // Si recherche active (3+ caractères), montrer TOUTES les commandes (même validées)
+    const commandesToFilter = commandeSearch.length >= 3 
+      ? commandes 
+      : commandes.filter(c => c.statut !== 'valide');
+    
+    // Appliquer la recherche si >= 3 caractères
+    let filtered = commandesToFilter;
+    if (commandeSearch.length >= 3) {
+      const searchLower = commandeSearch.toLowerCase();
+      filtered = commandesToFilter.filter(commande => 
+        commande.clientNom.toLowerCase().includes(searchLower) ||
+        commande.clientPhone.includes(searchLower) ||
+        commande.produits.some(p => p.nom.toLowerCase().includes(searchLower))
+      );
+    }
+    
+    // Trier par date (échéance ou arrivage)
+    return [...filtered].sort((a, b) => {
       const dateA = new Date(a.type === 'commande' ? a.dateArrivagePrevue || '' : a.dateEcheance || '');
       const dateB = new Date(b.type === 'commande' ? b.dateArrivagePrevue || '' : b.dateEcheance || '');
       
@@ -120,19 +132,7 @@ export default function CommandesPage() {
         return dateB.getTime() - dateA.getTime();
       }
     });
-  }, [nonValidatedCommandes, sortDateAsc]);
-
-  // Filtrer les commandes par recherche
-  const filteredCommandes = useMemo(() => {
-    if (commandeSearch.length < 3) return sortedCommandes;
-    
-    const searchLower = commandeSearch.toLowerCase();
-    return sortedCommandes.filter(commande => 
-      commande.clientNom.toLowerCase().includes(searchLower) ||
-      commande.clientPhone.includes(searchLower) ||
-      commande.produits.some(p => p.nom.toLowerCase().includes(searchLower))
-    );
-  }, [sortedCommandes, commandeSearch]);
+  }, [commandes, commandeSearch, sortDateAsc]);
 
   const fetchClients = async () => {
     try {
@@ -1022,7 +1022,7 @@ export default function CommandesPage() {
             Total: {filteredCommandes.length} {filteredCommandes.length > 1 ? 'commandes' : 'commande'}
             {commandeSearch.length >= 3 && (
               <span className="ml-2 text-purple-600 dark:text-purple-400 font-semibold">
-                (sur {nonValidatedCommandes.length} non validées)
+                (sur {commandes.filter(c => c.statut !== 'valide').length} non validées)
               </span>
             )}
           </CardDescription>

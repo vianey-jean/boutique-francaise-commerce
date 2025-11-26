@@ -448,6 +448,49 @@ const ClientsPage: React.FC = () => {
           </div>
         )}
 
+        {/* Pagination */}
+        {filteredClients.length > 0 && totalPages > 1 && (
+          <div className="flex justify-center items-center gap-2 mt-12 mb-8">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className="border-2 border-purple-300 dark:border-purple-700 hover:bg-purple-100 dark:hover:bg-purple-900/30 disabled:opacity-50"
+            >
+              ← Précédent
+            </Button>
+            
+            <div className="flex gap-2">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                <Button
+                  key={pageNum}
+                  variant={currentPage === pageNum ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCurrentPage(pageNum)}
+                  className={`min-w-[40px] ${
+                    currentPage === pageNum
+                      ? 'bg-gradient-to-r from-purple-600 via-violet-600 to-indigo-600 text-white shadow-lg scale-110'
+                      : 'border-2 border-purple-300 dark:border-purple-700 hover:bg-purple-100 dark:hover:bg-purple-900/30'
+                  }`}
+                >
+                  {pageNum}
+                </Button>
+              ))}
+            </div>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              className="border-2 border-purple-300 dark:border-purple-700 hover:bg-purple-100 dark:hover:bg-purple-900/30 disabled:opacity-50"
+            >
+              Suivant →
+            </Button>
+          </div>
+        )}
+
         {/* Empty State Ultra Premium */}
         {clients.length === 0 && searchQuery.length === 0 && (
           <div className="text-center py-32">

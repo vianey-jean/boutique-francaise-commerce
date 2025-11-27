@@ -371,10 +371,10 @@ const MultiProductSaleForm: React.FC<MultiProductSaleFormProps> = ({ isOpen, onC
           description: `Prêt - ${pretProduit.description}`,
           selectedProduct: product,
           maxQuantity: product.quantity || 0,
-          isAdvanceProduct: false,
+          isAdvanceProduct: true,
           purchasePriceUnit: product.purchasePrice.toString(),
           sellingPriceUnit: pretProduit.prixVente.toString(),
-          quantitySold: '1',
+          quantitySold: '0',
           profit: (pretProduit.prixVente - product.purchasePrice).toString(),
         };
         return newProducts;
@@ -392,11 +392,16 @@ const MultiProductSaleForm: React.FC<MultiProductSaleFormProps> = ({ isOpen, onC
   // Mise à jour du profit
   const updateProfit = (index: number, priceUnit: string, quantity: string, purchasePriceUnit: string) => {
     const product = formProducts[index];
+    
+    // Pour les produits d'avance ou prêt, calculer le bénéfice sans multiplication par quantité
     if (product.isAdvanceProduct) {
-      // Pour les produits "Avance", le bénéfice est toujours 0
+      const sellingPrice = Number(priceUnit) || 0;
+      const purchasePrice = Number(purchasePriceUnit) || 0;
+      const profit = (sellingPrice - purchasePrice).toFixed(2);
+      
       setFormProducts(prev => {
         const newProducts = [...prev];
-        newProducts[index] = { ...newProducts[index], profit: '0' };
+        newProducts[index] = { ...newProducts[index], profit: profit };
         return newProducts;
       });
     } else {

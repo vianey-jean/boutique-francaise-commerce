@@ -54,7 +54,7 @@
         "nom": "Tissages bouclé marron 22 pouces",
         "prixUnitaire": 23.44,
         "quantite": 3,
-        "prixVente": 180
+        "prixVente": 60
       }
     ],
     "dateCommande": "2025-11-26T04:50:19.917Z",
@@ -77,8 +77,9 @@
       }
     ],
     "dateCommande": "2025-11-26T04:52:53.723Z",
-    "statut": "en_attente",
+    "statut": "valide",
     "dateEcheance": "2025-11-26",
-    "createdAt": "2025-11-26T04:52:53.772Z"
+    "createdAt": "2025-11-26T04:52:53.772Z",
+    "updatedAt": "2025-11-26T15:02:04.872Z"
   }
 ]

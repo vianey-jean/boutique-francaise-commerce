@@ -279,7 +279,7 @@
     "id": "1746197176031",
     "description": "Colle et disolvant",
     "purchasePrice": 5,
-    "quantity": 1
+    "quantity": 0
   },
   {
     "id": "1746811388842",
@@ -735,7 +735,7 @@
     "id": "1764132092383",
     "description": "Perruque bouclé blonde miel blanche 20 pouces",
     "purchasePrice": 43.16,
-    "quantity": 1
+    "quantity": 0
   },
   {
     "id": "1764132619962",
@@ -747,6 +747,30 @@
     "id": "1764132773740",
     "description": "perruque lisse noir 26 pouces",
     "purchasePrice": 44.59,
+    "quantity": 0
+  },
+  {
+    "id": "1764234850371",
+    "description": "pret de Produit",
+    "purchasePrice": 0.1,
+    "quantity": 1000000000
+  },
+  {
+    "id": "1764299613440",
+    "description": "Tissages bouclé blonde miel 24 pouces",
+    "purchasePrice": 26.43,
+    "quantity": 3
+  },
+  {
+    "id": "1764299822840",
+    "description": "Perruque lisse noir ondulé de 20 pouces",
+    "purchasePrice": 40.1,
+    "quantity": 1
+  },
+  {
+    "id": "1764325660019",
+    "description": "Perruque bouclé marron 28 pouces",
+    "purchasePrice": 62.81,
     "quantity": 1
   }
 ]

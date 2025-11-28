@@ -46,31 +46,52 @@ const PretProduitFromSaleModal: React.FC<PretProduitFromSaleModalProps> = ({ isO
       if (clientSearch.length >= 3) {
         try {
           const token = localStorage.getItem('token');
-          const response = await axios.get(`${API_BASE_URL}/api/pretproduits/search?nom=${encodeURIComponent(clientSearch)}`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
+          
+          if (!token) {
+            console.warn('Token non trouvé pour la recherche de clients');
+            return;
+          }
 
-          // Grouper les clients par nom
-          const clientsMap = new Map<string, ClientPretProduit>();
-          response.data.forEach((pret: any) => {
-            if (pret.nom) {
-              const existing = clientsMap.get(pret.nom.toLowerCase());
-              if (existing) {
-                existing.pretsCount++;
-              } else {
-                clientsMap.set(pret.nom.toLowerCase(), {
-                  nom: pret.nom,
-                  phone: pret.phone || '',
-                  pretsCount: 1
-                });
-              }
+          console.log('🔍 Recherche de clients avec:', clientSearch, 'URL:', API_BASE_URL);
+          
+          const response = await axios.get(`${API_BASE_URL}/api/pretproduits/search`, {
+            params: { nom: clientSearch },
+            headers: { 
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json'
             }
           });
 
-          setClientResults(Array.from(clientsMap.values()));
-          setShowClientResults(true);
-        } catch (error) {
-          console.error('Erreur lors de la recherche de clients:', error);
+          console.log('✅ Réponse recherche clients:', response.data);
+
+          // Grouper les clients par nom
+          const clientsMap = new Map<string, ClientPretProduit>();
+          
+          if (Array.isArray(response.data)) {
+            response.data.forEach((pret: any) => {
+              if (pret.nom) {
+                const existing = clientsMap.get(pret.nom.toLowerCase());
+                if (existing) {
+                  existing.pretsCount++;
+                } else {
+                  clientsMap.set(pret.nom.toLowerCase(), {
+                    nom: pret.nom,
+                    phone: pret.phone || '',
+                    pretsCount: 1
+                  });
+                }
+              }
+            });
+          }
+
+          const results = Array.from(clientsMap.values());
+          setClientResults(results);
+          setShowClientResults(results.length > 0);
+        } catch (error: any) {
+          console.error('❌ Erreur lors de la recherche de clients:', error);
+          console.error('Détails:', error.response?.data || error.message);
+          setClientResults([]);
+          setShowClientResults(false);
         }
       } else {
         setClientResults([]);

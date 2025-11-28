@@ -16,6 +16,7 @@ import Layout from '@/components/Layout';
 import PremiumLoading from '@/components/ui/premium-loading';
 import SaleQuantityInput from '@/components/dashboard/forms/SaleQuantityInput';
 import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 interface Client {
   id: string;
@@ -1157,16 +1158,16 @@ export default function CommandesPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <ModernTable className="min-w-full">
+          <div className="overflow-x-auto lg:overflow-x-visible">
+            <ModernTable className="min-w-[900px] lg:min-w-0 lg:w-full">
             <ModernTableHeader>
               <ModernTableRow >
-                <ModernTableHead>Client</ModernTableHead>
-                <ModernTableHead>Contact</ModernTableHead>
-                <ModernTableHead>Produit</ModernTableHead>
-                <ModernTableHead>Prix</ModernTableHead>
-                <ModernTableHead>Type</ModernTableHead>
-                <ModernTableHead>
+                <ModernTableHead className="lg:w-[15%]">Client</ModernTableHead>
+                <ModernTableHead className="lg:w-[10%]">Contact</ModernTableHead>
+                <ModernTableHead className="lg:w-[15%]">Produit</ModernTableHead>
+                <ModernTableHead className="lg:w-[15%]">Prix</ModernTableHead>
+                <ModernTableHead className="lg:w-[10%]">Type</ModernTableHead>
+                <ModernTableHead className="lg:w-[12%]">
                   <button
                     onClick={() => setSortDateAsc(!sortDateAsc)}
                     className="flex items-center gap-2 hover:text-primary transition-colors"
@@ -1180,8 +1181,8 @@ export default function CommandesPage() {
                     )}
                   </button>
                 </ModernTableHead>
-                <ModernTableHead>Statut</ModernTableHead>
-                <ModernTableHead>Actions</ModernTableHead>
+                <ModernTableHead className="lg:w-[13%]">Statut</ModernTableHead>
+                <ModernTableHead className="lg:w-[10%]">Actions</ModernTableHead>
               </ModernTableRow>
             </ModernTableHeader>
 
@@ -1191,19 +1192,19 @@ export default function CommandesPage() {
                     key={commande.id}
                     className="bg-background/40 hover:bg-primary/5 transition-colors"
                   >
-                    <ModernTableCell className="align-top">
-                      <div className="font-medium">{commande.clientNom}</div>
-                      <div className="text-xs text-muted-foreground">
+                    <ModernTableCell className="align-top lg:max-w-[150px]">
+                      <div className="font-medium text-xs lg:text-sm truncate">{commande.clientNom}</div>
+                      <div className="text-xs text-muted-foreground truncate">
                         {commande.clientAddress}
                       </div>
                     </ModernTableCell>
                     <ModernTableCell className="align-top">
-                      <span className="text-sm">{commande.clientPhone}</span>
+                      <span className="text-xs lg:text-sm">{commande.clientPhone}</span>
                     </ModernTableCell>
-                    <ModernTableCell className="align-top">
+                    <ModernTableCell className="align-top lg:max-w-[150px]">
                       {commande.produits.map((p, idx) => (
-                        <div key={idx} className="text-sm space-y-0.5">
-                          <div className="font-medium">{p.nom}</div>
+                        <div key={idx} className="text-xs lg:text-sm space-y-0.5">
+                          <div className="font-medium truncate">{p.nom}</div>
                          <div className="text-xs text-muted-foreground">
                           Qté: <span className="font-bold text-red-600">{p.quantite}</span>
                         </div>
@@ -1213,42 +1214,43 @@ export default function CommandesPage() {
                     </ModernTableCell>
                     <ModernTableCell className="align-top">
                       {commande.produits.map((p, idx) => (
-                        <div key={idx} className="text-sm space-y-0.5">
-                          <div>Unitaire: {p.prixUnitaire}€</div>
+                        <div key={idx} className="text-xs space-y-0.5">
+                          <div>Unit: {p.prixUnitaire}€</div>
                           <div className="font-semibold">
                             Vente: {p.prixVente}€
                           </div>
                         </div>
                       ))}
                       {/* Prix total en gras et rouge */}
-                      <div className="mt-3 pt-3 border-t-2 border-red-300 dark:border-red-700">
-                        <div className="text-base font-black text-red-600 dark:text-red-500">
-                          Prix Total: {commande.produits.reduce((sum, p) => sum + (p.prixVente * p.quantite), 0).toFixed(2)}€
+                      <div className="mt-2 pt-2 border-t border-red-300 dark:border-red-700">
+                        <div className="text-xs lg:text-sm font-black text-red-600 dark:text-red-500">
+                          Total: {commande.produits.reduce((sum, p) => sum + (p.prixVente * p.quantite), 0).toFixed(2)}€
                         </div>
                       </div>
                     </ModernTableCell>
                     <ModernTableCell className="align-top">
                      <Badge
-                      className={
+                      className={cn(
+                        "text-xs lg:text-sm whitespace-normal lg:whitespace-nowrap",
                         commande.type === 'commande'
                           ? "bg-purple-600 text-white hover:bg-purple-700"   // violet
                           : "bg-blue-600 text-white hover:bg-blue-700"       // bleu
-                      }
+                      )}
                       variant={commande.type === 'commande' ? 'default' : 'secondary'}
                     >
-                      {commande.type === 'commande' ? 'Commande' : 'Réservation'}
+                      {commande.type === 'commande' ? 'Commande' : 'Réserv.'}
                     </Badge>
 
                     </ModernTableCell>
 
-                    <ModernTableCell className="align-top text-sm">
+                    <ModernTableCell className="align-top text-xs lg:text-sm">
                       {commande.type === 'commande' ? (
                         <div>
                           <div className="text-xs text-muted-foreground">Arrivage:</div>
-                          <div>{new Date(commande.dateArrivagePrevue || '').toLocaleDateString()}</div>
+                          <div className="text-xs lg:text-sm">{new Date(commande.dateArrivagePrevue || '').toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}</div>
                           {commande.horaire && (
                             <div className="text-xs text-muted-foreground mt-1">
-                              Horaire: {commande.horaire}
+                              {commande.horaire}
                             </div>
                           )}
                         </div>
@@ -1271,24 +1273,26 @@ export default function CommandesPage() {
                           return (
                             <div>
                               <div className="text-xs text-muted-foreground">Échéance:</div>
-                              <div className={
+                              <div className={cn(
+                                "text-xs lg:text-sm",
                                 isOverdue 
                                   ? "animate-pulse text-red-600 dark:text-red-500 font-bold"
                                   : isNearDeadline 
                                   ? "animate-pulse text-green-600 dark:text-green-500 font-bold"
                                   : ""
-                              }>
-                                {echeance.toLocaleDateString()}
+                              )}>
+                                {echeance.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}
                               </div>
                               {commande.horaire && (
-                                <div className={`text-xs mt-1 ${
+                                <div className={cn(
+                                  "text-xs mt-1",
                                   isOverdue 
                                     ? "animate-pulse text-red-600 dark:text-red-500 font-semibold"
                                     : isNearDeadline 
                                     ? "animate-pulse text-green-600 dark:text-green-500 font-semibold"
                                     : "text-muted-foreground"
-                                }`}>
-                                  Horaire: {commande.horaire}
+                                )}>
+                                  {commande.horaire}
                                 </div>
                               )}
                             </div>
@@ -1301,7 +1305,7 @@ export default function CommandesPage() {
                         value={commande.statut}
                         onValueChange={(value) => handleStatusChange(commande.id, value as any)}
                       >
-                        <SelectTrigger className="w-36">
+                        <SelectTrigger className="w-28 lg:w-32 text-xs lg:text-sm">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -1325,24 +1329,24 @@ export default function CommandesPage() {
                       </Select>
                     </ModernTableCell>
                     <ModernTableCell className="align-top">
-                      <div className="flex gap-2">
+                      <div className="flex gap-1 lg:gap-2">
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => handleEdit(commande)}
-                          className="hover:bg-gradient-to-r hover:from-green-100 hover:to-emerald-100 dark:hover:from-green-900/30 dark:hover:to-emerald-900/30 rounded-xl transition-all duration-300"
+                          className="hover:bg-gradient-to-r hover:from-green-100 hover:to-emerald-100 dark:hover:from-green-900/30 dark:hover:to-emerald-900/30 rounded-xl transition-all duration-300 p-1 lg:p-2"
                           title="Modifier"
                         >
-                          <Edit className="h-5 w-5 text-green-600 dark:text-green-400" />
+                          <Edit className="h-4 w-4 lg:h-5 lg:w-5 text-green-600 dark:text-green-400" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => setDeleteId(commande.id)}
-                          className="hover:bg-gradient-to-r hover:from-red-100 hover:to-rose-100 dark:hover:from-red-900/30 dark:hover:to-rose-900/30 rounded-xl transition-all duration-300"
+                          className="hover:bg-gradient-to-r hover:from-red-100 hover:to-rose-100 dark:hover:from-red-900/30 dark:hover:to-rose-900/30 rounded-xl transition-all duration-300 p-1 lg:p-2"
                           title="Supprimer"
                         >
-                          <Trash2 className="h-5 w-5 text-red-600 dark:text-red-400" />
+                          <Trash2 className="h-4 w-4 lg:h-5 lg:w-5 text-red-600 dark:text-red-400" />
                         </Button>
                       </div>
                     </ModernTableCell>

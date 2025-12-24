@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,11 +7,12 @@ import { ModernTable, ModernTableHeader, ModernTableRow, ModernTableHead, Modern
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
-import { Package, Plus, Trash2, Edit, ShoppingCart, TrendingUp, Sparkles, Crown, Star, Gift, Award, Zap, Diamond, ArrowUp, ArrowDown, Printer, Calendar } from 'lucide-react';
+import { Package, Plus, Trash2, Edit, ShoppingCart, TrendingUp, Sparkles, Crown, Star, Gift, Award, Zap, Diamond, ArrowUp, ArrowDown, Printer, Calendar, CalendarPlus } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Commande, CommandeProduit } from '@/types/commande';
 import api from '@/service/api';
+import { rdvFromReservationService } from '@/services/rdvFromReservationService';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import Layout from '@/components/Layout';
@@ -33,7 +34,7 @@ interface Product {
   quantity: number;
 }
 
-export default function CommandesPage() {
+const CommandesPage: React.FC = () =>  {
   const [commandes, setCommandes] = useState<Commande[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -80,6 +81,12 @@ export default function CommandesPage() {
   // État pour l'export PDF
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [exportDate, setExportDate] = useState('');
+  
+  // État pour la modale Reporter
+  const [reporterModalOpen, setReporterModalOpen] = useState(false);
+  const [reporterCommandeId, setReporterCommandeId] = useState<string | null>(null);
+  const [reporterDate, setReporterDate] = useState('');
+  const [reporterHoraire, setReporterHoraire] = useState('');
 
   useEffect(() => {
     const loadData = async () => {
@@ -304,10 +311,39 @@ export default function CommandesPage() {
       return;
     }
 
+    const quantiteInt = parseInt(quantite);
+    
+    // Vérifier si le produit existe dans products.json
+    const existingProduct = products.find(p => p.description.toLowerCase() === produitNom.toLowerCase());
+    
+    if (existingProduct) {
+      // Vérifier que la quantité en stock est supérieure à 0
+      if (existingProduct.quantity <= 0) {
+        toast({
+          title: 'Stock insuffisant',
+          description: `${produitNom} n'a plus de stock disponible (stock: ${existingProduct.quantity})`,
+          className: "bg-app-red text-white",
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      // Vérifier que la quantité demandée ne dépasse pas le stock disponible
+      if (quantiteInt > existingProduct.quantity) {
+        toast({
+          title: 'Quantité insuffisante',
+          description: `Stock disponible pour ${produitNom}: ${existingProduct.quantity} unités`,
+          className: "bg-app-red text-white",
+          variant: 'destructive',
+        });
+        return;
+      }
+    }
+
     const nouveauProduit: CommandeProduit = {
       nom: produitNom,
       prixUnitaire: parseFloat(prixUnitaire),
-      quantite: parseInt(quantite),
+      quantite: quantiteInt,
       prixVente: parseFloat(prixVente),
     };
 
@@ -433,13 +469,40 @@ export default function CommandesPage() {
 
       if (editingCommande) {
         await api.put(`/api/commandes/${editingCommande.id}`, commandeData);
+        
+        // Mettre à jour le RDV lié si c'est une réservation avec date et horaire
+        if (type === 'reservation' && dateEcheance && horaire) {
+          const updatedCommande = { ...editingCommande, ...commandeData } as Commande;
+          try {
+            await rdvFromReservationService.updateRdvFromCommande(updatedCommande);
+          } catch (err) {
+            console.error('Erreur mise à jour RDV:', err);
+          }
+        }
+        
         toast({
           title: 'Succès',
           description: 'Commande modifiée avec succès',
           className: "bg-app-green text-white",
         });
       } else {
-        await api.post('/api/commandes', commandeData);
+        const response = await api.post('/api/commandes', commandeData);
+        const newCommande = response.data as Commande;
+        
+        // Créer automatiquement un RDV si c'est une réservation avec date et horaire
+        if (type === 'reservation' && dateEcheance && horaire) {
+          try {
+            await rdvFromReservationService.createRdvFromCommande(newCommande);
+            toast({
+              title: '📅 Rendez-vous créé',
+              description: `Un RDV a été automatiquement créé pour le ${dateEcheance} à ${horaire}`,
+              className: "bg-app-green text-white",
+            });
+          } catch (err) {
+            console.error('Erreur création RDV:', err);
+          }
+        }
+        
         toast({
           title: 'Succès',
           description: 'Commande ajoutée avec succès',
@@ -479,6 +542,13 @@ export default function CommandesPage() {
 
   const handleDelete = async (id: string) => {
     try {
+      // Supprimer le RDV lié si existant
+      try {
+        await rdvFromReservationService.deleteRdvFromCommande(id);
+      } catch (err) {
+        console.error('Erreur suppression RDV lié:', err);
+      }
+      
       await api.delete(`/api/commandes/${id}`);
       toast({
         title: 'Succès',
@@ -501,7 +571,11 @@ export default function CommandesPage() {
   // État pour la confirmation d'annulation
   const [cancellingId, setCancellingId] = useState<string | null>(null);
 
-  const handleStatusChange = async (id: string, newStatus: 'en_route' | 'arrive' | 'en_attente' | 'valide' | 'annule') => {
+  const handleStatusChange = async (id: string, newStatus: 'en_route' | 'arrive' | 'en_attente' | 'valide' | 'annule' | 'reporter') => {
+    // Trouver la commande concernée
+    const commande = commandes.find(c => c.id === id);
+    if (!commande) return;
+    
     // Si on passe à "valide", demander confirmation
     if (newStatus === 'valide') {
       setValidatingId(id);
@@ -512,6 +586,48 @@ export default function CommandesPage() {
     if (newStatus === 'annule') {
       setCancellingId(id);
       return;
+    }
+    
+    // Si on passe à "reporter", ouvrir la modale date/horaire
+    if (newStatus === 'reporter') {
+      // Préremplir avec la date et horaire actuels
+      const currentDate = commande.type === 'commande' ? commande.dateArrivagePrevue : commande.dateEcheance;
+      setReporterDate(currentDate || '');
+      setReporterHoraire(commande.horaire || '');
+      setReporterCommandeId(id);
+      setReporterModalOpen(true);
+      return;
+    }
+    
+    // Si la commande était "valide" et on change vers un autre statut (sauf annule qui a sa propre confirmation)
+    // => Supprimer la vente dans sales.json et restaurer la quantité
+    if (commande.statut === 'valide' && commande.saleId) {
+      try {
+        // Supprimer la vente (le backend restaure automatiquement la quantité)
+        await api.delete(`/api/sales/${commande.saleId}`);
+        console.log('✅ Vente supprimée de sales.json, quantité restaurée');
+        
+        // Mettre à jour le statut et supprimer le saleId
+        await api.put(`/api/commandes/${id}`, { statut: newStatus, saleId: null });
+        
+        toast({
+          title: 'Succès',
+          description: 'Statut mis à jour et vente annulée',
+          className: "bg-app-green text-white",
+        });
+        
+        await Promise.all([fetchCommandes(), fetchProducts()]);
+        return;
+      } catch (error) {
+        console.error('Error reverting validation:', error);
+        toast({
+          title: 'Erreur',
+          description: 'Impossible de mettre à jour le statut',
+          className: "bg-app-red text-white",
+          variant: 'destructive',
+        });
+        return;
+      }
     }
     
     try {
@@ -536,14 +652,36 @@ export default function CommandesPage() {
   const confirmCancellation = async () => {
     if (!cancellingId) return;
     
+    // Trouver la commande concernée
+    const commande = commandes.find(c => c.id === cancellingId);
+    
     try {
-      await api.put(`/api/commandes/${cancellingId}`, { statut: 'annule' });
+      // Si la commande était validée, supprimer la vente d'abord
+      if (commande && commande.statut === 'valide' && commande.saleId) {
+        await api.delete(`/api/sales/${commande.saleId}`);
+        console.log('✅ Vente supprimée de sales.json lors de l\'annulation');
+      }
+      
+      await api.put(`/api/commandes/${cancellingId}`, { statut: 'annule', saleId: null });
+      
+      // Marquer le RDV lié comme annulé (invisible mais en DB)
+      if (commande && commande.type === 'reservation') {
+        try {
+          await api.put(`/api/rdv/by-commande/${cancellingId}`, {
+            statut: 'annule'
+          });
+          console.log('✅ RDV marqué comme annulé');
+        } catch (rdvError) {
+          console.log('RDV non trouvé:', rdvError);
+        }
+      }
+      
       toast({
         title: 'Succès',
         description: 'Commande annulée avec succès',
         className: "bg-app-green text-white",
       });
-      fetchCommandes();
+      await Promise.all([fetchCommandes(), fetchProducts()]);
       setCancellingId(null);
     } catch (error) {
       console.error('Error cancelling:', error);
@@ -564,8 +702,19 @@ export default function CommandesPage() {
     if (!commandeToValidate) return;
     
     try {
-      // 1. Mettre à jour le statut de la commande
-      await api.put(`/api/commandes/${validatingId}`, { statut: 'valide' });
+      // 1. Vérifier que tous les produits ont un stock suffisant
+      for (const p of commandeToValidate.produits) {
+        const existingProduct = products.find(prod => prod.description.toLowerCase() === p.nom.toLowerCase());
+        if (existingProduct && existingProduct.quantity < p.quantite) {
+          toast({
+            title: 'Stock insuffisant',
+            description: `Stock disponible pour ${p.nom}: ${existingProduct.quantity} unités (demandé: ${p.quantite})`,
+            className: "bg-app-red text-white",
+            variant: 'destructive',
+          });
+          return;
+        }
+      }
       
       // 2. Enregistrer la vente dans sales.json
       const today = new Date().toISOString().split('T')[0];
@@ -576,12 +725,12 @@ export default function CommandesPage() {
         // Chercher le produit dans la liste existante
         let product = products.find(prod => prod.description.toLowerCase() === p.nom.toLowerCase());
         
-        // Si le produit n'existe pas, le créer
+        // Si le produit n'existe pas, le créer avec la quantité nécessaire
         if (!product) {
           const newProductResponse = await api.post('/api/products', {
             description: p.nom,
             purchasePrice: p.prixUnitaire,
-            quantity: 0 // Quantité 0 car c'est une commande/réservation
+            quantity: p.quantite // Créer avec la quantité de la commande pour permettre la vente
           });
           product = newProductResponse.data;
         }
@@ -630,7 +779,14 @@ export default function CommandesPage() {
       };
       
       console.log('✅ Validation commande - Données à enregistrer dans sales.json:', saleData);
-      await api.post('/api/sales', saleData);
+      const saleResponse = await api.post('/api/sales', saleData);
+      const createdSale = saleResponse.data;
+      
+      // 2. Mettre à jour le statut de la commande avec le saleId
+      await api.put(`/api/commandes/${validatingId}`, { 
+        statut: 'valide',
+        saleId: createdSale.id // Stocker l'ID de la vente pour pouvoir la supprimer si on annule
+      });
       
       toast({
         title: 'Succès',
@@ -664,6 +820,8 @@ export default function CommandesPage() {
         return <Badge className="text-blue-600 font-semibold">Validé</Badge>;
       case 'annule':
         return <Badge className="text-gray-600 font-semibold">Annulé</Badge>;
+      case 'reporter':
+        return <Badge className="text-blue-500 font-semibold">Reporté</Badge>;
       default:
         return <Badge>{statut}</Badge>;
     }
@@ -674,12 +832,14 @@ export default function CommandesPage() {
       return [
         { value: 'en_route', label: 'En route' },
         { value: 'arrive', label: 'Arrivé' },
+        { value: 'reporter', label: 'Reporter' },
         { value: 'valide', label: 'Validé' },
         { value: 'annule', label: 'Annulé' }
       ];
     } else {
       return [
         { value: 'en_attente', label: 'En attente' },
+        { value: 'reporter', label: 'Reporter' },
         { value: 'valide', label: 'Validé' },
         { value: 'annule', label: 'Annulé' }
       ];
@@ -1356,10 +1516,10 @@ export default function CommandesPage() {
           <div className="overflow-x-auto">
             <ModernTable className="min-w-full">
             <ModernTableHeader>
-              <ModernTableRow >
-                <ModernTableHead>Client</ModernTableHead>
+              <ModernTableRow>
+                <ModernTableHead className="w-52">Client</ModernTableHead>
                 <ModernTableHead>Contact</ModernTableHead>
-                <ModernTableHead>Produit</ModernTableHead>
+                <ModernTableHead className="w-52">Produit</ModernTableHead>
                 <ModernTableHead>Prix</ModernTableHead>
                 <ModernTableHead>Type</ModernTableHead>
                 <ModernTableHead>
@@ -1387,23 +1547,22 @@ export default function CommandesPage() {
                     key={commande.id}
                     className="bg-background/40 hover:bg-primary/5 transition-colors"
                   >
-                    <ModernTableCell className="align-top">
-                      <div className="font-medium">{commande.clientNom}</div>
-                      <div className="text-xs text-muted-foreground">
+                    <ModernTableCell className="align-top w-52">
+                      <div className="font-medium whitespace-normal break-words">{commande.clientNom}</div>
+                      <div className="text-xs text-muted-foreground whitespace-normal break-words">
                         {commande.clientAddress}
                       </div>
                     </ModernTableCell>
                     <ModernTableCell className="align-top">
-                      <span className="text-sm">{commande.clientPhone}</span>
+                      <span className="text-sm whitespace-normal break-words">{commande.clientPhone}</span>
                     </ModernTableCell>
-                    <ModernTableCell className="align-top">
+                    <ModernTableCell className="align-top w-52">
                       {commande.produits.map((p, idx) => (
                         <div key={idx} className="text-sm space-y-0.5">
-                          <div className="font-medium">{p.nom}</div>
-                         <div className="text-xs text-muted-foreground">
-                          Qté: <span className="font-bold text-red-600">{p.quantite}</span>
-                        </div>
-
+                          <div className="font-medium whitespace-normal break-words">{p.nom}</div>
+                          <div className="text-xs text-muted-foreground">
+                            Qté: <span className="font-bold text-red-600">{p.quantite}</span>
+                          </div>
                         </div>
                       ))}
                     </ModernTableCell>
@@ -1511,6 +1670,7 @@ export default function CommandesPage() {
                                 option.value === 'en_attente' ? 'text-red-600 font-semibold' :
                                 option.value === 'valide' ? 'text-blue-600 font-semibold' :
                                 option.value === 'annule' ? 'text-gray-600 font-semibold' :
+                                option.value === 'reporter' ? 'text-blue-500 font-semibold' :
                                 ''
                               }
                             >
@@ -1603,7 +1763,149 @@ export default function CommandesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Dialog Reporter - Date et Horaire */}
+      <Dialog open={reporterModalOpen} onOpenChange={(open) => {
+        if (!open) {
+          setReporterModalOpen(false);
+          setReporterCommandeId(null);
+          setReporterDate('');
+          setReporterHoraire('');
+        }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-blue-600">
+              <Calendar className="h-5 w-5" />
+              Reporter la date d'échéance
+            </DialogTitle>
+            <DialogDescription>
+              Modifiez la date et l'horaire pour reporter cette commande/réservation.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="reporterDate" className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">
+                📅 Nouvelle date d'échéance
+              </Label>
+              <Input
+                id="reporterDate"
+                type="date"
+                value={reporterDate}
+                onChange={(e) => setReporterDate(e.target.value)}
+                className="border-2 border-blue-300 dark:border-blue-700 focus:border-blue-500 dark:focus:border-blue-500 bg-white dark:bg-gray-900 shadow-sm"
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="reporterHoraire" className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">
+                🕐 Horaire
+              </Label>
+              <Input
+                id="reporterHoraire"
+                type="time"
+                value={reporterHoraire}
+                onChange={(e) => setReporterHoraire(e.target.value)}
+                className="border-2 border-blue-300 dark:border-blue-700 focus:border-blue-500 dark:focus:border-blue-500 bg-white dark:bg-gray-900 shadow-sm"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setReporterModalOpen(false);
+                setReporterCommandeId(null);
+                setReporterDate('');
+                setReporterHoraire('');
+              }}
+            >
+              Annuler
+            </Button>
+            <Button
+              onClick={async () => {
+                if (!reporterCommandeId || !reporterDate) {
+                  toast({
+                    title: 'Erreur',
+                    description: 'Veuillez sélectionner une date',
+                    className: "bg-app-red text-white",
+                    variant: 'destructive',
+                  });
+                  return;
+                }
+                
+                try {
+                  // Trouver la commande pour déterminer le type
+                  const commande = commandes.find(c => c.id === reporterCommandeId);
+                  if (!commande) return;
+                  
+                  // Préparer les données à mettre à jour
+                  const updateData: any = {
+                    statut: 'reporter',
+                    horaire: reporterHoraire || undefined
+                  };
+                  
+                  // Mettre à jour la bonne date selon le type
+                  if (commande.type === 'commande') {
+                    updateData.dateArrivagePrevue = reporterDate;
+                  } else {
+                    updateData.dateEcheance = reporterDate;
+                  }
+                  
+                  await api.put(`/api/commandes/${reporterCommandeId}`, updateData);
+                  
+                  // Mettre à jour le RDV lié si c'est une réservation
+                  if (commande.type === 'reservation') {
+                    try {
+                      // Calculer la nouvelle heure de fin (1h après le début)
+                      const heureDebut = reporterHoraire || '09:00';
+                      const [h, m] = heureDebut.split(':').map(Number);
+                      const endH = (h + 1) % 24;
+                      const heureFin = `${endH.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+                      
+                      await api.put(`/api/rdv/by-commande/${reporterCommandeId}`, {
+                        date: reporterDate,
+                        heureDebut,
+                        heureFin,
+                        statut: 'planifie' // Réactiver le RDV
+                      });
+                      console.log('✅ RDV mis à jour avec nouvelle date et horaire');
+                    } catch (rdvError) {
+                      console.log('RDV non trouvé ou erreur:', rdvError);
+                    }
+                  }
+                  
+                  toast({
+                    title: 'Succès',
+                    description: `La date a été reportée au ${new Date(reporterDate).toLocaleDateString('fr-FR')}${reporterHoraire ? ' à ' + reporterHoraire : ''}`,
+                    className: "bg-app-green text-white",
+                  });
+                  
+                  fetchCommandes();
+                  setReporterModalOpen(false);
+                  setReporterCommandeId(null);
+                  setReporterDate('');
+                  setReporterHoraire('');
+                } catch (error) {
+                  console.error('Error updating date:', error);
+                  toast({
+                    title: 'Erreur',
+                    description: 'Impossible de reporter la date',
+                    className: "bg-app-red text-white",
+                    variant: 'destructive',
+                  });
+                }
+              }}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              Enregistrer
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       </div>
     </Layout>
   );
 }
+
+export default CommandesPage;

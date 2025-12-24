@@ -393,7 +393,7 @@
     "id": "1751641563836",
     "description": "Tissages bouclé blonde miel 20 pouces",
     "purchasePrice": 15.43,
-    "quantity": 0
+    "quantity": 2
   },
   {
     "id": "1751721764807",
@@ -423,7 +423,7 @@
     "id": "1752143907546",
     "description": "Tissages lisse mèche blonde 20 pouces",
     "purchasePrice": 25.053,
-    "quantity": 2
+    "quantity": 1
   },
   {
     "id": "1752213159276",
@@ -495,7 +495,7 @@
     "id": "1753186907720",
     "description": "Tissages bouclé noir 16 poucess",
     "purchasePrice": 11.02,
-    "quantity": 0
+    "quantity": 1
   },
   {
     "id": "1753187017537",
@@ -513,7 +513,7 @@
     "id": "1753356444320",
     "description": "Tissages bouclé blonde miel 18 pouces",
     "purchasePrice": 14.03,
-    "quantity": 1
+    "quantity": 0
   },
   {
     "id": "1753356496899",
@@ -525,7 +525,7 @@
     "id": "1753356640667",
     "description": "Perruque lisse blonde blanche 24 pouces",
     "purchasePrice": 53.09,
-    "quantity": 0
+    "quantity": 1
   },
   {
     "id": "1753356729671",
@@ -615,13 +615,13 @@
     "id": "1758025491344",
     "description": "Colle",
     "purchasePrice": 3,
-    "quantity": 6
+    "quantity": 4
   },
   {
     "id": "1758025563599",
     "description": "Disolvant",
     "purchasePrice": 1,
-    "quantity": 9
+    "quantity": 8
   },
   {
     "id": "1758614048851",
@@ -705,7 +705,7 @@
     "id": "1762441427899",
     "description": "Perruque lisse noir 24 pouces",
     "purchasePrice": 50.46,
-    "quantity": 0
+    "quantity": 1
   },
   {
     "id": "1762516167800",
@@ -729,7 +729,7 @@
     "id": "1764131911050",
     "description": "Perruque lisse gris 20 pouces",
     "purchasePrice": 37.06,
-    "quantity": 1
+    "quantity": 0
   },
   {
     "id": "1764132092383",
@@ -741,7 +741,7 @@
     "id": "1764132619962",
     "description": "Tissages bouclé marron 22 pouces",
     "purchasePrice": 23.44,
-    "quantity": 3
+    "quantity": 1
   },
   {
     "id": "1764132773740",
@@ -759,7 +759,7 @@
     "id": "1764299613440",
     "description": "Tissages bouclé blonde miel 24 pouces",
     "purchasePrice": 26.43,
-    "quantity": 3
+    "quantity": 4
   },
   {
     "id": "1764299822840",
@@ -771,7 +771,7 @@
     "id": "1764325660019",
     "description": "Perruque bouclé marron 28 pouces",
     "purchasePrice": 62.81,
-    "quantity": 1
+    "quantity": 0
   },
   {
     "id": "1764563281155",
@@ -783,6 +783,42 @@
     "id": "1764600030338",
     "description": "Extension crépus 20 pouces",
     "purchasePrice": 80,
+    "quantity": 0
+  },
+  {
+    "id": "1765190468819",
+    "description": "Extension crépus 20 pouces",
+    "purchasePrice": 80,
+    "quantity": 1
+  },
+  {
+    "id": "1765297459521",
+    "description": "Perruque lisse mèche blonde devant 12 pouces",
+    "purchasePrice": 19,
+    "quantity": 0
+  },
+  {
+    "id": "1765297481777",
+    "description": "perruque lisse noir 10 pouces",
+    "purchasePrice": 10,
+    "quantity": 0
+  },
+  {
+    "id": "1765543134962",
+    "description": "Perruque lisse blonde blanche 28 pouces ",
+    "purchasePrice": 57.89,
+    "quantity": 0
+  },
+  {
+    "id": "1766226403095",
+    "description": "Perruque crépus lisse noir 24 pouces",
+    "purchasePrice": 55.87,
+    "quantity": 0
+  },
+  {
+    "id": "1766556445480",
+    "description": "Perruque bouclé marron 26 pouces",
+    "purchasePrice": 43.05,
     "quantity": 0
   }
 ]

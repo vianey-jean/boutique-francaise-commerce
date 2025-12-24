@@ -13,10 +13,13 @@
         "prixVente": 130
       }
     ],
-    "dateCommande": "2025-11-26T04:38:30.955Z",
-    "statut": "en_attente",
-    "dateEcheance": "2025-12-08",
-    "createdAt": "2025-11-26T04:38:31.080Z"
+    "dateCommande": "2025-12-07T13:39:24.980Z",
+    "statut": "annule",
+    "dateEcheance": "2025-12-10",
+    "createdAt": "2025-11-26T04:38:31.080Z",
+    "horaire": "14:00",
+    "updatedAt": "2025-12-11T16:01:59.317Z",
+    "saleId": null
   },
   {
     "id": "1764132402668",
@@ -42,7 +45,8 @@
     "statut": "valide",
     "dateEcheance": "2025-11-27",
     "createdAt": "2025-11-26T04:46:42.668Z",
-    "updatedAt": "2025-11-27T18:34:31.949Z"
+    "updatedAt": "2025-12-04T12:40:37.659Z",
+    "notificationEnvoyee": true
   },
   {
     "id": "1764132619998",
@@ -59,9 +63,11 @@
       }
     ],
     "dateCommande": "2025-11-26T04:50:19.917Z",
-    "statut": "en_route",
+    "statut": "annule",
     "dateArrivagePrevue": "2025-12-20",
-    "createdAt": "2025-11-26T04:50:19.998Z"
+    "createdAt": "2025-11-26T04:50:19.998Z",
+    "updatedAt": "2025-12-17T11:37:26.916Z",
+    "saleId": null
   },
   {
     "id": "1764132773772",
@@ -98,11 +104,12 @@
       }
     ],
     "dateCommande": "2025-12-04T07:30:59.424Z",
-    "statut": "en_attente",
+    "statut": "annule",
     "dateEcheance": "2025-12-06",
     "createdAt": "2025-11-28T03:08:34.428Z",
     "horaire": "12:00",
-    "updatedAt": "2025-12-04T07:30:59.454Z"
+    "updatedAt": "2025-12-06T17:30:46.797Z",
+    "saleId": null
   },
   {
     "id": "1764299659511",
@@ -143,7 +150,8 @@
     "dateEcheance": "2025-12-03",
     "createdAt": "2025-11-28T03:17:46.391Z",
     "horaire": "09:00",
-    "updatedAt": "2025-12-04T07:30:32.840Z"
+    "updatedAt": "2025-12-04T12:40:37.673Z",
+    "notificationEnvoyee": true
   },
   {
     "id": "1764325730164",
@@ -166,9 +174,11 @@
       }
     ],
     "dateCommande": "2025-11-28T10:28:50.117Z",
-    "statut": "en_attente",
+    "statut": "annule",
     "dateEcheance": "2025-12-11",
-    "createdAt": "2025-11-28T10:28:50.164Z"
+    "createdAt": "2025-11-28T10:28:50.164Z",
+    "saleId": null,
+    "updatedAt": "2025-12-11T16:02:04.031Z"
   },
   {
     "id": "1764563379673",
@@ -206,10 +216,12 @@
       }
     ],
     "dateCommande": "2025-12-04T07:32:15.345Z",
-    "statut": "en_attente",
+    "statut": "valide",
     "dateEcheance": "2025-12-06",
     "horaire": "14:00",
-    "createdAt": "2025-12-04T07:32:15.386Z"
+    "createdAt": "2025-12-04T07:32:15.386Z",
+    "saleId": "1765042271759",
+    "updatedAt": "2025-12-06T17:31:11.779Z"
   },
   {
     "id": "1764833693155",
@@ -226,10 +238,12 @@
       }
     ],
     "dateCommande": "2025-12-04T07:34:53.106Z",
-    "statut": "en_attente",
+    "statut": "valide",
     "dateEcheance": "2025-12-06",
     "horaire": "10:00",
-    "createdAt": "2025-12-04T07:34:53.155Z"
+    "createdAt": "2025-12-04T07:34:53.155Z",
+    "saleId": "1765042242142",
+    "updatedAt": "2025-12-06T17:30:42.160Z"
   },
   {
     "id": "1764833841788",
@@ -246,10 +260,12 @@
       }
     ],
     "dateCommande": "2025-12-04T07:37:21.748Z",
-    "statut": "en_attente",
+    "statut": "valide",
     "dateEcheance": "2025-12-06",
     "horaire": "09:00",
-    "createdAt": "2025-12-04T07:37:21.788Z"
+    "createdAt": "2025-12-04T07:37:21.788Z",
+    "saleId": "1765042161135",
+    "updatedAt": "2025-12-06T17:29:21.155Z"
   },
   {
     "id": "1764834124754",
@@ -266,9 +282,165 @@
       }
     ],
     "dateCommande": "2025-12-04T07:42:04.706Z",
-    "statut": "en_attente",
+    "statut": "valide",
     "dateEcheance": "2025-12-05",
     "horaire": "09:00",
-    "createdAt": "2025-12-04T07:42:04.754Z"
+    "createdAt": "2025-12-04T07:42:04.754Z",
+    "saleId": "1764938389243",
+    "updatedAt": "2025-12-05T12:39:49.261Z"
+  },
+  {
+    "id": "1764842402126",
+    "clientNom": "Melissa GRND",
+    "clientPhone": "0693549814",
+    "clientAddress": "9 rue rose des bois ste marie",
+    "type": "reservation",
+    "produits": [
+      {
+        "nom": "Tissages bouclé noir 20 pouces 12 A",
+        "prixUnitaire": 14.91,
+        "quantite": 2,
+        "prixVente": 55
+      }
+    ],
+    "dateCommande": "2025-12-04T10:00:01.846Z",
+    "statut": "annule",
+    "dateEcheance": "2025-12-06",
+    "horaire": "14:00",
+    "createdAt": "2025-12-04T10:00:02.126Z",
+    "updatedAt": "2025-12-06T17:31:40.624Z",
+    "saleId": null
+  },
+  {
+    "id": "1764843383122",
+    "clientNom": "Lorci Ana",
+    "clientPhone": "06",
+    "clientAddress": "Bellepierre",
+    "type": "reservation",
+    "produits": [
+      {
+        "nom": "Tissages bouclé blonde miel 24 pouces",
+        "prixUnitaire": 26.43,
+        "quantite": 3,
+        "prixVente": 60
+      }
+    ],
+    "dateCommande": "2025-12-04T10:16:23.079Z",
+    "statut": "annule",
+    "dateEcheance": "2025-12-05",
+    "horaire": "11:00",
+    "createdAt": "2025-12-04T10:16:23.122Z",
+    "saleId": null,
+    "updatedAt": "2025-12-05T12:40:17.309Z"
+  },
+  {
+    "id": "1765469056495",
+    "clientNom": "Chakila techer",
+    "clientPhone": "0692503571",
+    "clientAddress": "5 allée Émile cohl le port",
+    "type": "reservation",
+    "produits": [
+      {
+        "nom": "Tissages bouclé blonde miel 18 pouces",
+        "prixUnitaire": 14.03,
+        "quantite": 2,
+        "prixVente": 40
+      }
+    ],
+    "dateCommande": "2025-12-11T16:04:16.458Z",
+    "statut": "valide",
+    "dateEcheance": "2025-12-13",
+    "horaire": "09:00",
+    "createdAt": "2025-12-11T16:04:16.495Z",
+    "saleId": "1765610308607",
+    "updatedAt": "2025-12-13T07:18:28.627Z"
+  },
+  {
+    "id": "1765542897403",
+    "clientNom": "Sabrina",
+    "clientPhone": "0692109069",
+    "clientAddress": "15 rue saint ange doxile 97420 le port Apt 30",
+    "type": "reservation",
+    "produits": [
+      {
+        "nom": "Tissages bouclé noir 24 pouces",
+        "prixUnitaire": 19.46,
+        "quantite": 3,
+        "prixVente": 60
+      }
+    ],
+    "dateCommande": "2025-12-12T12:34:57.228Z",
+    "statut": "annule",
+    "dateEcheance": "2025-12-13",
+    "horaire": "09:30",
+    "createdAt": "2025-12-12T12:34:57.403Z",
+    "saleId": null,
+    "updatedAt": "2025-12-13T07:18:21.272Z"
+  },
+  {
+    "id": "1765543188691",
+    "clientNom": "Nastazia ahmed",
+    "clientPhone": "06",
+    "clientAddress": "7 rue alice peverelly (le port)",
+    "type": "reservation",
+    "produits": [
+      {
+        "nom": "Perruque lisse blonde blanche 28 pouces ",
+        "prixUnitaire": 57.89,
+        "quantite": 1,
+        "prixVente": 180
+      }
+    ],
+    "dateCommande": "2025-12-12T12:39:48.572Z",
+    "statut": "valide",
+    "dateEcheance": "2025-12-13",
+    "horaire": "10:00",
+    "createdAt": "2025-12-12T12:39:48.691Z",
+    "saleId": "1765610312416",
+    "updatedAt": "2025-12-13T07:18:32.436Z"
+  },
+  {
+    "id": "1765885085223",
+    "clientNom": "Wendy Mola",
+    "clientPhone": "0692063833",
+    "clientAddress": "52 chemin duguet Saint leu 97436 ",
+    "type": "reservation",
+    "produits": [
+      {
+        "nom": "Perruque bouclé noir 26 pouces",
+        "prixUnitaire": 49,
+        "quantite": 1,
+        "prixVente": 180
+      }
+    ],
+    "dateCommande": "2025-12-20T03:44:53.460Z",
+    "statut": "valide",
+    "dateEcheance": "2025-12-20",
+    "horaire": "09:00",
+    "createdAt": "2025-12-16T11:38:05.223Z",
+    "updatedAt": "2025-12-20T10:24:17.434Z",
+    "saleId": "1766226257413"
+  },
+  {
+    "id": "1765971548586",
+    "clientNom": "Perséphone Perséphone",
+    "clientPhone": "0692 41 74 26",
+    "clientAddress": "Parking run market chaudron st denis",
+    "type": "reservation",
+    "produits": [
+      {
+        "nom": "Tissages bouclé noir 20 pouces 12 A",
+        "prixUnitaire": 14.91,
+        "quantite": 3,
+        "prixVente": 55
+      }
+    ],
+    "dateCommande": "2025-12-17T11:39:08.499Z",
+    "statut": "annule",
+    "dateEcheance": "2025-12-19",
+    "horaire": "13:00",
+    "createdAt": "2025-12-17T11:39:08.586Z",
+    "saleId": null,
+    "updatedAt": "2025-12-20T03:39:40.832Z"
   }
 ]

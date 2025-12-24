@@ -91,9 +91,9 @@
     "description": "Perruque bouclé marron 22 pouces",
     "nom": "Cliente Ma warren Chaudron",
     "prixVente": 160,
-    "avanceRecue": 150,
-    "reste": 10,
-    "estPaye": false,
+    "avanceRecue": 160,
+    "reste": 0,
+    "estPaye": true,
     "productId": "1745415790700",
     "paiements": [
       {
@@ -107,6 +107,10 @@
       {
         "date": "2025-11-23",
         "montant": 30
+      },
+      {
+        "date": "2025-12-13",
+        "montant": 10
       }
     ]
   },
@@ -118,10 +122,16 @@
     "description": "Perruque bouclé noir 20 pouces Vendu",
     "nom": "Cliente Naomie Vaubon",
     "prixVente": 140,
-    "avanceRecue": 70,
-    "reste": 70,
+    "avanceRecue": 120,
+    "reste": 20,
     "estPaye": false,
-    "productId": "1745415935938"
+    "productId": "1745415935938",
+    "paiements": [
+      {
+        "date": "2025-12-08",
+        "montant": 50
+      }
+    ]
   },
   {
     "id": "9",
@@ -271,8 +281,8 @@
     "nom": "Charnelle",
     "phone": "0692569227",
     "prixVente": 620,
-    "avanceRecue": 420,
-    "reste": 200,
+    "avanceRecue": 520,
+    "reste": 100,
     "estPaye": false,
     "paiements": [
       {
@@ -285,6 +295,10 @@
       },
       {
         "date": "2025-11-07",
+        "montant": 100
+      },
+      {
+        "date": "2025-12-07",
         "montant": 100
       }
     ]
@@ -341,11 +355,16 @@
     "nom": "Cliente Ma warren Chaudron",
     "phone": "+262 692 678 901",
     "prixVente": 110,
-    "avanceRecue": 0,
-    "reste": 110,
+    "avanceRecue": 60,
+    "reste": 50,
     "estPaye": false,
     "productId": "1762441427899",
-    "paiements": []
+    "paiements": [
+      {
+        "date": "2025-12-13",
+        "montant": 60
+      }
+    ]
   },
   {
     "id": "22",
@@ -369,9 +388,45 @@
     "description": "perruque lisse noir 26 pouces",
     "nom": "Copine Emilienne Vaubon",
     "prixVente": 160,
-    "avanceRecue": 0,
-    "reste": 160,
+    "avanceRecue": 80,
+    "reste": 80,
     "estPaye": false,
-    "productId": "1764132773740"
+    "productId": "1764132773740",
+    "paiements": [
+      {
+        "date": "2025-12-06",
+        "montant": 80
+      }
+    ]
+  },
+  {
+    "id": "24",
+    "date": "2025-11-12",
+    "description": "Extension crépus 20 pouces",
+    "nom": "Toufahat Gharibe Chaibati ",
+    "phone": "06",
+    "prixVente": 180,
+    "avanceRecue": 150,
+    "reste": 30,
+    "estPaye": false,
+    "productId": "1764600030338",
+    "paiements": [
+      {
+        "date": "2025-12-08",
+        "montant": 150
+      }
+    ]
+  },
+  {
+    "id": "25",
+    "date": "2025-12-09",
+    "datePaiement": "2025-12-14",
+    "phone": "0692019459",
+    "description": "perruque lisse noir 10 pouces, Perruque lisse mèche blonde devant 12 pouces",
+    "nom": "Cliente maido Bellepierre",
+    "prixVente": 100,
+    "avanceRecue": 70,
+    "reste": 30,
+    "estPaye": false
   }
 ]

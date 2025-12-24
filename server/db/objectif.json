@@ -1,0 +1,15 @@
+{
+  "objectif": 4000,
+  "totalVentesMois": 3245,
+  "mois": 12,
+  "annee": 2025,
+  "historique": [
+    {
+      "mois": 12,
+      "annee": 2025,
+      "totalVentesMois": 3245,
+      "objectif": 4000,
+      "pourcentage": 81
+    }
+  ]
+}

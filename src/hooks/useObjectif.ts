@@ -25,10 +25,8 @@ export const useObjectif = () => {
     try {
       const result = await objectifApi.updateObjectif(newObjectif);
       setData(result);
-      // Recalculate after updating to ensure data consistency
-      const recalculated = await objectifApi.recalculate();
-      setData(recalculated);
-      return recalculated;
+      // DO NOT recalculate after updating - it would overwrite the custom objectif
+      return result;
     } catch (err) {
       console.error('Error updating objectif:', err);
       throw err;

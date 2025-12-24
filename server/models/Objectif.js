@@ -33,7 +33,7 @@ const Objectif = {
     
     // Reset total if month changed and save previous month to historique
     if (data.mois !== currentMonth || data.annee !== currentYear) {
-      // Save previous month data to historique before resetting
+      // Save previous month data to historique before resetting - PRESERVE custom objectif
       if (data.totalVentesMois > 0 || data.objectif > 0) {
         if (!data.historique) data.historique = [];
         
@@ -41,15 +41,17 @@ const Objectif = {
           h => h.mois === data.mois && h.annee === data.annee
         );
         
-        const pourcentage = DEFAULT_OBJECTIF > 0 
-          ? Math.round((data.totalVentesMois / DEFAULT_OBJECTIF) * 100) 
+        // Use the actual objectif that was set for that month
+        const monthObjectif = data.objectif || DEFAULT_OBJECTIF;
+        const pourcentage = monthObjectif > 0 
+          ? Math.round((data.totalVentesMois / monthObjectif) * 100) 
           : 0;
         
         const monthData = {
           mois: data.mois,
           annee: data.annee,
           totalVentesMois: data.totalVentesMois,
-          objectif: DEFAULT_OBJECTIF,
+          objectif: monthObjectif,
           pourcentage
         };
         
@@ -63,6 +65,7 @@ const Objectif = {
       data.totalVentesMois = 0;
       data.mois = currentMonth;
       data.annee = currentYear;
+      // Reset objectif to DEFAULT for new month only
       data.objectif = DEFAULT_OBJECTIF;
       writeData(data);
     }
@@ -70,26 +73,50 @@ const Objectif = {
     return data;
   },
   
-  updateObjectif: (newObjectif) => {
+  updateObjectif: (newObjectif, targetMonth = null, targetYear = null) => {
     const data = readData();
-    data.objectif = Number(newObjectif);
+    const now = new Date();
+    const currentMonth = now.getMonth() + 1;
+    const currentYear = now.getFullYear();
     
-    // Also update in current month historique if exists
-    if (data.historique) {
-      const now = new Date();
-      const currentMonth = now.getMonth() + 1;
-      const currentYear = now.getFullYear();
-      
-      const existingIndex = data.historique.findIndex(
-        h => h.mois === currentMonth && h.annee === currentYear
-      );
-      
-      if (existingIndex >= 0) {
-        data.historique[existingIndex].objectif = Number(newObjectif);
-        data.historique[existingIndex].pourcentage = Number(newObjectif) > 0 
-          ? Math.round((data.historique[existingIndex].totalVentesMois / Number(newObjectif)) * 100)
-          : 0;
-      }
+    // Determine which month to update
+    const monthToUpdate = targetMonth || currentMonth;
+    const yearToUpdate = targetYear || currentYear;
+    
+    // ONLY allow updating current month - past months are locked
+    if (yearToUpdate < currentYear || (yearToUpdate === currentYear && monthToUpdate < currentMonth)) {
+      throw new Error('Cannot modify objectif for past months');
+    }
+    
+    // Update main objectif only if it's the current month
+    if (monthToUpdate === currentMonth && yearToUpdate === currentYear) {
+      data.objectif = Number(newObjectif);
+    }
+    
+    // Also update in historique
+    if (!data.historique) data.historique = [];
+    
+    const existingIndex = data.historique.findIndex(
+      h => h.mois === monthToUpdate && h.annee === yearToUpdate
+    );
+    
+    if (existingIndex >= 0) {
+      data.historique[existingIndex].objectif = Number(newObjectif);
+      data.historique[existingIndex].pourcentage = Number(newObjectif) > 0 
+        ? Math.round((data.historique[existingIndex].totalVentesMois / Number(newObjectif)) * 100)
+        : 0;
+    } else {
+      // Create new entry for current month if it doesn't exist
+      const pourcentage = Number(newObjectif) > 0 
+        ? Math.round((data.totalVentesMois / Number(newObjectif)) * 100)
+        : 0;
+      data.historique.push({
+        mois: monthToUpdate,
+        annee: yearToUpdate,
+        totalVentesMois: data.totalVentesMois || 0,
+        objectif: Number(newObjectif),
+        pourcentage
+      });
     }
     
     writeData(data);
@@ -114,7 +141,7 @@ const Objectif = {
     return data;
   },
   
-  // Recalculate all months from sales data
+  // Recalculate all months from sales data - PRESERVES custom objectif values
   recalculateFromSales: (sales) => {
     const now = new Date();
     const currentMonth = now.getMonth() + 1;
@@ -146,21 +173,27 @@ const Objectif = {
     const data = readData();
     if (!data.historique) data.historique = [];
     
-    // Update historique for all months with data
+    // Update historique for all months with data - PRESERVE existing objectif values
     Object.values(monthlyTotals).forEach(({ month, year, total }) => {
-      const pourcentage = DEFAULT_OBJECTIF > 0 
-        ? Math.round((total / DEFAULT_OBJECTIF) * 100) 
-        : 0;
-      
       const existingIndex = data.historique.findIndex(
         h => h.mois === month && h.annee === year
       );
+      
+      // Get existing objectif or use default
+      const existingObjectif = existingIndex >= 0 
+        ? data.historique[existingIndex].objectif 
+        : DEFAULT_OBJECTIF;
+      
+      const objectifToUse = existingObjectif || DEFAULT_OBJECTIF;
+      const pourcentage = objectifToUse > 0 
+        ? Math.round((total / objectifToUse) * 100) 
+        : 0;
       
       const monthData = {
         mois: month,
         annee: year,
         totalVentesMois: total,
-        objectif: DEFAULT_OBJECTIF,
+        objectif: objectifToUse,
         pourcentage
       };
       
@@ -171,14 +204,17 @@ const Objectif = {
       }
     });
     
-    // Update current month data
+    // Update current month data - PRESERVE current objectif if set
     const currentMonthKey = `${currentYear}-${currentMonth}`;
     const currentMonthTotal = monthlyTotals[currentMonthKey]?.total || 0;
     
     data.totalVentesMois = currentMonthTotal;
     data.mois = currentMonth;
     data.annee = currentYear;
-    data.objectif = DEFAULT_OBJECTIF;
+    // PRESERVE existing objectif - don't reset to DEFAULT
+    if (!data.objectif || data.objectif === 0) {
+      data.objectif = DEFAULT_OBJECTIF;
+    }
     
     // Sort historique by month
     data.historique.sort((a, b) => {

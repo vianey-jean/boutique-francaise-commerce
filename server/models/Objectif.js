@@ -41,15 +41,15 @@ const Objectif = {
           h => h.mois === data.mois && h.annee === data.annee
         );
         
-        const pourcentage = data.objectif > 0 
-          ? Math.round((data.totalVentesMois / data.objectif) * 100) 
+        const pourcentage = DEFAULT_OBJECTIF > 0 
+          ? Math.round((data.totalVentesMois / DEFAULT_OBJECTIF) * 100) 
           : 0;
         
         const monthData = {
           mois: data.mois,
           annee: data.annee,
           totalVentesMois: data.totalVentesMois,
-          objectif: data.objectif,
+          objectif: DEFAULT_OBJECTIF,
           pourcentage
         };
         
@@ -60,16 +60,10 @@ const Objectif = {
         }
       }
       
-      // Reset for new year - keep historique but filter for new year display
-      if (data.annee !== currentYear) {
-        // Archive previous year data (keep in historique but will be filtered in display)
-      }
-      
       data.totalVentesMois = 0;
       data.mois = currentMonth;
       data.annee = currentYear;
-      // Reset objectif to default at the start of each month
-      data.objectif = data.objectif || DEFAULT_OBJECTIF;
+      data.objectif = DEFAULT_OBJECTIF;
       writeData(data);
     }
     
@@ -92,7 +86,7 @@ const Objectif = {
       
       if (existingIndex >= 0) {
         data.historique[existingIndex].objectif = Number(newObjectif);
-        data.historique[existingIndex].pourcentage = data.objectif > 0 
+        data.historique[existingIndex].pourcentage = Number(newObjectif) > 0 
           ? Math.round((data.historique[existingIndex].totalVentesMois / Number(newObjectif)) * 100)
           : 0;
       }
@@ -120,55 +114,77 @@ const Objectif = {
     return data;
   },
   
+  // Recalculate all months from sales data
   recalculateFromSales: (sales) => {
     const now = new Date();
     const currentMonth = now.getMonth() + 1;
     const currentYear = now.getFullYear();
     
-    // Calculate total from current month sales
-    const monthlyTotal = sales
-      .filter(sale => {
-        const saleDate = new Date(sale.date);
-        return saleDate.getMonth() + 1 === currentMonth && saleDate.getFullYear() === currentYear;
-      })
-      .reduce((sum, sale) => {
-        if (sale.totalSellingPrice) {
-          return sum + Number(sale.totalSellingPrice);
-        } else if (sale.sellingPrice) {
-          return sum + Number(sale.sellingPrice);
+    // Calculate totals for ALL months from sales
+    const monthlyTotals = {};
+    
+    sales.forEach(sale => {
+      const saleDate = new Date(sale.date);
+      const month = saleDate.getMonth() + 1;
+      const year = saleDate.getFullYear();
+      
+      // Only process current year sales
+      if (year === currentYear) {
+        const key = `${year}-${month}`;
+        if (!monthlyTotals[key]) {
+          monthlyTotals[key] = { month, year, total: 0 };
         }
-        return sum;
-      }, 0);
+        
+        if (sale.totalSellingPrice) {
+          monthlyTotals[key].total += Number(sale.totalSellingPrice);
+        } else if (sale.sellingPrice) {
+          monthlyTotals[key].total += Number(sale.sellingPrice);
+        }
+      }
+    });
     
     const data = readData();
-    data.totalVentesMois = monthlyTotal;
-    data.mois = currentMonth;
-    data.annee = currentYear;
-    
-    // Update current month in historique
     if (!data.historique) data.historique = [];
     
-    const pourcentage = data.objectif > 0 
-      ? Math.round((monthlyTotal / data.objectif) * 100) 
-      : 0;
+    // Update historique for all months with data
+    Object.values(monthlyTotals).forEach(({ month, year, total }) => {
+      const pourcentage = DEFAULT_OBJECTIF > 0 
+        ? Math.round((total / DEFAULT_OBJECTIF) * 100) 
+        : 0;
+      
+      const existingIndex = data.historique.findIndex(
+        h => h.mois === month && h.annee === year
+      );
+      
+      const monthData = {
+        mois: month,
+        annee: year,
+        totalVentesMois: total,
+        objectif: DEFAULT_OBJECTIF,
+        pourcentage
+      };
+      
+      if (existingIndex >= 0) {
+        data.historique[existingIndex] = monthData;
+      } else {
+        data.historique.push(monthData);
+      }
+    });
     
-    const existingIndex = data.historique.findIndex(
-      h => h.mois === currentMonth && h.annee === currentYear
-    );
+    // Update current month data
+    const currentMonthKey = `${currentYear}-${currentMonth}`;
+    const currentMonthTotal = monthlyTotals[currentMonthKey]?.total || 0;
     
-    const monthData = {
-      mois: currentMonth,
-      annee: currentYear,
-      totalVentesMois: monthlyTotal,
-      objectif: data.objectif,
-      pourcentage
-    };
+    data.totalVentesMois = currentMonthTotal;
+    data.mois = currentMonth;
+    data.annee = currentYear;
+    data.objectif = DEFAULT_OBJECTIF;
     
-    if (existingIndex >= 0) {
-      data.historique[existingIndex] = monthData;
-    } else {
-      data.historique.push(monthData);
-    }
+    // Sort historique by month
+    data.historique.sort((a, b) => {
+      if (a.annee !== b.annee) return a.annee - b.annee;
+      return a.mois - b.mois;
+    });
     
     writeData(data);
     
@@ -187,7 +203,7 @@ const Objectif = {
     
     return {
       currentData: {
-        objectif: data.objectif,
+        objectif: data.objectif || DEFAULT_OBJECTIF,
         totalVentesMois: data.totalVentesMois,
         mois: data.mois,
         annee: data.annee

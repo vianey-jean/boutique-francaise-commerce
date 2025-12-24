@@ -214,7 +214,11 @@ const ObjectifStatsModal: React.FC = () => {
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                      <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} />
+                      <XAxis 
+                        dataKey="name" 
+                        tick={{ fill: '#dc2626', fontWeight: 'bold', fontSize: 12 }}
+                        stroke="#94a3b8"
+                      />
                       <YAxis stroke="#94a3b8" fontSize={12} tickFormatter={(v) => `${v/1000}k`} />
                       <Tooltip
                         contentStyle={{
@@ -249,7 +253,11 @@ const ObjectifStatsModal: React.FC = () => {
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={fullYearData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                      <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} />
+                      <XAxis 
+                        dataKey="name" 
+                        tick={{ fill: '#dc2626', fontWeight: 'bold', fontSize: 12 }}
+                        stroke="#94a3b8"
+                      />
                       <YAxis stroke="#94a3b8" fontSize={12} tickFormatter={(v) => `${v}%`} />
                       <Tooltip
                         contentStyle={{

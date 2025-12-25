@@ -87,6 +87,13 @@ const CommandesPage: React.FC = () =>  {
   const [reporterCommandeId, setReporterCommandeId] = useState<string | null>(null);
   const [reporterDate, setReporterDate] = useState('');
   const [reporterHoraire, setReporterHoraire] = useState('');
+  
+  // État pour la confirmation de création RDV depuis réservation
+  const [showRdvConfirmDialog, setShowRdvConfirmDialog] = useState(false);
+  const [showRdvFormModal, setShowRdvFormModal] = useState(false);
+  const [pendingReservationForRdv, setPendingReservationForRdv] = useState<Commande | null>(null);
+  const [rdvTitre, setRdvTitre] = useState('');
+  const [rdvDescription, setRdvDescription] = useState('');
 
   useEffect(() => {
     const loadData = async () => {
@@ -489,18 +496,12 @@ const CommandesPage: React.FC = () =>  {
         const response = await api.post('/api/commandes', commandeData);
         const newCommande = response.data as Commande;
         
-        // Créer automatiquement un RDV si c'est une réservation avec date et horaire
+        // Si c'est une réservation avec date et horaire, demander confirmation pour créer un RDV
         if (type === 'reservation' && dateEcheance && horaire) {
-          try {
-            await rdvFromReservationService.createRdvFromCommande(newCommande);
-            toast({
-              title: '📅 Rendez-vous créé',
-              description: `Un RDV a été automatiquement créé pour le ${dateEcheance} à ${horaire}`,
-              className: "bg-app-green text-white",
-            });
-          } catch (err) {
-            console.error('Erreur création RDV:', err);
-          }
+          setPendingReservationForRdv(newCommande);
+          setRdvTitre('');
+          setRdvDescription('');
+          setShowRdvConfirmDialog(true);
         }
         
         toast({
@@ -806,6 +807,74 @@ const CommandesPage: React.FC = () =>  {
         variant: 'destructive',
       });
     }
+  };
+
+  // Handler pour créer un RDV depuis une réservation
+  const handleCreateRdvFromReservation = async () => {
+    if (!pendingReservationForRdv) return;
+    
+    try {
+      // Calculer l'heure de fin (1 heure après le début)
+      const heureDebut = pendingReservationForRdv.horaire || '09:00';
+      const [hours, minutes] = heureDebut.split(':').map(Number);
+      const endHours = (hours + 1) % 24;
+      const heureFin = `${endHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+      
+      // Construire les données du RDV avec titre et description personnalisés
+      const rdvData = {
+        titre: rdvTitre.trim() || `Réservation pour ${pendingReservationForRdv.clientNom}`,
+        description: rdvDescription.trim() || '',
+        clientNom: pendingReservationForRdv.clientNom,
+        clientTelephone: pendingReservationForRdv.clientPhone,
+        clientAdresse: pendingReservationForRdv.clientAddress,
+        date: pendingReservationForRdv.dateEcheance,
+        heureDebut,
+        heureFin,
+        lieu: pendingReservationForRdv.clientAddress,
+        statut: 'planifie',
+        notes: `Créé depuis une réservation`,
+        produits: pendingReservationForRdv.produits.map(p => ({
+          nom: p.nom,
+          quantite: p.quantite,
+          prixUnitaire: p.prixUnitaire,
+          prixVente: p.prixVente,
+        })),
+        commandeId: pendingReservationForRdv.id,
+      };
+      
+      await api.post('/api/rdv', rdvData);
+      
+      toast({
+        title: '📅 Rendez-vous créé',
+        description: `Le RDV "${rdvData.titre}" a été créé pour le ${pendingReservationForRdv.dateEcheance} à ${heureDebut}`,
+        className: "bg-app-green text-white",
+      });
+    } catch (err) {
+      console.error('Erreur création RDV:', err);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de créer le rendez-vous',
+        className: "bg-app-red text-white",
+        variant: 'destructive',
+      });
+    } finally {
+      setShowRdvFormModal(false);
+      setPendingReservationForRdv(null);
+      setRdvTitre('');
+      setRdvDescription('');
+    }
+  };
+
+  const handleDeclineRdv = () => {
+    setShowRdvConfirmDialog(false);
+    setPendingReservationForRdv(null);
+    setRdvTitre('');
+    setRdvDescription('');
+  };
+
+  const handleAcceptRdv = () => {
+    setShowRdvConfirmDialog(false);
+    setShowRdvFormModal(true);
   };
 
   const getStatusBadge = (statut: string) => {
@@ -1899,6 +1968,104 @@ const CommandesPage: React.FC = () =>  {
               className="bg-blue-600 hover:bg-blue-700 text-white"
             >
               Enregistrer
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de confirmation pour créer un RDV depuis une réservation */}
+      <AlertDialog open={showRdvConfirmDialog} onOpenChange={setShowRdvConfirmDialog}>
+        <AlertDialogContent className="border-primary/30">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <CalendarPlus className="h-5 w-5 text-primary" />
+              Créer un rendez-vous ?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Voulez-vous créer un rendez-vous pour cette réservation ?
+              {pendingReservationForRdv && (
+                <div className="mt-3 p-3 bg-muted rounded-lg text-sm">
+                  <div><strong>Client:</strong> {pendingReservationForRdv.clientNom}</div>
+                  <div><strong>Date:</strong> {new Date(pendingReservationForRdv.dateEcheance!).toLocaleDateString('fr-FR')}</div>
+                  <div><strong>Heure:</strong> {pendingReservationForRdv.horaire}</div>
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleDeclineRdv}>Non</AlertDialogCancel>
+            <AlertDialogAction onClick={handleAcceptRdv} className="bg-primary hover:bg-primary/90">
+              Oui, créer le RDV
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Modal formulaire pour titre et description du RDV */}
+      <Dialog open={showRdvFormModal} onOpenChange={setShowRdvFormModal}>
+        <DialogContent className="sm:max-w-md border-primary/30">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-primary" />
+              Détails du rendez-vous
+            </DialogTitle>
+            <DialogDescription>
+              Renseignez le titre et la description du rendez-vous
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="rdvTitre">Titre du rendez-vous *</Label>
+              <Input
+                id="rdvTitre"
+                value={rdvTitre}
+                onChange={(e) => setRdvTitre(e.target.value)}
+                placeholder="Ex: Livraison perruque, Essayage..."
+                className="border-primary/20"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="rdvDescription">Description (optionnelle)</Label>
+              <Input
+                id="rdvDescription"
+                value={rdvDescription}
+                onChange={(e) => setRdvDescription(e.target.value)}
+                placeholder="Notes ou détails supplémentaires..."
+                className="border-primary/20"
+              />
+            </div>
+            
+            {pendingReservationForRdv && (
+              <div className="p-3 bg-muted/50 rounded-lg text-sm space-y-1">
+                <div className="font-semibold text-primary mb-2">Informations pré-remplies :</div>
+                <div><strong>Client:</strong> {pendingReservationForRdv.clientNom}</div>
+                <div><strong>Téléphone:</strong> {pendingReservationForRdv.clientPhone}</div>
+                <div><strong>Adresse:</strong> {pendingReservationForRdv.clientAddress}</div>
+                <div><strong>Date:</strong> {new Date(pendingReservationForRdv.dateEcheance!).toLocaleDateString('fr-FR')}</div>
+                <div><strong>Heure:</strong> {pendingReservationForRdv.horaire}</div>
+              </div>
+            )}
+          </div>
+          
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowRdvFormModal(false);
+                setPendingReservationForRdv(null);
+                setRdvTitre('');
+                setRdvDescription('');
+              }}
+            >
+              Annuler
+            </Button>
+            <Button
+              onClick={handleCreateRdvFromReservation}
+              className="bg-primary hover:bg-primary/90"
+            >
+              Créer le rendez-vous
             </Button>
           </div>
         </DialogContent>

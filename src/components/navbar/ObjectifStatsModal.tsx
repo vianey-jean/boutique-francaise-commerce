@@ -37,8 +37,8 @@ interface ObjectifHistorique {
 }
 
 const MOIS_NOMS = [
-  'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-  'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
+  'Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin',
+  'Juil', 'Aout', 'Sep', 'Oct', 'Nov', 'Déc'
 ];
 
 const ObjectifStatsModal: React.FC = () => {
@@ -145,7 +145,7 @@ const ObjectifStatsModal: React.FC = () => {
               />
               <StatCard
                 icon={<Target className="h-5 w-5" />}
-                label="Objectif"
+                label="Objectif du Mois encours"
                 value={formatCurrency(data.currentData.objectif)}
                 gradient="from-violet-500 to-purple-500"
                 shadowColor="violet"

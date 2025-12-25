@@ -557,7 +557,7 @@ const RdvPage: React.FC = () => {
 
             <TabsContent value="calendar">
               <RdvCalendar
-                rdvs={upcomingRdvs}
+                rdvs={rdvs}
                 onRdvClick={(rdv) => handleOpenForm(rdv)}
                 onSlotClick={(date, time) => handleOpenForm(undefined, date, time)}
                 onRdvDrop={handleRdvDrop}

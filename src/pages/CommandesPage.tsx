@@ -1,3 +1,27 @@
+/**
+ * =============================================================================
+ * Page de gestion des Commandes et Réservations
+ * =============================================================================
+ * 
+ * Cette page permet de gérer les commandes et réservations clients.
+ * Elle intègre la synchronisation automatique avec les rendez-vous.
+ * 
+ * FONCTIONNALITÉS PRINCIPALES:
+ * - Création/modification/suppression de commandes et réservations
+ * - Gestion des statuts avec synchronisation RDV automatique
+ * - Export PDF des commandes par date
+ * - Création de RDV depuis une réservation avec modal premium
+ * - Validation des commandes avec enregistrement en vente
+ * 
+ * SYNCHRONISATION RDV:
+ * - Lors d'un changement de statut de réservation, le RDV lié est mis à jour
+ * - Mapping des statuts: voir reservationRdvSyncService
+ * 
+ * @module CommandesPage
+ * @author Système de gestion des ventes
+ * @version 2.0.0
+ */
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,9 +34,13 @@ import { toast } from '@/hooks/use-toast';
 import { Package, Plus, Trash2, Edit, ShoppingCart, TrendingUp, Sparkles, Crown, Star, Gift, Award, Zap, Diamond, ArrowUp, ArrowDown, Printer, Calendar, CalendarPlus } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { Commande, CommandeProduit } from '@/types/commande';
+import { Commande, CommandeProduit, CommandeStatut } from '@/types/commande';
 import api from '@/service/api';
 import { rdvFromReservationService } from '@/services/rdvFromReservationService';
+// Import du service de synchronisation Réservation ↔ Rendez-vous
+import { reservationRdvSyncService } from '@/services/reservationRdvSyncService';
+// Import du modal premium pour création de RDV
+import RdvCreationModal from '@/components/commandes/RdvCreationModal';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import Layout from '@/components/Layout';
@@ -92,8 +120,11 @@ const CommandesPage: React.FC = () =>  {
   const [showRdvConfirmDialog, setShowRdvConfirmDialog] = useState(false);
   const [showRdvFormModal, setShowRdvFormModal] = useState(false);
   const [pendingReservationForRdv, setPendingReservationForRdv] = useState<Commande | null>(null);
+  // États temporaires pour compatibilité (gérés par le modal premium)
   const [rdvTitre, setRdvTitre] = useState('');
   const [rdvDescription, setRdvDescription] = useState('');
+  // État de chargement pour le modal RDV premium
+  const [isRdvLoading, setIsRdvLoading] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -633,6 +664,13 @@ const CommandesPage: React.FC = () =>  {
     
     try {
       await api.put(`/api/commandes/${id}`, { statut: newStatus });
+      
+      // ✅ SYNCHRONISATION: Si c'est une réservation, synchroniser le statut du RDV lié
+      if (commande.type === 'reservation') {
+        await reservationRdvSyncService.syncRdvStatus(id, newStatus as CommandeStatut);
+        console.log(`✅ Sync RDV: Réservation ${id} → Statut ${newStatus}`);
+      }
+      
       toast({
         title: 'Succès',
         description: 'Statut mis à jour',
@@ -809,9 +847,17 @@ const CommandesPage: React.FC = () =>  {
     }
   };
 
-  // Handler pour créer un RDV depuis une réservation
-  const handleCreateRdvFromReservation = async () => {
+  /**
+   * Handler pour créer un RDV depuis une réservation via le modal premium
+   * Cette fonction est appelée par le composant RdvCreationModal après validation
+   * 
+   * @param titre - Titre du rendez-vous saisi par l'utilisateur
+   * @param description - Description optionnelle du rendez-vous
+   */
+  const handleCreateRdvFromReservation = async (titre: string, description: string) => {
     if (!pendingReservationForRdv) return;
+    
+    setIsRdvLoading(true);
     
     try {
       // Calculer l'heure de fin (1 heure après le début)
@@ -822,8 +868,8 @@ const CommandesPage: React.FC = () =>  {
       
       // Construire les données du RDV avec titre et description personnalisés
       const rdvData = {
-        titre: rdvTitre.trim() || `Réservation pour ${pendingReservationForRdv.clientNom}`,
-        description: rdvDescription.trim() || '',
+        titre: titre || `Réservation pour ${pendingReservationForRdv.clientNom}`,
+        description: description || '',
         clientNom: pendingReservationForRdv.clientNom,
         clientTelephone: pendingReservationForRdv.clientPhone,
         clientAdresse: pendingReservationForRdv.clientAddress,
@@ -858,6 +904,7 @@ const CommandesPage: React.FC = () =>  {
         variant: 'destructive',
       });
     } finally {
+      setIsRdvLoading(false);
       setShowRdvFormModal(false);
       setPendingReservationForRdv(null);
       setRdvTitre('');
@@ -865,6 +912,10 @@ const CommandesPage: React.FC = () =>  {
     }
   };
 
+  /**
+   * Handler appelé quand l'utilisateur refuse de créer un RDV
+   * Ferme les dialogs et réinitialise les états
+   */
   const handleDeclineRdv = () => {
     setShowRdvConfirmDialog(false);
     setPendingReservationForRdv(null);
@@ -872,9 +923,23 @@ const CommandesPage: React.FC = () =>  {
     setRdvDescription('');
   };
 
+  /**
+   * Handler appelé quand l'utilisateur accepte de créer un RDV
+   * Ferme le dialog de confirmation et ouvre le modal premium
+   */
   const handleAcceptRdv = () => {
     setShowRdvConfirmDialog(false);
     setShowRdvFormModal(true);
+  };
+
+  /**
+   * Handler pour fermer le modal RDV premium
+   */
+  const handleCloseRdvModal = () => {
+    setShowRdvFormModal(false);
+    setPendingReservationForRdv(null);
+    setRdvTitre('');
+    setRdvDescription('');
   };
 
   const getStatusBadge = (statut: string) => {
@@ -2001,75 +2066,22 @@ const CommandesPage: React.FC = () =>  {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Modal formulaire pour titre et description du RDV */}
-      <Dialog open={showRdvFormModal} onOpenChange={setShowRdvFormModal}>
-        <DialogContent className="sm:max-w-md border-primary/30">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-primary" />
-              Détails du rendez-vous
-            </DialogTitle>
-            <DialogDescription>
-              Renseignez le titre et la description du rendez-vous
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="rdvTitre">Titre du rendez-vous *</Label>
-              <Input
-                id="rdvTitre"
-                value={rdvTitre}
-                onChange={(e) => setRdvTitre(e.target.value)}
-                placeholder="Ex: Livraison perruque, Essayage..."
-                className="border-primary/20"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="rdvDescription">Description (optionnelle)</Label>
-              <Input
-                id="rdvDescription"
-                value={rdvDescription}
-                onChange={(e) => setRdvDescription(e.target.value)}
-                placeholder="Notes ou détails supplémentaires..."
-                className="border-primary/20"
-              />
-            </div>
-            
-            {pendingReservationForRdv && (
-              <div className="p-3 bg-muted/50 rounded-lg text-sm space-y-1">
-                <div className="font-semibold text-primary mb-2">Informations pré-remplies :</div>
-                <div><strong>Client:</strong> {pendingReservationForRdv.clientNom}</div>
-                <div><strong>Téléphone:</strong> {pendingReservationForRdv.clientPhone}</div>
-                <div><strong>Adresse:</strong> {pendingReservationForRdv.clientAddress}</div>
-                <div><strong>Date:</strong> {new Date(pendingReservationForRdv.dateEcheance!).toLocaleDateString('fr-FR')}</div>
-                <div><strong>Heure:</strong> {pendingReservationForRdv.horaire}</div>
-              </div>
-            )}
-          </div>
-          
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowRdvFormModal(false);
-                setPendingReservationForRdv(null);
-                setRdvTitre('');
-                setRdvDescription('');
-              }}
-            >
-              Annuler
-            </Button>
-            <Button
-              onClick={handleCreateRdvFromReservation}
-              className="bg-primary hover:bg-primary/90"
-            >
-              Créer le rendez-vous
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Modal Premium pour création de RDV depuis une réservation */}
+      <RdvCreationModal
+        isOpen={showRdvFormModal}
+        onClose={handleCloseRdvModal}
+        onConfirm={handleCreateRdvFromReservation}
+        reservation={pendingReservationForRdv ? {
+          id: pendingReservationForRdv.id,
+          clientNom: pendingReservationForRdv.clientNom,
+          clientPhone: pendingReservationForRdv.clientPhone,
+          clientAddress: pendingReservationForRdv.clientAddress,
+          dateEcheance: pendingReservationForRdv.dateEcheance || '',
+          horaire: pendingReservationForRdv.horaire || '',
+          produits: pendingReservationForRdv.produits,
+        } : null}
+        isLoading={isRdvLoading}
+      />
       </div>
     </Layout>
   );

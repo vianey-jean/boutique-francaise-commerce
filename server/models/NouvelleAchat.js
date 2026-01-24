@@ -67,19 +67,117 @@ const NouvelleAchat = {
     }
   },
 
-  // Créer un nouvel achat et mettre à jour le produit
+  /**
+   * Créer un nouvel achat et gérer le produit associé
+   * 
+   * LOGIQUE DE FONCTIONNEMENT :
+   * 1. Si productId est fourni et le produit existe → mise à jour du stock
+   * 2. Si productId est fourni mais le produit n'existe pas → création du produit
+   * 3. Si productId n'est pas fourni → création d'un nouveau produit
+   * 4. Dans tous les cas → enregistrement de l'achat dans nouvelle_achat.json
+   * 
+   * @param {Object} achatData - Données de l'achat
+   * @param {string} achatData.productId - ID du produit (optionnel)
+   * @param {string} achatData.productDescription - Description du produit (obligatoire)
+   * @param {number} achatData.purchasePrice - Prix d'achat unitaire (obligatoire)
+   * @param {number} achatData.quantity - Quantité achetée (obligatoire)
+   * @param {string} achatData.fournisseur - Nom du fournisseur (optionnel)
+   * @param {string} achatData.caracteristiques - Caractéristiques du produit (optionnel)
+   * @param {string} achatData.date - Date de l'achat (optionnel, défaut: maintenant)
+   * @returns {Object|null} L'achat créé ou null en cas d'erreur
+   */
   create: (achatData) => {
     try {
       console.log('📝 Creating new achat:', achatData);
       
+      // Lire les achats existants
       const data = fs.readFileSync(nouvelleAchatPath, 'utf8');
       const achats = JSON.parse(data);
       
-      // Créer l'objet achat
+      // Variable pour stocker l'ID du produit final
+      let finalProductId = achatData.productId;
+      
+      // ========================================
+      // GESTION DU PRODUIT
+      // ========================================
+      if (achatData.productId) {
+        // CAS 1: Un productId est fourni
+        const existingProduct = Product.getById(achatData.productId);
+        
+        if (existingProduct) {
+          // CAS 1A: Le produit existe → mise à jour du stock
+          console.log('📦 Updating existing product stock...');
+          const updatedProductData = {
+            description: achatData.productDescription || existingProduct.description,
+            purchasePrice: Number(achatData.purchasePrice) || existingProduct.purchasePrice,
+            quantity: existingProduct.quantity + Number(achatData.quantity)
+          };
+          
+          Product.update(achatData.productId, updatedProductData);
+          console.log('✅ Product updated with new stock:', updatedProductData);
+        } else {
+          // CAS 1B: Le productId est fourni mais le produit n'existe pas → création
+          console.log('🆕 Product ID provided but product not found, creating new product...');
+          const newProduct = Product.create({
+            description: achatData.productDescription,
+            purchasePrice: Number(achatData.purchasePrice),
+            quantity: Number(achatData.quantity),
+            sellingPrice: 0 // Prix de vente à définir ultérieurement
+          });
+          
+          if (newProduct) {
+            finalProductId = newProduct.id;
+            console.log('✅ New product created:', newProduct);
+          }
+        }
+      } else {
+        // CAS 2: Pas de productId fourni → vérifier si le produit existe par description
+        console.log('🔍 No productId provided, checking if product exists by description...');
+        
+        // Rechercher un produit existant avec la même description
+        const allProducts = Product.getAll();
+        const existingProductByDescription = allProducts.find(
+          p => p.description.toLowerCase().trim() === achatData.productDescription.toLowerCase().trim()
+        );
+        
+        if (existingProductByDescription) {
+          // CAS 2A: Un produit avec la même description existe → mise à jour
+          console.log('📦 Found existing product by description, updating stock...');
+          finalProductId = existingProductByDescription.id;
+          
+          const updatedProductData = {
+            purchasePrice: Number(achatData.purchasePrice) || existingProductByDescription.purchasePrice,
+            quantity: existingProductByDescription.quantity + Number(achatData.quantity)
+          };
+          
+          Product.update(existingProductByDescription.id, updatedProductData);
+          console.log('✅ Existing product updated:', updatedProductData);
+        } else {
+          // CAS 2B: Aucun produit correspondant → création d'un nouveau produit
+          console.log('🆕 No matching product found, creating new product in products.json...');
+          const newProduct = Product.create({
+            description: achatData.productDescription,
+            purchasePrice: Number(achatData.purchasePrice),
+            quantity: Number(achatData.quantity),
+            sellingPrice: 0 // Prix de vente à définir ultérieurement
+          });
+          
+          if (newProduct) {
+            finalProductId = newProduct.id;
+            console.log('✅ New product created in products.json:', newProduct);
+          } else {
+            console.error('❌ Failed to create new product');
+          }
+        }
+      }
+      
+      // ========================================
+      // CRÉATION DE L'ENREGISTREMENT D'ACHAT
+      // ========================================
       const newAchat = {
         id: Date.now().toString(),
         date: achatData.date || new Date().toISOString(),
-        productId: achatData.productId,
+        productId: finalProductId, // ID du produit (existant ou nouvellement créé)
         productDescription: achatData.productDescription,
         purchasePrice: Number(achatData.purchasePrice),
         quantity: Number(achatData.quantity),
@@ -89,27 +187,11 @@ const NouvelleAchat = {
         type: 'achat_produit'
       };
       
+      // Enregistrer l'achat
       achats.push(newAchat);
       fs.writeFileSync(nouvelleAchatPath, JSON.stringify(achats, null, 2));
       
-      // Mettre à jour le produit dans products.json
-      if (achatData.productId) {
-        const existingProduct = Product.getById(achatData.productId);
-        
-        if (existingProduct) {
-          // Mettre à jour la quantité et le prix si nécessaire
-          const updatedProductData = {
-            description: achatData.productDescription || existingProduct.description,
-            purchasePrice: Number(achatData.purchasePrice),
-            quantity: existingProduct.quantity + Number(achatData.quantity)
-          };
-          
-          Product.update(achatData.productId, updatedProductData);
-          console.log('✅ Product updated with new stock:', updatedProductData);
-        }
-      }
-      
-      console.log('✅ Achat created successfully:', newAchat);
+      console.log('✅ Achat created successfully in nouvelle_achat.json:', newAchat);
       return newAchat;
     } catch (error) {
       console.error("❌ Error creating achat:", error);

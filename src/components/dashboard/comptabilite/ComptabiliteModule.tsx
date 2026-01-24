@@ -265,9 +265,22 @@ const ComptabiliteModule: React.FC<ComptabiliteModuleProps> = ({ className }) =>
     }));
   }, []);
 
+  /**
+   * handleSubmitAchat - Gère la soumission du formulaire de nouvel achat
+   * 
+   * Logique de fonctionnement :
+   * 1. Validation : description et quantité obligatoires, prix optionnel
+   * 2. Si produit existant sélectionné (selectedProduct) : mise à jour du stock dans products.json
+   * 3. Si NOUVEAU produit (selectedProduct est null) : création du produit dans products.json
+   * 4. Dans tous les cas : enregistrement de l'achat dans nouvelle_achat.json
+   * 
+   * @returns {Promise<void>}
+   */
   const handleSubmitAchat = useCallback(async () => {
     try {
-      // Validation: description et quantité obligatoires, prix optionnel
+      // ========================================
+      // ÉTAPE 1: Validation des champs obligatoires
+      // ========================================
       if (!achatForm.productDescription || achatForm.quantity <= 0) {
         toast({
           title: 'Erreur',
@@ -277,18 +290,28 @@ const ComptabiliteModule: React.FC<ComptabiliteModuleProps> = ({ className }) =>
         return;
       }
 
-      // Déterminer le prix d'achat final
+      // ========================================
+      // ÉTAPE 2: Déterminer le prix d'achat final
+      // ========================================
+      // Si un nouveau prix est saisi, on l'utilise
+      // Sinon, on utilise le prix du produit existant (si sélectionné)
+      // Sinon, on utilise 0 (cas d'un nouveau produit sans prix)
       const finalPurchasePrice = achatForm.purchasePrice > 0 
         ? achatForm.purchasePrice 
         : (selectedProduct?.purchasePrice || 0);
 
-      // Si un produit existant est sélectionné, mettre à jour products.json
+      // Variable pour stocker l'ID du produit (existant ou nouveau)
+      let productIdForAchat: string | undefined = selectedProduct?.id;
+
+      // ========================================
+      // ÉTAPE 3A: Produit EXISTANT sélectionné → mise à jour du stock
+      // ========================================
       if (selectedProduct) {
         const updateData: Partial<ProductFormData> = {
-          quantity: selectedProduct.quantity + achatForm.quantity // Ajouter la nouvelle quantité
+          quantity: selectedProduct.quantity + achatForm.quantity // Ajouter la nouvelle quantité au stock existant
         };
         
-        // Si un nouveau prix est saisi, l'enregistrer aussi
+        // Si un nouveau prix est saisi, mettre à jour le prix d'achat
         if (achatForm.purchasePrice > 0) {
           updateData.purchasePrice = achatForm.purchasePrice;
         }
@@ -301,29 +324,67 @@ const ComptabiliteModule: React.FC<ComptabiliteModuleProps> = ({ className }) =>
         
         await productApiService.update(selectedProduct.id, updateData);
         console.log('✅ Product updated in products.json:', updateData);
+      } 
+      // ========================================
+      // ÉTAPE 3B: NOUVEAU produit → création dans products.json
+      // ========================================
+      else {
+        // Le produit n'existe pas, on doit le créer
+        console.log('🆕 Creating new product in products.json...');
+        
+        // Préparer les données du nouveau produit
+        const newProductData: ProductFormData = {
+          description: achatForm.productDescription,
+          purchasePrice: finalPurchasePrice,
+          quantity: achatForm.quantity,
+          // Le prix de vente sera défini ultérieurement par l'utilisateur
+          sellingPrice: 0
+        };
+        
+        // Créer le produit via l'API
+        const createdProduct = await productApiService.create(newProductData);
+        console.log('✅ New product created in products.json:', createdProduct);
+        
+        // Récupérer l'ID du nouveau produit pour l'achat
+        productIdForAchat = createdProduct.id;
+        
+        toast({
+          title: '🆕 Nouveau produit créé',
+          description: `"${achatForm.productDescription}" ajouté à l'inventaire avec ${achatForm.quantity} unités`,
+          className: 'bg-blue-600 text-white border-blue-700'
+        });
       }
 
-      // Créer l'entrée dans nouvelle_achat.json avec le nom (modifié ou non)
+      // ========================================
+      // ÉTAPE 4: Enregistrer l'achat dans nouvelle_achat.json
+      // ========================================
       await nouvelleAchatApiService.create({
         ...achatForm,
+        productId: productIdForAchat, // Lier l'achat au produit (existant ou nouvellement créé)
         purchasePrice: finalPurchasePrice
       });
+      console.log('✅ Achat recorded in nouvelle_achat.json');
       
-      // Message de succès incluant info sur le changement de nom
+      // ========================================
+      // ÉTAPE 5: Message de succès
+      // ========================================
       const nameChanged = selectedProduct && achatForm.productDescription !== selectedProduct.description;
-     toast({
-  title: 'Succès',
-  description: selectedProduct 
-    ? `Stock mis à jour: +${achatForm.quantity} unités${
-        achatForm.purchasePrice > 0
-          ? `, nouveau prix: ${formatEuro(achatForm.purchasePrice)}`
-          : ''
-      }${nameChanged ? `, nom modifié` : ''}`
-    : 'Achat enregistré avec succès',
-  className: 'bg-green-600 text-white border-green-700'
-});
+      if (selectedProduct) {
+        // Message pour mise à jour de stock
+        toast({
+          title: 'Succès',
+          description: `Stock mis à jour: +${achatForm.quantity} unités${
+            achatForm.purchasePrice > 0
+              ? `, nouveau prix: ${formatEuro(achatForm.purchasePrice)}`
+              : ''
+          }${nameChanged ? `, nom modifié` : ''}`,
+          className: 'bg-green-600 text-white border-green-700'
+        });
+      }
 
-      
+      // ========================================
+      // ÉTAPE 6: Réinitialiser le formulaire
+      // ========================================
       setAchatForm({
         productDescription: '',
         purchasePrice: 0,
@@ -334,13 +395,14 @@ const ComptabiliteModule: React.FC<ComptabiliteModuleProps> = ({ className }) =>
       setSelectedProduct(null);
       setSearchTerm('');
       setShowProductList(false);
-      // Garder le formulaire ouvert pour permettre des saisies multiples
-      // L'utilisateur peut fermer manuellement avec le bouton "Annuler" ou "X"
       
+      // ========================================
+      // ÉTAPE 7: Rafraîchir les données
+      // ========================================
       loadAchats();
       fetchProducts();
     } catch (error) {
-      console.error('Erreur:', error);
+      console.error('❌ Erreur lors de l\'enregistrement de l\'achat:', error);
       toast({
         title: 'Erreur',
         description: 'Impossible d\'enregistrer l\'achat',

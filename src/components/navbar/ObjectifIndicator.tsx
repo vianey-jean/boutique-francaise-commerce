@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Plus, Target, Edit2, Check, X, Sparkles, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,10 +50,38 @@ const ObjectifIndicator: React.FC = () => {
     return 'from-rose-500 to-pink-500';
   };
 
-  const handleAddObjectif = async () => {
-    const value = parseFloat(newObjectif);
+  // Validation centralisée - retourne true si valide, false sinon
+  const validateObjectif = (value: number): boolean => {
+    // Vérification valeur valide
     if (isNaN(value) || value <= 0) {
       toast.error('Veuillez entrer une valeur valide');
+      return false;
+    }
+
+    // Vérification: seule une augmentation stricte est autorisée (pas de diminution ni égalité)
+    if (data && value <= data.objectif) {
+      toast.error('L\'objectif doit être strictement supérieur à l\'actuel.');
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleAddObjectif = async () => {
+    const value = parseFloat(newObjectif);
+    
+    // Validation centralisée avant tout appel API
+    if (!validateObjectif(value)) {
+      // Fermer la modal et réinitialiser
+      setNewObjectif('');
+      setIsDialogOpen(false);
+      return;
+    }
+
+    // Si la valeur est égale à l'actuel, rien à faire
+    if (data && value === data.objectif) {
+      setNewObjectif('');
+      setIsDialogOpen(false);
       return;
     }
 
@@ -62,8 +90,15 @@ const ObjectifIndicator: React.FC = () => {
       setNewObjectif('');
       setIsDialogOpen(false);
       toast.success('Objectif mis à jour');
-    } catch {
-      toast.error('Erreur lors de la mise à jour');
+    } catch (error: any) {
+      // Fermer la modal en cas d'erreur aussi
+      setNewObjectif('');
+      setIsDialogOpen(false);
+      if (error?.response?.data?.message === 'OBJECTIF_MUST_INCREASE') {
+        toast.error('On ne peut pas baisser un objectif.');
+      } else {
+        toast.error('Erreur lors de la mise à jour');
+      }
     }
   };
 
@@ -76,17 +111,36 @@ const ObjectifIndicator: React.FC = () => {
 
   const handleEditSave = async () => {
     const value = parseFloat(editValue);
-    if (isNaN(value) || value <= 0) {
-      toast.error('Veuillez entrer une valeur valide');
+    
+    // Validation centralisée avant tout appel API
+    if (!validateObjectif(value)) {
+      // Annuler le mode édition immédiatement
+      setIsEditing(false);
+      setEditValue('');
+      return;
+    }
+
+    // Si la valeur est égale à l'actuel, juste fermer l'édition
+    if (data && value === data.objectif) {
+      setIsEditing(false);
+      setEditValue('');
       return;
     }
 
     try {
       await updateObjectif(value);
       setIsEditing(false);
+      setEditValue('');
       toast.success('Objectif mis à jour');
-    } catch {
-      toast.error('Erreur lors de la mise à jour');
+    } catch (error: any) {
+      // Annuler le mode édition en cas d'erreur
+      setIsEditing(false);
+      setEditValue('');
+      if (error?.response?.data?.message === 'OBJECTIF_MUST_INCREASE') {
+        toast.error('On ne peut pas baisser un objectif.');
+      } else {
+        toast.error('Erreur lors de la mise à jour');
+      }
     }
   };
 

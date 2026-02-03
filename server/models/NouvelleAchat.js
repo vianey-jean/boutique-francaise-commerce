@@ -86,6 +86,18 @@ const NouvelleAchat = {
    * @param {string} achatData.date - Date de l'achat (optionnel, défaut: maintenant)
    * @returns {Object|null} L'achat créé ou null en cas d'erreur
    */
+  /**
+   * Créer un nouvel achat et gérer le produit associé
+   * 
+   * LOGIQUE CENTRALISÉE (corrige le bug de double quantité) :
+   * Le backend gère TOUTE la logique de création/mise à jour du produit.
+   * Le frontend n'envoie que les données de l'achat.
+   * 
+   * CAS :
+   * 1. productId fourni et produit existe → mise à jour du stock (quantité EXACTE du formulaire)
+   * 2. productId fourni mais produit n'existe pas → création du produit
+   * 3. Pas de productId → recherche par description, sinon création
+   */
   create: (achatData) => {
     try {
       console.log('📝 Creating new achat:', achatData);
@@ -96,6 +108,7 @@ const NouvelleAchat = {
       
       // Variable pour stocker l'ID du produit final
       let finalProductId = achatData.productId;
+      const quantityToAdd = Number(achatData.quantity);
       
       // ========================================
       // GESTION DU PRODUIT
@@ -107,34 +120,35 @@ const NouvelleAchat = {
         if (existingProduct) {
           // CAS 1A: Le produit existe → mise à jour du stock
           console.log('📦 Updating existing product stock...');
+          console.log(`   Current quantity: ${existingProduct.quantity}, Adding: ${quantityToAdd}`);
+          
           const updatedProductData = {
             description: achatData.productDescription || existingProduct.description,
             purchasePrice: Number(achatData.purchasePrice) || existingProduct.purchasePrice,
-            quantity: existingProduct.quantity + Number(achatData.quantity)
+            quantity: existingProduct.quantity + quantityToAdd
           };
           
           Product.update(achatData.productId, updatedProductData);
-          console.log('✅ Product updated with new stock:', updatedProductData);
+          console.log(`✅ Product updated - New quantity: ${updatedProductData.quantity}`);
         } else {
           // CAS 1B: Le productId est fourni mais le produit n'existe pas → création
           console.log('🆕 Product ID provided but product not found, creating new product...');
           const newProduct = Product.create({
             description: achatData.productDescription,
             purchasePrice: Number(achatData.purchasePrice),
-            quantity: Number(achatData.quantity),
-            sellingPrice: 0 // Prix de vente à définir ultérieurement
+            quantity: quantityToAdd, // Quantité EXACTE du formulaire
+            sellingPrice: 0
           });
           
           if (newProduct) {
             finalProductId = newProduct.id;
-            console.log('✅ New product created:', newProduct);
+            console.log(`✅ New product created with quantity: ${quantityToAdd}`);
           }
         }
       } else {
         // CAS 2: Pas de productId fourni → vérifier si le produit existe par description
         console.log('🔍 No productId provided, checking if product exists by description...');
         
-        // Rechercher un produit existant avec la même description
         const allProducts = Product.getAll();
         const existingProductByDescription = allProducts.find(
           p => p.description.toLowerCase().trim() === achatData.productDescription.toLowerCase().trim()
@@ -143,28 +157,30 @@ const NouvelleAchat = {
         if (existingProductByDescription) {
           // CAS 2A: Un produit avec la même description existe → mise à jour
           console.log('📦 Found existing product by description, updating stock...');
+          console.log(`   Current quantity: ${existingProductByDescription.quantity}, Adding: ${quantityToAdd}`);
+          
           finalProductId = existingProductByDescription.id;
           
           const updatedProductData = {
             purchasePrice: Number(achatData.purchasePrice) || existingProductByDescription.purchasePrice,
-            quantity: existingProductByDescription.quantity + Number(achatData.quantity)
+            quantity: existingProductByDescription.quantity + quantityToAdd
           };
           
           Product.update(existingProductByDescription.id, updatedProductData);
-          console.log('✅ Existing product updated:', updatedProductData);
+          console.log(`✅ Existing product updated - New quantity: ${updatedProductData.quantity}`);
         } else {
           // CAS 2B: Aucun produit correspondant → création d'un nouveau produit
-          console.log('🆕 No matching product found, creating new product in products.json...');
+          console.log('🆕 No matching product found, creating new product...');
           const newProduct = Product.create({
             description: achatData.productDescription,
             purchasePrice: Number(achatData.purchasePrice),
-            quantity: Number(achatData.quantity),
-            sellingPrice: 0 // Prix de vente à définir ultérieurement
+            quantity: quantityToAdd, // Quantité EXACTE du formulaire
+            sellingPrice: 0
           });
           
           if (newProduct) {
             finalProductId = newProduct.id;
-            console.log('✅ New product created in products.json:', newProduct);
+            console.log(`✅ New product created with quantity: ${quantityToAdd}`);
           } else {
             console.error('❌ Failed to create new product');
           }
@@ -177,21 +193,20 @@ const NouvelleAchat = {
       const newAchat = {
         id: Date.now().toString(),
         date: achatData.date || new Date().toISOString(),
-        productId: finalProductId, // ID du produit (existant ou nouvellement créé)
+        productId: finalProductId,
         productDescription: achatData.productDescription,
         purchasePrice: Number(achatData.purchasePrice),
-        quantity: Number(achatData.quantity),
+        quantity: quantityToAdd,
         fournisseur: achatData.fournisseur || '',
         caracteristiques: achatData.caracteristiques || '',
-        totalCost: Number(achatData.purchasePrice) * Number(achatData.quantity),
+        totalCost: Number(achatData.purchasePrice) * quantityToAdd,
         type: 'achat_produit'
       };
       
-      // Enregistrer l'achat
       achats.push(newAchat);
       fs.writeFileSync(nouvelleAchatPath, JSON.stringify(achats, null, 2));
       
-      console.log('✅ Achat created successfully in nouvelle_achat.json:', newAchat);
+      console.log('✅ Achat created successfully:', newAchat);
       return newAchat;
     } catch (error) {
       console.error("❌ Error creating achat:", error);

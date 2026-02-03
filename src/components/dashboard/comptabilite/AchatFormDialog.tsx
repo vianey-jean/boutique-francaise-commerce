@@ -38,6 +38,8 @@
  */
 
 import React from 'react';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import {
   Dialog,
   DialogContent,
@@ -51,13 +53,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 import {
   ShoppingCart,
   DollarSign,
   Package,
   Receipt,
   Calculator,
-  Plus
+  Plus,
+  CalendarIcon
 } from 'lucide-react';
 import { NouvelleAchatFormData } from '@/types/comptabilite';
 import { Product } from '@/types/product';
@@ -158,7 +164,7 @@ const AchatFormDialog: React.FC<AchatFormDialogProps> = ({
               <p className="text-xs text-amber-600 dark:text-amber-400 font-semibold">
                 ⚠️ Le nom sera modifié de "{selectedProduct.description}" à "{achatForm.productDescription}"
               </p>
-            )}
+          )}
           </div>
 
           {/* Grille Prix / Quantité */}
@@ -251,6 +257,38 @@ const AchatFormDialog: React.FC<AchatFormDialogProps> = ({
             </div>
           </div>
 
+          {/* Date d'achat */}
+        <div className="space-y-3">
+          <Label className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+            <CalendarIcon className="h-4 w-4 text-indigo-500" />
+            Date d'achat *
+          </Label>
+
+          <div className="relative">
+            <CalendarIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-indigo-500" />
+
+            <Input
+              type="date"
+              value={achatForm.date ? achatForm.date.slice(0, 10) : ""}
+              onChange={(e) =>
+                onFormChange(
+                  "date",
+                  e.target.value ? new Date(e.target.value).toISOString() : ""
+                )
+              }
+              className={cn(
+                "h-12 w-full pl-11 pr-4 rounded-2xl",
+                "bg-white/80 dark:bg-gray-900/70 backdrop-blur-md",
+                "border border-gray-200/60 dark:border-gray-700/60",
+                "text-gray-900 dark:text-gray-100 font-medium",
+                "shadow-sm hover:shadow-md transition-all duration-200",
+                "focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500",
+                "appearance-none"
+              )}
+            />
+          </div>
+        </div>
+
           {/* Résumé du coût */}
           {achatForm.quantity > 0 && (
             <Card className="bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-cyan-500/10 border-emerald-500/30 shadow-lg">
@@ -285,7 +323,7 @@ const AchatFormDialog: React.FC<AchatFormDialogProps> = ({
           </Button>
           <Button
             onClick={onSubmit}
-            disabled={!achatForm.productDescription || achatForm.quantity <= 0}
+            disabled={!achatForm.productDescription || achatForm.quantity <= 0 || !achatForm.date}
             className="h-12 px-8 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-700 hover:via-teal-700 hover:to-cyan-700 text-white shadow-xl rounded-xl font-bold text-base disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
           >
             <Plus className="h-5 w-5 mr-2" />

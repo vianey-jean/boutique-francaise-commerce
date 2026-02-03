@@ -1,26 +1,34 @@
 /**
- * INDEX - Exports du module Comptabilité
+ * INDEX - Exports du module Comptabilité (REFACTORISÉ)
  * 
- * Ce fichier centralise tous les exports des composants du module Comptabilité.
- * Il permet une importation simplifiée depuis d'autres parties de l'application.
- * 
- * COMPOSANTS EXPORTÉS :
- * - ComptabiliteModule : Composant principal du module
- * - ProductSearchInput : Champ de recherche de produit avec suggestions
- * - ComptabiliteStatsCards : Cartes de statistiques (Crédit, Débit, Bénéfices)
- * - AchatsHistoriqueList : Liste historique des achats et dépenses
- * - AchatFormDialog : Formulaire modal d'ajout d'achat
- * - DepenseFormDialog : Formulaire modal d'ajout de dépense
- * - StableBarChart, StablePieChart : Graphiques stables pour les charts
- * 
- * UTILISATION :
- * import { ComptabiliteModule, AchatFormDialog } from '@/components/dashboard/comptabilite';
+ * Architecture propre avec séparation des responsabilités.
  */
 
 // ============================================
 // COMPOSANT PRINCIPAL
 // ============================================
 export { default as ComptabiliteModule } from './ComptabiliteModule';
+
+// ============================================
+// HOOK PERSONNALISÉ
+// ============================================
+export { default as useComptabilite, MONTHS } from '@/hooks/useComptabilite';
+export type { ModalStates, BarChartData, PieChartData } from '@/hooks/useComptabilite';
+
+// ============================================
+// COMPOSANTS DE STRUCTURE
+// ============================================
+export { default as ComptabiliteHeader } from './ComptabiliteHeader';
+export type { ComptabiliteHeaderProps } from './ComptabiliteHeader';
+
+export { default as ComptabiliteStatsCards } from './ComptabiliteStatsCards';
+export type { ComptabiliteStatsCardsProps } from './ComptabiliteStatsCards';
+
+export { default as SecondaryStatsCards } from './SecondaryStatsCards';
+export type { SecondaryStatsCardsProps } from './SecondaryStatsCards';
+
+export { default as ComptabiliteTabs } from './ComptabiliteTabs';
+export type { ComptabiliteTabsProps } from './ComptabiliteTabs';
 
 // ============================================
 // COMPOSANTS DE FORMULAIRE
@@ -37,9 +45,6 @@ export type { ProductSearchInputProps } from './ProductSearchInput';
 // ============================================
 // COMPOSANTS D'AFFICHAGE
 // ============================================
-export { default as ComptabiliteStatsCards } from './ComptabiliteStatsCards';
-export type { ComptabiliteStatsCardsProps } from './ComptabiliteStatsCards';
-
 export { default as AchatsHistoriqueList } from './AchatsHistoriqueList';
 export type { AchatsHistoriqueListProps } from './AchatsHistoriqueList';
 
@@ -47,3 +52,31 @@ export type { AchatsHistoriqueListProps } from './AchatsHistoriqueList';
 // COMPOSANTS DE GRAPHIQUES
 // ============================================
 export { StableBarChart, StablePieChart } from './StableCharts';
+export { default as DepensesRepartitionChart } from './DepensesRepartitionChart';
+export { default as EvolutionMensuelleChart } from './EvolutionMensuelleChart';
+
+// ============================================
+// MODALES DE DÉTAILS
+// ============================================
+export {
+  CreditDetailsModal,
+  DebitDetailsModal,
+  BeneficeVentesModal,
+  BeneficeReelModal,
+  AchatsProduitsModal,
+  AutresDepensesModal,
+  SoldeNetModal,
+  ExportPdfModal
+} from './modals';
+
+// ============================================
+// COMPOSANTS PARTAGÉS (RÉUTILISABLES)
+// ============================================
+export { ClickableStatCard, DetailsModal } from './shared';
+export type { ClickableStatCardProps, DetailsModalProps } from './shared';
+
+// ============================================
+// COMPOSANTS DE DÉTAILS
+// ============================================
+export { AchatsProduitsDetails, AutresDepensesDetails, SoldeNetDetails } from './details';
+export type { AchatsProduitsDetailsProps, AutresDepensesDetailsProps, SoldeNetDetailsProps } from './details';

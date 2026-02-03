@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { productService } from '@/service/api';
 import { Product } from '@/types';
-import { Search, Plus, Edit, Trash2, Package, Filter, ArrowUpDown, AlertTriangle, ShoppingBag, Star, TrendingUp, Eye, CheckCircle, XCircle, Clock, Sparkles, Crown, Diamond } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, Package, Filter, ArrowUpDown, AlertTriangle, ShoppingBag, Star, TrendingUp, Eye, CheckCircle, XCircle, Clock, Sparkles, Crown, Diamond, Printer } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import ModernActionButton from '@/components/dashboard/forms/ModernActionButton';
@@ -65,7 +65,24 @@ const Inventaire = () => {
     try {
       setLoading(true);
       const data = await productService.getProducts();
-      setProducts(data);
+      
+      // Vérifier si certains produits n'ont pas de code, si oui générer les codes
+      const productsWithoutCode = data.filter(p => !p.code);
+      if (productsWithoutCode.length > 0) {
+        console.log(`🔧 ${productsWithoutCode.length} produits sans code détectés, génération en cours...`);
+        try {
+          await productService.generateCodesForExistingProducts();
+          // Recharger les produits après génération des codes
+          const updatedData = await productService.getProducts();
+          setProducts(updatedData);
+        } catch (codeError) {
+          console.error('⚠️ Erreur lors de la génération des codes:', codeError);
+          // Continuer avec les produits existants même si la génération de codes échoue
+          setProducts(data);
+        }
+      } else {
+        setProducts(data);
+      }
     } catch (error) {
       toast({
         title: "Erreur",
@@ -85,7 +102,11 @@ const Inventaire = () => {
   useEffect(() => {
     let filtered = [...products];
     if (searchTerm.length >= 3) {
-      filtered = filtered.filter(product => product.description.toLowerCase().includes(searchTerm.toLowerCase()));
+      // Recherche par description OU par code unique
+      filtered = filtered.filter(product => 
+        product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (product.code && product.code.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
     }
     if (category !== 'all') {
       filtered = filtered.filter(product => categorizeProduct(product.description) === category);
@@ -195,6 +216,109 @@ const Inventaire = () => {
     }
   };
 
+  // Fonction pour imprimer l'étiquette du code produit
+  const handlePrintProductLabel = (product: Product) => {
+    const printWindow = window.open('', '_blank', 'width=300,height=200');
+    if (!printWindow) {
+      toast({
+        title: "Erreur",
+        description: "Impossible d'ouvrir la fenêtre d'impression. Vérifiez les paramètres de votre navigateur.",
+        variant: "destructive",
+        className: "notification-erreur",
+      });
+      return;
+    }
+
+    const productCode = (product.code || 'SANS-CODE').toUpperCase();
+    const productDescription = product.description.toUpperCase();
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Étiquette - ${productCode}</title>
+          <style>
+            @page {
+              size: 50mm 30mm;
+              margin: 0;
+            }
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
+            body {
+              width: 50mm;
+              height: 30mm;
+              font-family: 'Arial', sans-serif;
+              display: flex;
+              flex-direction: column;
+              overflow: hidden;
+            }
+            .label-container {
+              width: 50mm;
+              height: 30mm;
+              display: flex;
+              flex-direction: column;
+              border: 1px solid #000;
+            }
+            .code-section {
+              width: 50mm;
+              height: 10mm;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+              color: white;
+              font-weight: 900;
+              font-size: 12px;
+              letter-spacing: 1px;
+              text-transform: uppercase;
+              border-bottom: 1px solid #000;
+            }
+            .description-section {
+              width: 50mm;
+              height: 20mm;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              text-align: center;
+              padding: 2mm;
+              font-weight: 700;
+              font-size: 8px;
+              line-height: 1.3;
+              text-transform: uppercase;
+              background: #ffffff;
+              overflow: hidden;
+              word-wrap: break-word;
+            }
+            @media print {
+              body {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="label-container">
+            <div class="code-section">${productCode}</div>
+            <div class="description-section">${productDescription}</div>
+          </div>
+          <script>
+            window.onload = function() {
+              window.print();
+              window.onafterprint = function() {
+                window.close();
+              };
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   const stats = getStats();
 
   if (loading) {
@@ -277,7 +401,7 @@ const Inventaire = () => {
                 <Search className="h-5 w-5" />
               </div>
               <Input
-                placeholder="🔍 Recherche premium... (min. 3 caractères)"
+                placeholder="🔍 Recherche par nom ou code... (min. 3 caractères)"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-12 pr-4 py-3 bg-gradient-to-r from-white to-gray-50 border-2 border-gray-200 focus:border-blue-500 focus:from-blue-50 focus:to-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300  placeholder:text-gray-500"
@@ -488,14 +612,22 @@ const Inventaire = () => {
                         </div>
                         <div className="min-w-0">
                           <div className="font-bold text-sm sm:text-base md:text-lg group-hover:text-blue-900 transition-colors truncate">{product.description}</div>
-                          <Badge variant="outline" className="mt-1 sm:mt-2 bg-gradient-to-r from-gray-100 to-gray-200 border-0 text-gray-700 font-semibold text-xs hidden sm:inline-flex">
-                            <div className="flex items-center gap-1">
-                              {categorizeProduct(product.description) === 'perruque' && <Crown className="h-3 w-3" />}
-                              {categorizeProduct(product.description) === 'tissage' && <Diamond className="h-3 w-3" />}
-                              {categorizeProduct(product.description) === 'autre' && <ShoppingBag className="h-3 w-3" />}
-                              {categorizeProduct(product.description)}
-                            </div>
-                          </Badge>
+                          <div className="flex items-center gap-2 mt-1 sm:mt-2 flex-wrap">
+                            {/* Code unique du produit */}
+                            {product.code && (
+                              <Badge className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white border-0 font-mono text-xs px-2 py-0.5 rounded-lg shadow-md">
+                                {product.code}
+                              </Badge>
+                            )}
+                            <Badge variant="outline" className="bg-gradient-to-r from-gray-100 to-gray-200 border-0 text-gray-700 font-semibold text-xs hidden sm:inline-flex">
+                              <div className="flex items-center gap-1">
+                                {categorizeProduct(product.description) === 'perruque' && <Crown className="h-3 w-3" />}
+                                {categorizeProduct(product.description) === 'tissage' && <Diamond className="h-3 w-3" />}
+                                {categorizeProduct(product.description) === 'autre' && <ShoppingBag className="h-3 w-3" />}
+                                {categorizeProduct(product.description)}
+                              </div>
+                            </Badge>
+                          </div>
                         </div>
                       </div>
                     </td>
@@ -525,15 +657,16 @@ const Inventaire = () => {
                         {priority.label}
                       </Badge>
                     </td>
-                    <td className="p-3 sm:p-4 md:p-6">
-                      <div className="flex gap-1 sm:gap-2 md:gap-3">
+                    <td className="p-2 sm:p-4 md:p-6">
+                      <div className="flex flex-wrap gap-1 sm:gap-2">
                         <ModernActionButton
                           buttonSize="sm"
                           variant="outline"
                           gradient="blue"
                           icon={Edit}
                           onClick={() => setEditingProduct(product)}
-                          className="btn-3d hover:scale-110 p-1 sm:p-2"
+                          className="btn-3d hover:scale-105 p-1 min-w-[32px] h-8"
+                          title="Modifier"
                         />
                         <ModernActionButton
                           buttonSize="sm"
@@ -541,7 +674,8 @@ const Inventaire = () => {
                           gradient="red"
                           icon={Trash2}
                           onClick={() => setDeletingProduct(product)}
-                          className="btn-3d hover:scale-110 p-1 sm:p-2 hidden sm:flex"
+                          className="btn-3d hover:scale-105 p-1 min-w-[32px] h-8"
+                          title="Supprimer"
                         />
                         <ModernActionButton
                           buttonSize="sm"
@@ -549,7 +683,17 @@ const Inventaire = () => {
                           gradient="purple"
                           icon={Eye}
                           onClick={() => setViewingProduct(product)}
-                          className="btn-3d hover:scale-110 p-1 sm:p-2"
+                          className="btn-3d hover:scale-105 p-1 min-w-[32px] h-8"
+                          title="Voir"
+                        />
+                        <ModernActionButton
+                          buttonSize="sm"
+                          variant="outline"
+                          gradient="indigo"
+                          icon={Printer}
+                          onClick={() => handlePrintProductLabel(product)}
+                          className="btn-3d hover:scale-105 p-1 min-w-[32px] h-8"
+                          title="Imprimer étiquette"
                         />
                       </div>
                     </td>
@@ -674,6 +818,16 @@ const Inventaire = () => {
             </DialogHeader>
             <div className="space-y-6">
               <div className="space-y-4">
+                {/* Code unique du produit */}
+                {viewingProduct.code && (
+                  <div className="p-4 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 rounded-xl border-2 border-indigo-300">
+                    <Label className="text-sm font-bold text-gray-700 flex items-center gap-2 mb-2">
+                      <Sparkles className="h-4 w-4 text-indigo-600" />
+                      Code Unique
+                    </Label>
+                    <p className="text-2xl font-black font-mono bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent tracking-widest">{viewingProduct.code}</p>
+                  </div>
+                )}
                 <div className="p-4 bg-white/80 rounded-xl border-2 border-purple-200">
                   <Label className="text-sm font-bold text-gray-700 flex items-center gap-2 mb-2">
                     <Package className="h-4 w-4 text-purple-600" />

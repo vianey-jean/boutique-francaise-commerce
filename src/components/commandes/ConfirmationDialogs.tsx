@@ -33,12 +33,17 @@ export const ValidationDialog: React.FC<ValidationDialogProps> = ({
 }) => {
   return (
     <AlertDialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
-      <AlertDialogContent className="bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-green-900/30 dark:via-emerald-900/30 dark:to-teal-900/30 border-2 border-green-300 dark:border-green-700">
-        <AlertDialogHeader>
-          <div className="flex items-center justify-center mb-2">
-            <CheckCircle className="h-12 w-12 text-green-500" />
+      <AlertDialogContent className="bg-gradient-to-br from-white/90 via-emerald-50/40 to-teal-50/50 dark:from-slate-900/90 dark:via-emerald-950/40 dark:to-teal-950/50 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-[0_40px_100px_rgba(0,0,0,0.35)] rounded-3xl">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-3xl">
+          <div className="absolute -top-20 -right-20 w-40 h-40 bg-gradient-to-br from-emerald-400/15 to-teal-400/15 rounded-full blur-3xl" />
+        </div>
+        <AlertDialogHeader className="relative">
+          <div className="flex items-center justify-center mb-4">
+            <div className="p-3 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full shadow-lg shadow-emerald-500/30 border border-white/20">
+              <CheckCircle className="h-8 w-8 text-white" />
+            </div>
           </div>
-          <AlertDialogTitle className="text-center text-xl font-bold text-green-700 dark:text-green-300">
+          <AlertDialogTitle className="text-center text-xl font-extrabold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
             Confirmer la validation
           </AlertDialogTitle>
           <AlertDialogDescription className="text-center text-muted-foreground">
@@ -46,16 +51,13 @@ export const ValidationDialog: React.FC<ValidationDialogProps> = ({
             Êtes-vous sûr de vouloir continuer ?
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter className="flex gap-2 justify-center">
-          <AlertDialogCancel
-            onClick={onCancel}
-            className="border-gray-300 dark:border-gray-700"
-          >
+        <AlertDialogFooter className="flex gap-3 justify-center">
+          <AlertDialogCancel onClick={onCancel}>
             Annuler
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
-            className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white"
+            className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
           >
             Valider la commande
           </AlertDialogAction>
@@ -81,12 +83,17 @@ export const CancellationDialog: React.FC<CancellationDialogProps> = ({
 }) => {
   return (
     <AlertDialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
-      <AlertDialogContent className="bg-gradient-to-br from-red-50 via-rose-50 to-pink-50 dark:from-red-900/30 dark:via-rose-900/30 dark:to-pink-900/30 border-2 border-red-300 dark:border-red-700">
-        <AlertDialogHeader>
-          <div className="flex items-center justify-center mb-2">
-            <XCircle className="h-12 w-12 text-red-500" />
+      <AlertDialogContent className="bg-gradient-to-br from-white/90 via-red-50/40 to-rose-50/50 dark:from-slate-900/90 dark:via-red-950/40 dark:to-rose-950/50 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-[0_40px_100px_rgba(0,0,0,0.35)] rounded-3xl">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-3xl">
+          <div className="absolute -top-20 -left-20 w-40 h-40 bg-gradient-to-br from-red-400/15 to-rose-400/15 rounded-full blur-3xl" />
+        </div>
+        <AlertDialogHeader className="relative">
+          <div className="flex items-center justify-center mb-4">
+            <div className="p-3 bg-gradient-to-br from-red-500 to-rose-600 rounded-full shadow-lg shadow-red-500/30 border border-white/20">
+              <XCircle className="h-8 w-8 text-white" />
+            </div>
           </div>
-          <AlertDialogTitle className="text-center text-xl font-bold text-red-700 dark:text-red-300">
+          <AlertDialogTitle className="text-center text-xl font-extrabold bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent">
             Confirmer l'annulation
           </AlertDialogTitle>
           <AlertDialogDescription className="text-center text-muted-foreground">
@@ -94,16 +101,13 @@ export const CancellationDialog: React.FC<CancellationDialogProps> = ({
             et le stock sera restauré. Cette action est irréversible.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter className="flex gap-2 justify-center">
-          <AlertDialogCancel
-            onClick={onCancel}
-            className="border-gray-300 dark:border-gray-700"
-          >
+        <AlertDialogFooter className="flex gap-3 justify-center">
+          <AlertDialogCancel onClick={onCancel}>
             Retour
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
-            className="bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 text-white"
+            className="bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600"
           >
             Confirmer l'annulation
           </AlertDialogAction>
@@ -129,12 +133,17 @@ export const DeleteDialog: React.FC<DeleteDialogProps> = ({
 }) => {
   return (
     <AlertDialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
-      <AlertDialogContent className="bg-gradient-to-br from-gray-50 via-slate-50 to-zinc-50 dark:from-gray-900/50 dark:via-slate-900/50 dark:to-zinc-900/50 border-2 border-gray-300 dark:border-gray-700">
-        <AlertDialogHeader>
-          <div className="flex items-center justify-center mb-2">
-            <Trash2 className="h-12 w-12 text-gray-500" />
+      <AlertDialogContent className="bg-gradient-to-br from-white/90 via-slate-50/40 to-zinc-50/50 dark:from-slate-900/90 dark:via-slate-800/40 dark:to-zinc-900/50 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-[0_40px_100px_rgba(0,0,0,0.35)] rounded-3xl">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-3xl">
+          <div className="absolute -top-20 -right-20 w-40 h-40 bg-gradient-to-br from-slate-400/10 to-zinc-400/10 rounded-full blur-3xl" />
+        </div>
+        <AlertDialogHeader className="relative">
+          <div className="flex items-center justify-center mb-4">
+            <div className="p-3 bg-gradient-to-br from-slate-500 to-zinc-600 rounded-full shadow-lg shadow-slate-500/30 border border-white/20">
+              <Trash2 className="h-8 w-8 text-white" />
+            </div>
           </div>
-          <AlertDialogTitle className="text-center text-xl font-bold text-gray-700 dark:text-gray-300">
+          <AlertDialogTitle className="text-center text-xl font-extrabold bg-gradient-to-r from-slate-600 to-zinc-600 bg-clip-text text-transparent">
             Supprimer cette entrée ?
           </AlertDialogTitle>
           <AlertDialogDescription className="text-center text-muted-foreground">
@@ -142,16 +151,13 @@ export const DeleteDialog: React.FC<DeleteDialogProps> = ({
             Cette action ne peut pas être annulée.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter className="flex gap-2 justify-center">
-          <AlertDialogCancel
-            onClick={onCancel}
-            className="border-gray-300 dark:border-gray-700"
-          >
+        <AlertDialogFooter className="flex gap-3 justify-center">
+          <AlertDialogCancel onClick={onCancel}>
             Annuler
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
-            className="bg-gradient-to-r from-gray-600 to-slate-600 hover:from-gray-700 hover:to-slate-700 text-white"
+            className="bg-gradient-to-r from-slate-600 to-zinc-600 hover:from-slate-700 hover:to-zinc-700"
           >
             Supprimer définitivement
           </AlertDialogAction>

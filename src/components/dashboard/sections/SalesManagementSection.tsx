@@ -11,7 +11,8 @@ import EditProductForm from '@/components/dashboard/EditProductForm';
 import ExportSalesDialog from '@/components/dashboard/ExportSalesDialog';
 import InvoiceGenerator from '@/components/dashboard/InvoiceGenerator';
 import { AccessibleButton } from '@/components/accessibility/AccessibleButton';
-import { PlusCircle, Edit, ShoppingCart, FileText, Receipt, Package } from 'lucide-react';
+import { PlusCircle, Edit, ShoppingCart, FileText, FileSignature, Package, FileDown, Layers, PenLine, CirclePlus, Users } from 'lucide-react';
+import VentesParClientsModal from '@/components/dashboard/VentesParClientsModal';
 
 interface SalesManagementSectionProps {
   sales: Sale[];
@@ -39,6 +40,7 @@ const SalesManagementSection: React.FC<SalesManagementSectionProps> = ({
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [invoiceGeneratorOpen, setInvoiceGeneratorOpen] = useState(false);
   const [selectedSale, setSelectedSale] = useState<Sale | undefined>(undefined);
+  const [ventesParClientsOpen, setVentesParClientsOpen] = useState(false);
 
   const handleRowClick = (sale: Sale) => {
     setSelectedSale(sale);
@@ -52,44 +54,42 @@ const SalesManagementSection: React.FC<SalesManagementSectionProps> = ({
   };
 
   const actions = [
-    {
-      icon: PlusCircle,
-      label: 'Ajouter un produit',
-      onClick: () => setAddProductDialogOpen(true),
-      gradient: 'red' as const,
-      'aria-label': 'Ouvrir le formulaire d\'ajout de produit'
-    },
-    {
-      icon: Edit,
-      label: 'Modifier un produit',
-      onClick: () => setEditProductDialogOpen(true),
-      gradient: 'blue' as const,
-      'aria-label': 'Ouvrir le formulaire de modification de produit'
-    },
-    // {
-    //   icon: ShoppingCart,
-    //   label: 'Ajouter une vente',
-    //   onClick: () => {
-    //     setSelectedSale(undefined);
-    //     setAddSaleDialogOpen(true);
-    //   },
-    //   gradient: 'green' as const,
-    //   'aria-label': 'Ouvrir le formulaire d\'ajout de vente'
-    // },
-    {
-      icon: Package,
-      label: 'Ajouter Vente un/multi-produits',
-      onClick: () => setMultiProductSaleDialogOpen(true),
-      gradient: 'orange' as const,
-      'aria-label': 'Ouvrir le formulaire de vente avec plusieurs produits'
-    },
-    {
-      icon: Receipt,
-      label: 'Générer facture',
-      onClick: () => setInvoiceGeneratorOpen(true),
-      gradient: 'purple' as const,
-      'aria-label': 'Ouvrir le générateur de factures'
-    }
+   {
+  icon: CirclePlus,
+  label: 'Ajouter un produit',
+  onClick: () => setAddProductDialogOpen(true),
+  gradient: 'red' as const,
+  'aria-label': 'Ouvrir le formulaire d\'ajout de produit'
+},
+{
+  icon: PenLine,
+  label: 'Modifier un produit',
+  onClick: () => setEditProductDialogOpen(true),
+  gradient: 'blue' as const,
+  'aria-label': 'Ouvrir le formulaire de modification de produit'
+},
+{
+  icon: Layers,
+  label: 'Ajouter vente multi-produits',
+  onClick: () => setMultiProductSaleDialogOpen(true),
+  gradient: 'orange' as const,
+  'aria-label': 'Ouvrir le formulaire de vente avec plusieurs produits'
+},
+
+   {
+  icon: FileSignature,
+  label: 'Facture par Client',
+  onClick: () => setInvoiceGeneratorOpen(true),
+  gradient: 'purple' as const,
+  'aria-label': 'Ouvrir le générateur de factures'
+},
+{
+  icon: Users,
+  label: 'Ventes par Clients',
+  onClick: () => setVentesParClientsOpen(true),
+  gradient: 'green' as const,
+  'aria-label': 'Voir les ventes groupées par client'
+}
   ];
 
   return (
@@ -111,8 +111,8 @@ const SalesManagementSection: React.FC<SalesManagementSectionProps> = ({
               announceOnClick="Ouverture de la boîte de dialogue d'export"
               onClick={() => setExportDialogOpen(true)}
             >
-              <FileText className="mr-2 h-4 w-4" />
-              Exporter
+              <FileDown className="mr-2 h-4 w-4" />
+              Générer
             </AccessibleButton>
           </div>
         }
@@ -209,6 +209,11 @@ const SalesManagementSection: React.FC<SalesManagementSectionProps> = ({
       <InvoiceGenerator
         isOpen={invoiceGeneratorOpen}
         onClose={() => setInvoiceGeneratorOpen(false)}
+      />
+
+      <VentesParClientsModal
+        isOpen={ventesParClientsOpen}
+        onClose={() => setVentesParClientsOpen(false)}
       />
     </section>
   );

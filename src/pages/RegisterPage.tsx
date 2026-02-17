@@ -12,7 +12,8 @@ import PasswordInput from '@/components/PasswordInput';
 import PasswordStrengthChecker from '@/components/PasswordStrengthChecker';
 import Layout from '@/components/Layout';
 import PremiumLoading from '@/components/ui/premium-loading';
-import { UserPlus, Mail, User, Phone, MapPin, Shield, Sparkles } from 'lucide-react';
+import { UserPlus, Mail, User, Phone, MapPin, Shield, Sparkles, Crown, Fingerprint, KeyRound, Star } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
@@ -123,10 +124,16 @@ const RegisterPage: React.FC = () => {
     const hasLowerCase = /[a-z]/.test(formData.password);
     const hasUpperCase = /[A-Z]/.test(formData.password);
     const hasNumber = /[0-9]/.test(formData.password);
-    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(formData.password);
-    const hasMinLength = formData.password.length >= 8;
+    const hasSpecialChar = /[!@#$%^&*()_+\-\=\[\]{};':"\\|,.<>\/?]/.test(formData.password);
+    const hasMinLength = formData.password.length >= 6;
 
     return hasLowerCase && hasUpperCase && hasNumber && hasSpecialChar && hasMinLength;
+  };
+
+  const validatePhone = (phone: string) => {
+    const cleaned = phone.trim();
+    const regex = /^[0-9+\-\s()]{6,20}$/;
+    return regex.test(cleaned);
   };
 
   const handlePasswordValidityChange = (isValid: boolean) => {
@@ -155,6 +162,10 @@ const RegisterPage: React.FC = () => {
       newErrors.email = 'Veuillez entrer un email valide';
     }
 
+    if (formData.phone && !validatePhone(formData.phone)) {
+      newErrors.phone = 'Veuillez entrer un numéro de téléphone valide (au moins 6 caractères).';
+    }
+
     if (formData.password && !validatePassword()) {
       newErrors.password = 'Le mot de passe ne répond pas aux exigences de sécurité';
     }
@@ -174,22 +185,42 @@ const RegisterPage: React.FC = () => {
       return;
     }
 
-    const success = await register({
-      email: formData.email,
-      password: formData.password,
-      confirmPassword: formData.confirmPassword,
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      gender: formData.gender as 'male' | 'female' | 'other',
-      address: formData.address,
-      phone: formData.phone,
-      acceptTerms: formData.acceptTerms,
-    });
+    try {
+      const success = await register({
+        email: formData.email,
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        gender: formData.gender as 'male' | 'female' | 'other',
+        address: formData.address,
+        phone: formData.phone.trim(),
+        acceptTerms: formData.acceptTerms,
+      });
 
-    if (success) {
-      navigate('/dashboard');
+      if (success) {
+        toast({
+          title: "Compte créé avec succès !",
+          description: "Vous pouvez maintenant vous connecter avec vos identifiants.",
+          className: "bg-green-600 text-white border-green-600",
+        });
+        navigate('/login');
+      }
+    } catch (error: any) {
+      console.error('Erreur lors de l\'inscription:', error);
+
+      const apiData = error?.response?.data;
+      const apiDetails = Array.isArray(apiData?.details) ? apiData.details.join(' • ') : null;
+      const message = apiData?.message || apiDetails || "Une erreur s'est produite lors de la création du compte";
+
+      toast({
+        title: "Erreur d'inscription",
+        description: message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   };
 
   const isFormValid =
@@ -207,7 +238,6 @@ const RegisterPage: React.FC = () => {
     !isEmailChecking &&
     Object.keys(errors).filter(key => errors[key]).length === 0;
 
-  // Show loading during form submission
   if (isSubmitting) {
     return (
       <Layout>
@@ -221,192 +251,283 @@ const RegisterPage: React.FC = () => {
     );
   }
 
+  const inputClasses = (hasError: boolean) => `relative h-12 bg-white/[0.06] border-white/[0.1] text-white placeholder:text-purple-300/30 rounded-xl transition-all duration-300 focus:bg-white/[0.1] focus:border-purple-400/50 ${hasError ? "border-red-400/50" : ""}`;
+
   return (
     <Layout>
-      {/* Background decorations */}
-      <div className="min-h-screen bg-gradient-to-br from-violet-50 via-purple-50 to-fuchsia-100 dark:from-gray-900 dark:via-purple-900/20 dark:to-slate-900 py-12 px-4">
-        {/* Background decorations */}
+      <div className="min-h-screen relative flex items-center justify-center p-4 py-12 overflow-hidden">
+        {/* Ultra-luxe animated background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-purple-950 to-indigo-950" />
+        
+        {/* Animated glassmorphism orbs */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-1/4 left-1/6 w-72 h-72 bg-purple-400/20 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-1/4 right-1/6 w-72 h-72 bg-pink-400/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-violet-400/10 to-fuchsia-400/10 rounded-full blur-3xl"></div>
+          <motion.div
+            animate={{ x: [0, 30, 0], y: [0, -20, 0], scale: [1, 1.1, 1] }}
+            transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute top-1/4 left-1/6 w-80 h-80 bg-purple-500/20 rounded-full blur-[100px]"
+          />
+          <motion.div
+            animate={{ x: [0, -40, 0], y: [0, 30, 0], scale: [1, 1.2, 1] }}
+            transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute bottom-1/4 right-1/6 w-[500px] h-[500px] bg-pink-500/15 rounded-full blur-[120px]"
+          />
+          <motion.div
+            animate={{ x: [0, 20, 0], y: [0, 40, 0] }}
+            transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 rounded-full blur-[100px]"
+          />
+          
+          {/* Floating particles */}
+          {[...Array(8)].map((_, i) => (
+            <motion.div
+              key={i}
+              animate={{ y: [0, -60, 0], opacity: [0.2, 0.6, 0.2] }}
+              transition={{ duration: 6 + i * 1.5, repeat: Infinity, delay: i * 0.6, ease: "easeInOut" }}
+              className="absolute w-1.5 h-1.5 bg-purple-300/40 rounded-full"
+              style={{ left: `${10 + i * 11}%`, top: `${15 + i * 8}%` }}
+            />
+          ))}
         </div>
 
-        <div className="relative container mx-auto max-w-4xl">
-          <Card className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl border-0 shadow-2xl">
+        {/* Grid pattern overlay */}
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:64px_64px]" />
+
+        <motion.div
+          initial={{ opacity: 0, y: 40, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="relative w-full max-w-4xl z-10"
+        >
+          {/* Glow behind card */}
+          <div className="absolute -inset-4 bg-gradient-to-r from-purple-600/20 via-pink-600/20 to-blue-600/20 rounded-[2rem] blur-2xl" />
+          
+          <Card className="relative bg-white/[0.08] backdrop-blur-2xl border border-white/[0.12] shadow-[0_32px_64px_rgba(0,0,0,0.4)] rounded-3xl overflow-hidden">
+            {/* Top shimmer line */}
+            <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-purple-400/50 to-transparent" />
+            
+            {/* Mirror reflection effect */}
+            <div className="absolute inset-0 bg-gradient-to-b from-white/[0.08] via-transparent to-white/[0.02] pointer-events-none" />
+            
             <CardHeader className="text-center pb-8 pt-10">
-              <div className="flex justify-center mb-6">
-                <div className="w-20 h-20 bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 rounded-2xl flex items-center justify-center shadow-lg">
-                  <UserPlus className="h-10 w-10 text-white" />
+              <motion.div
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ duration: 0.6, type: "spring", bounce: 0.4 }}
+                className="flex justify-center mb-6"
+              >
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded-3xl blur-xl opacity-50" />
+                  <div className="relative w-24 h-24 bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 rounded-3xl flex items-center justify-center shadow-2xl border border-white/20">
+                    <UserPlus className="h-12 w-12 text-white drop-shadow-lg" />
+                  </div>
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                    className="absolute -top-2 -right-2 w-7 h-7 bg-gradient-to-r from-yellow-400 to-amber-400 rounded-full flex items-center justify-center shadow-lg"
+                  >
+                    <Crown className="h-3.5 w-3.5 text-white" />
+                  </motion.div>
+                  <motion.div
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="absolute -bottom-1 -left-1 w-5 h-5 bg-gradient-to-r from-pink-400 to-rose-400 rounded-full flex items-center justify-center"
+                  >
+                    <Star className="h-3 w-3 text-white" />
+                  </motion.div>
                 </div>
-              </div>
-              <CardTitle className="text-3xl font-bold bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
+              </motion.div>
+              
+              <CardTitle className="text-3xl font-bold text-white drop-shadow-lg">
                 Créer un compte
               </CardTitle>
-              <CardDescription className="text-gray-600 dark:text-gray-300 text-lg mt-2">
+              <CardDescription className="text-purple-200/70 text-lg mt-2">
                 Rejoignez notre communauté et découvrez toutes nos fonctionnalités
               </CardDescription>
+              
+              {/* Trust badges */}
+              <div className="flex items-center justify-center gap-4 mt-4">
+                <div className="flex items-center gap-1.5 text-xs text-purple-300/60">
+                  <Shield className="h-3 w-3" />
+                  <span>Sécurisé</span>
+                </div>
+                <div className="w-1 h-1 bg-purple-400/30 rounded-full" />
+                <div className="flex items-center gap-1.5 text-xs text-purple-300/60">
+                  <KeyRound className="h-3 w-3" />
+                  <span>Chiffré</span>
+                </div>
+                <div className="w-1 h-1 bg-purple-400/30 rounded-full" />
+                <div className="flex items-center gap-1.5 text-xs text-purple-300/60">
+                  <Fingerprint className="h-3 w-3" />
+                  <span>Protégé</span>
+                </div>
+              </div>
             </CardHeader>
 
             <form onSubmit={handleSubmit}>
-              <CardContent className="space-y-8 px-8">
-                {/* Personal Info Section */}
+              <CardContent className="space-y-8 px-6 sm:px-8">
+
+                {/* Personal Info */}
                 <div className="space-y-6">
                   <div className="flex items-center gap-2 mb-4">
-                    <User className="h-5 w-5 text-purple-600" />
-                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Informations personnelles</h3>
+                    <div className="p-2 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-lg border border-purple-500/20">
+                      <User className="h-4 w-4 text-purple-400" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-white">Informations personnelles</h3>
                   </div>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-3">
-                      <Label htmlFor="firstName" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      <Label htmlFor="firstName" className="text-sm font-semibold text-purple-200/80">
                         Prénom
                       </Label>
-                      <Input
-                        id="firstName"
-                        name="firstName"
-                        placeholder="Jean"
-                        value={formData.firstName}
-                        onChange={handleChange}
-                        className={`h-12 bg-white/50 dark:bg-gray-700/50 border-2 rounded-xl transition-all duration-200 ${
-                          errors.firstName ? "border-red-500" : "border-purple-200 dark:border-purple-700 focus:border-purple-500"
-                        } focus:ring-4 focus:ring-purple-500/20`}
-                      />
+                      <div className="relative group">
+                        <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-xl blur opacity-0 group-focus-within:opacity-100 transition-opacity duration-300" />
+                        <Input
+                          id="firstName"
+                          name="firstName"
+                          placeholder="Jean"
+                          value={formData.firstName}
+                          onChange={handleChange}
+                          className={inputClasses(!!errors.firstName)}
+                        />
+                      </div>
                       {errors.firstName && (
-                        <span className="text-sm text-red-500 flex items-center gap-2">
-                          <span className="w-2 h-2 bg-red-500 rounded-full inline-block"></span>
+                        <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2 text-red-400 text-sm">
+                          <div className="w-1.5 h-1.5 bg-red-400 rounded-full" />
                           {errors.firstName}
-                        </span>
+                        </motion.div>
                       )}
                     </div>
 
                     <div className="space-y-3">
-                      <Label htmlFor="lastName" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      <Label htmlFor="lastName" className="text-sm font-semibold text-purple-200/80">
                         Nom
                       </Label>
-                      <Input
-                        id="lastName"
-                        name="lastName"
-                        placeholder="Dupont"
-                        value={formData.lastName}
-                        onChange={handleChange}
-                        className={`h-12 bg-white/50 dark:bg-gray-700/50 border-2 rounded-xl transition-all duration-200 ${
-                          errors.lastName ? "border-red-500" : "border-purple-200 dark:border-purple-700 focus:border-purple-500"
-                        } focus:ring-4 focus:ring-purple-500/20`}
-                      />
+                      <div className="relative group">
+                        <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-xl blur opacity-0 group-focus-within:opacity-100 transition-opacity duration-300" />
+                        <Input
+                          id="lastName"
+                          name="lastName"
+                          placeholder="Dupont"
+                          value={formData.lastName}
+                          onChange={handleChange}
+                          className={inputClasses(!!errors.lastName)}
+                        />
+                      </div>
                       {errors.lastName && (
-                        <span className="text-sm text-red-500 flex items-center gap-2">
-                          <span className="w-2 h-2 bg-red-500 rounded-full inline-block"></span>
+                        <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2 text-red-400 text-sm">
+                          <div className="w-1.5 h-1.5 bg-red-400 rounded-full" />
                           {errors.lastName}
-                        </span>
+                        </motion.div>
                       )}
                     </div>
                   </div>
 
+                  {/* Email */}
                   <div className="space-y-3">
-                    <Label htmlFor="email" className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                      <Mail className="h-4 w-4" />
+                    <Label htmlFor="email" className="text-sm font-semibold text-purple-200/80 flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-purple-400" />
                       Adresse email
                     </Label>
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      placeholder="exemple@email.com"
-                      value={formData.email}
-                      onChange={handleChange}
-                      onBlur={validateEmail}
-                      disabled={isEmailChecking}
-                      className={`h-12 bg-white/50 dark:bg-gray-700/50 border-2 rounded-xl transition-all duration-200 ${
-                        errors.email ? "border-red-500" : "border-purple-200 dark:border-purple-700 focus:border-purple-500"
-                      } focus:ring-4 focus:ring-purple-500/20`}
-                    />
+                    <div className="relative group">
+                      <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-xl blur opacity-0 group-focus-within:opacity-100 transition-opacity duration-300" />
+                      <Input
+                        id="email"
+                        name="email"
+                        type="email"
+                        placeholder="exemple@email.com"
+                        value={formData.email}
+                        onChange={handleChange}
+                        onBlur={validateEmail}
+                        disabled={isEmailChecking}
+                        className={inputClasses(!!errors.email)}
+                      />
+                    </div>
                     {errors.email && (
-                      <span className="text-sm text-red-500 flex items-center gap-2">
-                        <span className="w-2 h-2 bg-red-500 rounded-full inline-block"></span>
+                      <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2 text-red-400 text-sm">
+                        <div className="w-1.5 h-1.5 bg-red-400 rounded-full" />
                         {errors.email}
-                      </span>
+                      </motion.div>
                     )}
                     {isEmailChecking && (
-                      <span className="text-sm text-purple-600 flex items-center gap-2">
-                        <span className="w-4 h-4 border-2 border-purple-600/30 border-t-purple-600 rounded-full animate-spin inline-block"></span>
+                      <span className="text-sm text-purple-400 flex items-center gap-2">
+                        <span className="w-4 h-4 border-2 border-purple-400/30 border-t-purple-400 rounded-full animate-spin inline-block"></span>
                         Vérification de l'email...
                       </span>
                     )}
                   </div>
 
+                  {/* Gender & Phone */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-3">
-                      <Label htmlFor="gender" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      <Label htmlFor="gender" className="text-sm font-semibold text-purple-200/80">
                         Genre
                       </Label>
-                      <Select
-                        value={formData.gender}
-                        onValueChange={handleSelectChange}
-                      >
-                        <SelectTrigger className={`h-12 bg-white/50 dark:bg-gray-700/50 border-2 rounded-xl transition-all duration-200 ${
-                          errors.gender ? "border-red-500" : "border-purple-200 dark:border-purple-700"
-                        }`}>
+                      <Select value={formData.gender} onValueChange={handleSelectChange}>
+                        <SelectTrigger className={`h-12 bg-white/[0.06] border-white/[0.1] text-white rounded-xl transition-all duration-300 focus:bg-white/[0.1] focus:border-purple-400/50 ${errors.gender ? "border-red-400/50" : ""}`}>
                           <SelectValue placeholder="Sélectionnez votre genre" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-slate-900/95 backdrop-blur-2xl border border-white/[0.1] text-white">
                           <SelectItem value="male">Homme</SelectItem>
                           <SelectItem value="female">Femme</SelectItem>
                           <SelectItem value="other">Autre</SelectItem>
                         </SelectContent>
                       </Select>
                       {errors.gender && (
-                        <span className="text-sm text-red-500 flex items-center gap-2">
-                          <span className="w-2 h-2 bg-red-500 rounded-full inline-block"></span>
+                        <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2 text-red-400 text-sm">
+                          <div className="w-1.5 h-1.5 bg-red-400 rounded-full" />
                           {errors.gender}
-                        </span>
+                        </motion.div>
                       )}
                     </div>
 
                     <div className="space-y-3">
-                      <Label htmlFor="phone" className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                        <Phone className="h-4 w-4" />
+                      <Label htmlFor="phone" className="text-sm font-semibold text-purple-200/80 flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-purple-400" />
                         Téléphone
                       </Label>
-                      <Input
-                        id="phone"
-                        name="phone"
-                        placeholder="+33 6 12 34 56 78"
-                        value={formData.phone}
-                        onChange={handleChange}
-                        className={`h-12 bg-white/50 dark:bg-gray-700/50 border-2 rounded-xl transition-all duration-200 ${
-                          errors.phone ? "border-red-500" : "border-purple-200 dark:border-purple-700 focus:border-purple-500"
-                        } focus:ring-4 focus:ring-purple-500/20`}
-                      />
+                      <div className="relative group">
+                        <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-xl blur opacity-0 group-focus-within:opacity-100 transition-opacity duration-300" />
+                        <Input
+                          id="phone"
+                          name="phone"
+                          placeholder="+33 6 12 34 56 78"
+                          value={formData.phone}
+                          onChange={handleChange}
+                          className={inputClasses(!!errors.phone)}
+                        />
+                      </div>
                       {errors.phone && (
-                        <span className="text-sm text-red-500 flex items-center gap-2">
-                          <span className="w-2 h-2 bg-red-500 rounded-full inline-block"></span>
+                        <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2 text-red-400 text-sm">
+                          <div className="w-1.5 h-1.5 bg-red-400 rounded-full" />
                           {errors.phone}
-                        </span>
+                        </motion.div>
                       )}
                     </div>
                   </div>
 
+                  {/* Address */}
                   <div className="space-y-3">
-                    <Label htmlFor="address" className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                      <MapPin className="h-4 w-4" />
+                    <Label htmlFor="address" className="text-sm font-semibold text-purple-200/80 flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-purple-400" />
                       Adresse
                     </Label>
-                    <Input
-                      id="address"
-                      name="address"
-                      placeholder="123 Rue de Paris, 75001 Paris"
-                      value={formData.address}
-                      onChange={handleChange}
-                      className={`h-12 bg-white/50 dark:bg-gray-700/50 border-2 rounded-xl transition-all duration-200 ${
-                        errors.address ? "border-red-500" : "border-purple-200 dark:border-purple-700 focus:border-purple-500"
-                      } focus:ring-4 focus:ring-purple-500/20`}
-                    />
+                    <div className="relative group">
+                      <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-xl blur opacity-0 group-focus-within:opacity-100 transition-opacity duration-300" />
+                      <Input
+                        id="address"
+                        name="address"
+                        placeholder="123 Rue de Paris, 75001 Paris"
+                        value={formData.address}
+                        onChange={handleChange}
+                        className={inputClasses(!!errors.address)}
+                      />
+                    </div>
                     {errors.address && (
-                      <span className="text-sm text-red-500 flex items-center gap-2">
-                        <span className="w-2 h-2 bg-red-500 rounded-full inline-block"></span>
+                      <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2 text-red-400 text-sm">
+                        <div className="w-1.5 h-1.5 bg-red-400 rounded-full" />
                         {errors.address}
-                      </span>
+                      </motion.div>
                     )}
                   </div>
                 </div>
@@ -414,13 +535,15 @@ const RegisterPage: React.FC = () => {
                 {/* Security Section */}
                 <div className="space-y-6">
                   <div className="flex items-center gap-2 mb-4">
-                    <Shield className="h-5 w-5 text-purple-600" />
-                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Sécurité du compte</h3>
+                    <div className="p-2 bg-gradient-to-br from-emerald-500/20 to-teal-500/20 rounded-lg border border-emerald-500/20">
+                      <Shield className="h-4 w-4 text-emerald-400" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-white">Sécurité du compte</h3>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-3">
-                      <Label htmlFor="password" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      <Label htmlFor="password" className="text-sm font-semibold text-purple-200/80">
                         Mot de passe
                       </Label>
                       <PasswordInput
@@ -430,7 +553,7 @@ const RegisterPage: React.FC = () => {
                         value={formData.password}
                         onChange={handleChange}
                         error={errors.password}
-                        className="h-12"
+                        className="h-12 bg-white/[0.06] border-white/[0.1] text-white rounded-xl"
                       />
                       <PasswordStrengthChecker 
                         password={formData.password} 
@@ -439,7 +562,7 @@ const RegisterPage: React.FC = () => {
                     </div>
 
                     <div className="space-y-3">
-                      <Label htmlFor="confirmPassword" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      <Label htmlFor="confirmPassword" className="text-sm font-semibold text-purple-200/80">
                         Confirmer le mot de passe
                       </Label>
                       <PasswordInput
@@ -449,15 +572,15 @@ const RegisterPage: React.FC = () => {
                         value={formData.confirmPassword}
                         onChange={handleChange}
                         error={errors.confirmPassword}
-                        className="h-12"
+                        className="h-12 bg-white/[0.06] border-white/[0.1] text-white rounded-xl"
                       />
                     </div>
                   </div>
                 </div>
 
-                {/* Terms and Conditions */}
+                {/* Terms */}
                 <div className="space-y-4">
-                  <div className="flex items-start space-x-3 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-800">
+                  <div className="flex items-start space-x-3 p-4 bg-white/[0.04] rounded-xl border border-white/[0.08]">
                     <Checkbox
                       id="acceptTerms"
                       name="acceptTerms"
@@ -468,37 +591,32 @@ const RegisterPage: React.FC = () => {
                           acceptTerms: checked as boolean,
                         })
                       }
-                      className="mt-1"
+                      className="mt-1 border-purple-400/50"
                     />
                     <Label
                       htmlFor="acceptTerms"
                       className={`text-sm leading-relaxed cursor-pointer ${
-                        errors.acceptTerms ? "text-red-500" : "text-gray-700 dark:text-gray-300"
+                        errors.acceptTerms ? "text-red-400" : "text-purple-200/70"
                       }`}
                     >
                       J'accepte les{" "}
-                      <Link to="/terms" className="text-purple-600 hover:text-purple-700 underline">
+                      <Link to="/terms" className="text-purple-400 hover:text-purple-300 underline">
                         conditions générales d'utilisation
                       </Link>{" "}
                       et la{" "}
-                      <Link to="/privacy" className="text-purple-600 hover:text-purple-700 underline">
+                      <Link to="/privacy" className="text-purple-400 hover:text-purple-300 underline">
                         politique de confidentialité
                       </Link>
                     </Label>
                   </div>
-                  {errors.acceptTerms && (
-                    <span className="text-sm text-red-500 flex items-center gap-2">
-                      <span className="w-2 h-2 bg-red-500 rounded-full inline-block"></span>
-                      {errors.acceptTerms}
-                    </span>
-                  )}
                 </div>
+
               </CardContent>
 
-              <CardFooter className="flex flex-col space-y-6 px-8 pb-10">
+              <CardFooter className="flex flex-col space-y-6 px-6 sm:px-8 pb-10">
                 <Button
                   type="submit"
-                  className="w-full h-14 bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 hover:from-violet-700 hover:via-purple-700 hover:to-fuchsia-700 text-white font-bold text-lg rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 flex items-center justify-center gap-3"
+                  className="w-full h-14 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 hover:from-purple-500 hover:via-pink-500 hover:to-blue-500 text-white font-bold text-lg rounded-xl shadow-[0_20px_40px_rgba(139,92,246,0.3)] hover:shadow-[0_25px_50px_rgba(139,92,246,0.4)] transform hover:scale-[1.02] transition-all duration-300 border border-white/10 flex items-center justify-center gap-3"
                   disabled={!isFormValid || isSubmitting}
                 >
                   {isEmailChecking ? (
@@ -515,20 +633,23 @@ const RegisterPage: React.FC = () => {
                 </Button>
 
                 <div className="text-center">
-                  <p className="text-gray-600 dark:text-gray-300">
-                    Déjà membre?{" "}
-                    <Link 
-                      to="/login" 
-                      className="text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 font-semibold hover:underline transition-colors"
+                  <p className="text-purple-200/60 text-base flex items-center justify-center gap-2">
+                    Déjà membre?
+                    <Link
+                      to="/login"
+                      className="text-purple-400 hover:text-purple-300 font-bold transition-colors"
                     >
-                      Se connecter
+                      Se Connecter
                     </Link>
                   </p>
                 </div>
               </CardFooter>
             </form>
+            
+            {/* Bottom shimmer line */}
+            <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-pink-400/30 to-transparent" />
           </Card>
-        </div>
+        </motion.div>
       </div>
     </Layout>
   );

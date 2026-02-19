@@ -989,15 +989,10 @@ const PretFamilles: React.FC = () => {
 
       {/* Dialog pour voir les détails d'un prêt */}
       <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
-        <DialogContent className="sm:max-w-[600px] bg-gradient-to-br from-white/90 via-blue-50/40 to-indigo-50/50 dark:from-slate-900/90 dark:via-blue-950/40 dark:to-indigo-950/50 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-[0_40px_100px_rgba(0,0,0,0.35)] rounded-3xl overflow-hidden">
-          {/* Glass orbs */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-3xl">
-            <div className="absolute -top-20 -right-20 w-40 h-40 bg-gradient-to-br from-blue-400/15 to-purple-400/15 rounded-full blur-3xl" />
-            <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-gradient-to-br from-indigo-400/10 to-pink-400/10 rounded-full blur-3xl" />
-          </div>
-          <DialogHeader className="relative">
-            <DialogTitle className="flex items-center gap-3 text-xl font-extrabold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
-              <div className="p-2.5 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full shadow-lg shadow-blue-500/30 border border-white/20">
+        <DialogContent className="sm:max-w-[600px] bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 border border-white/20 shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <div className="bg-gradient-to-r from-blue-500 to-purple-500 rounded-full p-2">
                 <Eye className="h-5 w-5 text-white" />
               </div>
               Détails du prêt
@@ -1149,13 +1144,10 @@ const PretFamilles: React.FC = () => {
       
       {/* Formulaire de remboursement */}
       <Dialog open={remboursementDialogOpen} onOpenChange={setRemboursementDialogOpen}>
-        <DialogContent className="sm:max-w-[500px] bg-gradient-to-br from-white/90 via-emerald-50/40 to-teal-50/50 dark:from-slate-900/90 dark:via-emerald-950/40 dark:to-teal-950/50 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-[0_40px_100px_rgba(0,0,0,0.35)] rounded-3xl">
-          <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-3xl">
-            <div className="absolute -top-20 -right-20 w-40 h-40 bg-gradient-to-br from-emerald-400/15 to-teal-400/15 rounded-full blur-3xl" />
-          </div>
-          <DialogHeader className="relative">
-            <DialogTitle className="flex items-center gap-3 text-xl font-extrabold bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 bg-clip-text text-transparent">
-              <div className="p-2.5 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full shadow-lg shadow-emerald-500/30 border border-white/20">
+        <DialogContent className="sm:max-w-[500px] bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 border border-white/20 shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <div className="bg-gradient-to-r from-blue-500 to-purple-500 rounded-full p-2">
                 <Receipt className="h-5 w-5 text-white" />
               </div>
               Enregistrer un remboursement
@@ -1275,13 +1267,10 @@ const PretFamilles: React.FC = () => {
       
       {/* Dialog pour modifier un remboursement */}
       <Dialog open={editRemboursementDialogOpen} onOpenChange={setEditRemboursementDialogOpen}>
-        <DialogContent className="sm:max-w-[500px] bg-gradient-to-br from-white/90 via-blue-50/40 to-indigo-50/50 dark:from-slate-900/90 dark:via-blue-950/40 dark:to-indigo-950/50 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-[0_40px_100px_rgba(0,0,0,0.35)] rounded-3xl">
-          <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-3xl">
-            <div className="absolute -top-20 -left-20 w-40 h-40 bg-gradient-to-br from-blue-400/15 to-indigo-400/15 rounded-full blur-3xl" />
-          </div>
-          <DialogHeader className="relative">
-            <DialogTitle className="flex items-center gap-3 text-xl font-extrabold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
-              <div className="p-2.5 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full shadow-lg shadow-blue-500/30 border border-white/20">
+        <DialogContent className="sm:max-w-[500px] bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 border border-white/20 shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <div className="bg-gradient-to-r from-blue-500 to-purple-500 rounded-full p-2">
                 <Edit2 className="h-5 w-5 text-white" />
               </div>
               Modifier le remboursement
@@ -1415,10 +1404,10 @@ const PretFamilles: React.FC = () => {
 
       {/* Dialog pour modifier un prêt de l'historique */}
       <Dialog open={editPretDialogOpen} onOpenChange={setEditPretDialogOpen}>
-        <DialogContent className="sm:max-w-[95vw] md:max-w-[500px] bg-gradient-to-br from-white/90 via-cyan-50/40 to-blue-50/50 dark:from-slate-900/90 dark:via-cyan-950/40 dark:to-blue-950/50 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-[0_40px_100px_rgba(0,0,0,0.35)] rounded-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader className="relative">
-            <DialogTitle className="flex items-center gap-3 text-lg sm:text-xl font-extrabold bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              <div className="p-2 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full shadow-lg shadow-cyan-500/30 border border-white/20">
+        <DialogContent className="sm:max-w-[95vw] md:max-w-[500px] bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 border border-white/20 shadow-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
+              <div className="bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full p-2">
                 <Edit2 className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
               </div>
               Modifier le prêt
@@ -1506,13 +1495,10 @@ const PretFamilles: React.FC = () => {
       
       {/* Formulaire de demande de prêt */}
       <Dialog open={demandePretDialogOpen} onOpenChange={setDemandePretDialogOpen}>
-        <DialogContent className="sm:max-w-[500px] bg-gradient-to-br from-white/90 via-emerald-50/40 to-teal-50/50 dark:from-slate-900/90 dark:via-emerald-950/40 dark:to-teal-950/50 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-[0_40px_100px_rgba(0,0,0,0.35)] rounded-3xl">
-          <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-3xl">
-            <div className="absolute -top-20 -right-20 w-40 h-40 bg-gradient-to-br from-emerald-400/15 to-teal-400/15 rounded-full blur-3xl" />
-          </div>
-          <DialogHeader className="relative">
-            <DialogTitle className="flex items-center gap-3 text-xl font-extrabold bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 bg-clip-text text-transparent">
-              <div className="p-2.5 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full shadow-lg shadow-emerald-500/30 border border-white/20">
+        <DialogContent className="sm:max-w-[500px] bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 border border-white/20 shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <div className="bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full p-2">
                 <CreditCard className="h-5 w-5 text-white" />
               </div>
               Enregistrer une demande de prêt

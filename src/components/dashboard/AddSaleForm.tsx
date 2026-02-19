@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useApp } from '@/contexts/AppContext';
 import { Product, Sale } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { Trash2, Sparkles, Crown, Diamond } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import ConfirmDeleteDialog from './forms/ConfirmDeleteDialog';
 import { useSaleForm } from './forms/hooks/useSaleForm';
 import { calculateSaleProfit } from './forms/utils/saleCalculations';
@@ -428,20 +428,10 @@ const AddSaleForm: React.FC<AddSaleFormProps> = ({ isOpen, onClose, editSale }) 
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-md max-h-[80vh] overflow-y-auto bg-gradient-to-br from-white/90 via-purple-50/40 to-indigo-50/50 dark:from-slate-900/90 dark:via-purple-950/40 dark:to-indigo-950/50 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-[0_40px_100px_rgba(0,0,0,0.35)] rounded-3xl">
-          {/* Decorative glass orbs */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-3xl">
-            <div className="absolute -top-20 -right-20 w-40 h-40 bg-gradient-to-br from-purple-400/15 to-pink-400/15 rounded-full blur-3xl" />
-            <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-gradient-to-br from-blue-400/15 to-indigo-400/15 rounded-full blur-3xl" />
-          </div>
-          <DialogHeader className="relative">
-            <DialogTitle className="flex items-center gap-3 text-xl font-extrabold bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent">
-              <div className="p-2.5 bg-gradient-to-br from-purple-500 via-pink-500 to-indigo-500 rounded-full shadow-lg shadow-purple-500/30 border border-white/20">
-                <Sparkles className="h-5 w-5 text-white" />
-              </div>
-              {editSale ? 'Modifier la vente' : 'Ajouter une vente'}
-            </DialogTitle>
-            <DialogDescription className="text-muted-foreground">
+        <DialogContent className="sm:max-w-md max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editSale ? 'Modifier la vente' : 'Ajouter une vente'}</DialogTitle>
+            <DialogDescription>
               {editSale ? 'Modifiez les détails de la vente.' : 'Enregistrez une nouvelle vente.'}
               {isAdvanceProduct && (
                 <div className="mt-2 text-amber-600 text-sm font-medium">
@@ -467,14 +457,14 @@ const AddSaleForm: React.FC<AddSaleFormProps> = ({ isOpen, onClose, editSale }) 
               isProfitNegative={isProfitNegative}
             />
             
-            <DialogFooter className="flex gap-3 pt-4">
+            <DialogFooter>
               {editSale && (
                 <Button
                   type="button"
                   variant="destructive"
                   onClick={() => setShowDeleteConfirm(true)}
                   disabled={isSubmitting}
-                  className="mr-auto rounded-full px-5 bg-gradient-to-r from-red-500/80 to-rose-500/80 backdrop-blur-xl border border-white/20 shadow-lg shadow-red-500/20 hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-300"
+                  className="mr-auto"
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
                   Supprimer
@@ -486,17 +476,15 @@ const AddSaleForm: React.FC<AddSaleFormProps> = ({ isOpen, onClose, editSale }) 
                 variant="outline"
                 onClick={onClose}
                 disabled={isSubmitting}
-                className="rounded-full px-5 bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg hover:bg-white/20 hover:scale-105 active:scale-95 transition-all duration-300"
               >
                 Annuler
               </Button>
               
               <Button
                 type="submit"
-                className="rounded-full px-6 bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 text-white border-0 shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-300 font-bold"
+                className="bg-app-green hover:bg-opacity-90"
                 disabled={isButtonDisabled()}
               >
-                <Diamond className="h-4 w-4 mr-2" />
                 {getButtonText()}
               </Button>
             </DialogFooter>

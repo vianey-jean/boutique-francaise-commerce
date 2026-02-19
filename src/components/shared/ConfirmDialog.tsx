@@ -96,7 +96,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = memo(({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-[0_40px_100px_rgba(0,0,0,0.35)] rounded-3xl max-w-md">
+      <AlertDialogContent className="bg-card/95 backdrop-blur-xl border-0 shadow-2xl max-w-md">
         <AlertDialogHeader>
           <div className="flex items-center gap-3 mb-2">
             <div className={cn(
@@ -123,28 +123,22 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = memo(({
           </div>
         )}
 
-        <AlertDialogFooter className="gap-3 sm:gap-3 flex justify-center">
+        <AlertDialogFooter className="gap-3 sm:gap-2">
           <AlertDialogCancel 
             onClick={handleCancel}
             disabled={isLoading}
-            className="rounded-full px-6 bg-white/10 border border-white/20 shadow-lg hover:bg-white/20 hover:scale-105 active:scale-95 transition-all duration-300"
+            className="bg-secondary hover:bg-secondary/80"
           >
             {cancelText}
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirm}
             disabled={isLoading || disabled}
-            className={cn(
-              "rounded-full px-6 text-white border-0 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-300 min-w-[120px] font-bold",
-              variant === 'danger' && "bg-gradient-to-r from-red-500 to-rose-600 shadow-red-500/25",
-              variant === 'warning' && "bg-gradient-to-r from-amber-500 to-orange-600 shadow-amber-500/25",
-              variant === 'info' && "bg-gradient-to-r from-blue-500 to-indigo-600 shadow-blue-500/25",
-              variant === 'success' && "bg-gradient-to-r from-emerald-500 to-teal-600 shadow-emerald-500/25"
-            )}
+            className={cn(config.buttonClass, "min-w-[100px]")}
           >
             {isLoading ? (
               <span className="flex items-center gap-2">
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
                 Chargement...
               </span>
             ) : (

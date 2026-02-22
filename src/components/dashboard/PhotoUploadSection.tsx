@@ -123,32 +123,39 @@ const PhotoUploadSection: React.FC<PhotoUploadSectionProps> = ({
                 alt={`Photo ${absIndex + 1}`}
                 className="w-full h-full object-cover"
               />
-              {/* Overlay on hover */}
-              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+              {/* Croix de suppression toujours visible (sauf si dernière photo) */}
+              {totalPhotos > 1 && (
                 <button
                   type="button"
-                  onClick={() => setAsMain(absIndex)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    photo.type === 'existing' ? removeExisting(photo.url) : removeNewFile(absIndex - keptExistingUrls.length);
+                  }}
+                  className="absolute top-1 right-1 z-10 p-1 rounded-full bg-red-500/90 text-white hover:bg-red-600 shadow-lg transition-all hover:scale-110"
+                  title="Supprimer cette photo"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+              {/* Overlay on hover pour définir photo principale */}
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setAsMain(absIndex); }}
                   title="Définir comme photo principale"
                   className={cn(
-                    "p-1.5 rounded-full transition-all",
+                    "p-2 rounded-full transition-all",
                     mainIndex === absIndex
-                      ? "bg-amber-500 text-white"
-                      : "bg-white/20 text-white hover:bg-amber-500"
+                      ? "bg-amber-500 text-white scale-110"
+                      : "bg-white/20 text-white hover:bg-amber-500 hover:scale-110"
                   )}
                 >
-                  <Star className="h-3.5 w-3.5 fill-current" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => photo.type === 'existing' ? removeExisting(photo.url) : removeNewFile(absIndex - keptExistingUrls.length)}
-                  className="p-1.5 rounded-full bg-white/20 text-white hover:bg-red-500 transition-all"
-                >
-                  <X className="h-3.5 w-3.5" />
+                  <Star className="h-4 w-4 fill-current" />
                 </button>
               </div>
               {/* Main badge */}
               {mainIndex === absIndex && (
-                <div className="absolute top-1 left-1 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-500/90 text-white text-[10px] font-bold shadow-lg">
+                <div className="absolute bottom-1 left-1 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-500/90 text-white text-[10px] font-bold shadow-lg">
                   <Star className="h-2.5 w-2.5 fill-white" />
                   Prin.
                 </div>

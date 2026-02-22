@@ -263,22 +263,37 @@ router.put('/:id/photos', authMiddleware, upload.array('photos', 6), async (req,
 
     const mainPhotoIndex = req.body.mainPhotoIndex !== undefined ? parseInt(req.body.mainPhotoIndex) : 0;
     
-    let photos = [];
-    let mainPhoto = null;
-
-    if (req.files && req.files.length > 0) {
-      photos = req.files.map(file => `/uploads/${file.filename}`);
-      mainPhoto = photos[mainPhotoIndex] || photos[0];
-    }
-
-    // If mainPhotoUrl provided in body (for keeping existing photos)
+    // Parse kept existing photo URLs
+    let keptExistingUrls = [];
     if (req.body.photosJson) {
       try {
-        photos = JSON.parse(req.body.photosJson);
-        const mainIdx = parseInt(req.body.mainPhotoIndex) || 0;
-        mainPhoto = photos[mainIdx] || photos[0] || null;
+        keptExistingUrls = JSON.parse(req.body.photosJson);
       } catch(e) {}
     }
+
+    // New uploaded file URLs
+    const newPhotoUrls = (req.files || []).map(file => `/uploads/${file.filename}`);
+    
+    // Combined photos: kept existing + new uploads
+    const photos = [...keptExistingUrls, ...newPhotoUrls];
+    const mainPhoto = photos[mainPhotoIndex] || photos[0] || null;
+
+    // Delete old photo files that are no longer kept
+    const oldPhotos = product.photos || [];
+    oldPhotos.forEach(oldUrl => {
+      if (!keptExistingUrls.includes(oldUrl)) {
+        try {
+          const filename = oldUrl.replace('/uploads/', '');
+          const filePath = path.join(__dirname, '../uploads', filename);
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+            console.log(`🗑️ Deleted replaced photo: ${filename}`);
+          }
+        } catch (e) {
+          console.warn(`⚠️ Could not delete old photo: ${oldUrl}`);
+        }
+      }
+    });
 
     const updatedProduct = Product.update(req.params.id, { photos, mainPhoto });
     console.log(`✅ Photos updated for product ${req.params.id}`);

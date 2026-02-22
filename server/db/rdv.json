@@ -159,5 +159,32 @@
     "rappelEnvoye": false,
     "createdAt": "2026-02-05T09:16:38.897Z",
     "updatedAt": "2026-02-15T08:53:39.476Z"
+  },
+  {
+    "id": "1771586753668",
+    "titre": "Réservation: Perruque bouclé noir 22 pouces",
+    "description": "Produits réservés:\n- Perruque bouclé noir 22 pouces x1 (130 Ar)",
+    "clientNom": "MCie Fortuna",
+    "clientTelephone": "0692810595",
+    "clientAdresse": "MacDo Saint-Pierre",
+    "date": "2026-02-21",
+    "heureDebut": "12:30",
+    "heureFin": "13:30",
+    "lieu": "MacDo Saint-Pierre",
+    "statut": "confirme",
+    "notes": "Créé automatiquement depuis une réservation",
+    "produits": [
+      {
+        "nom": "Perruque bouclé noir 22 pouces",
+        "quantite": 1,
+        "prixUnitaire": 45.46,
+        "prixVente": 130
+      }
+    ],
+    "commandeId": "1771586696922",
+    "notificationEnvoyee": false,
+    "rappelEnvoye": false,
+    "createdAt": "2026-02-20T11:25:53.668Z",
+    "updatedAt": "2026-02-22T02:55:52.513Z"
   }
 ]

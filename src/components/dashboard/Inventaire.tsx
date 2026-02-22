@@ -211,21 +211,27 @@ const Inventaire = () => {
     if (!editingProduct) return;
     try {
       await productService.updateProduct(editingProduct);
-      // Upload/replace photos if changes made
-      if ((editPhotos.files.length > 0 || editPhotos.existingUrls.length !== (editingProduct.photos || []).length) && editingProduct.id) {
-        setIsUploadingPhotos(true);
-        try {
-          if (editPhotos.files.length > 0) {
-            await productService.replaceProductPhotos(editingProduct.id, editPhotos.files, editPhotos.existingUrls, editPhotos.mainIndex);
-          } else if (editPhotos.existingUrls.length !== (editingProduct.photos || []).length) {
-            // Some existing photos removed - update via regular update
-            const mainPhoto = editPhotos.existingUrls[editPhotos.mainIndex] || editPhotos.existingUrls[0] || undefined;
-            await productService.updateProduct({ ...editingProduct, photos: editPhotos.existingUrls, mainPhoto });
+      // Handle photo changes: always use replaceProductPhotos to sync photos
+      if (editingProduct.id) {
+        const hasNewFiles = editPhotos.files.length > 0;
+        const existingPhotos = editingProduct.photos || [];
+        const keptChanged = editPhotos.existingUrls.length !== existingPhotos.length || 
+          editPhotos.existingUrls.some((url, i) => url !== existingPhotos[i]);
+        
+        if (hasNewFiles || keptChanged) {
+          setIsUploadingPhotos(true);
+          try {
+            await productService.replaceProductPhotos(
+              editingProduct.id, 
+              editPhotos.files, 
+              editPhotos.existingUrls, 
+              editPhotos.mainIndex
+            );
+          } catch (photoErr) {
+            console.warn('Photo upload warning:', photoErr);
+          } finally {
+            setIsUploadingPhotos(false);
           }
-        } catch (photoErr) {
-          console.warn('Photo upload warning:', photoErr);
-        } finally {
-          setIsUploadingPhotos(false);
         }
       }
       await loadProducts();

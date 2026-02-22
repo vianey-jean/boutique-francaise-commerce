@@ -8,7 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useApp } from '@/contexts/AppContext';
 import { Product, SaleProduct, Sale } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Package, Euro, Edit3 } from 'lucide-react';
+import { Plus, Trash2, Package, Euro, Edit3, Camera, RotateCcw } from 'lucide-react';
+import ProductPhotoSlideshow from '../ProductPhotoSlideshow';
 import ProductSearchInput from '../ProductSearchInput';
 import SaleQuantityInput from './SaleQuantityInput';
 import ClientSearchInput from '../ClientSearchInput';
@@ -23,6 +24,7 @@ interface MultiProductSaleFormProps {
   isOpen: boolean;
   onClose: () => void;
   editSale?: Sale;
+  onRefund?: (sale: Sale) => void;
 }
 
 interface FormProduct {
@@ -41,7 +43,7 @@ interface FormProduct {
   avancePretProduit: string;
 }
 
-const MultiProductSaleForm: React.FC<MultiProductSaleFormProps> = ({ isOpen, onClose, editSale }) => {
+const MultiProductSaleForm: React.FC<MultiProductSaleFormProps> = ({ isOpen, onClose, editSale, onRefund }) => {
   const { products, addSale, updateSale, deleteSale } = useApp();
   const { toast } = useToast();
   
@@ -85,6 +87,8 @@ const MultiProductSaleForm: React.FC<MultiProductSaleFormProps> = ({ isOpen, onC
   // États pour la modale de confirmation produit réservé
   const [reservedModalOpen, setReservedModalOpen] = useState(false);
   const [pendingReservedProduct, setPendingReservedProduct] = useState<{ product: Product; index: number } | null>(null);
+  // État pour le slideshow photo produit
+  const [slideshowProduct, setSlideshowProduct] = useState<{ photos: string[]; mainPhoto?: string; name: string } | null>(null);
 
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:10000';
 
@@ -960,11 +964,6 @@ const MultiProductSaleForm: React.FC<MultiProductSaleFormProps> = ({ isOpen, onC
                   <span className="bg-gradient-to-r from-indigo-600 to-purple-700 bg-clip-text text-transparent">
                     Produit {index + 1}
                   </span>
-                  {product.isAdvanceProduct && (
-                    <span className="text-xs bg-gradient-to-r from-amber-100 to-orange-100 text-amber-800 px-3 py-1 rounded-full font-semibold shadow-sm">
-                      ⭐ Avance
-                    </span>
-                  )}
                 </CardTitle>
                 {formProducts.length > 1 && (
                   <Button
@@ -977,6 +976,47 @@ const MultiProductSaleForm: React.FC<MultiProductSaleFormProps> = ({ isOpen, onC
                   </Button>
                 )}
               </div>
+              {/* Photo principale cliquable - centrée et agrandie */}
+              {product.selectedProduct?.mainPhoto && (
+                <div className="flex justify-center mt-3">
+                  <button
+                    type="button"
+                    onClick={() => setSlideshowProduct({
+                      photos: product.selectedProduct?.photos || [],
+                      mainPhoto: product.selectedProduct?.mainPhoto,
+                      name: product.selectedProduct?.description || ''
+                    })}
+                    className="w-16 h-16 rounded-xl overflow-hidden border-2 border-purple-300 hover:border-purple-500 hover:scale-110 transition-all duration-200 shadow-lg cursor-pointer"
+                  >
+                    <img
+                      src={`${API_BASE_URL}${product.selectedProduct.mainPhoto}`}
+                      alt={product.selectedProduct.description}
+                      className="w-full h-full object-cover"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    />
+                  </button>
+                </div>
+              )}
+              {product.selectedProduct && !product.selectedProduct.mainPhoto && product.selectedProduct.photos && product.selectedProduct.photos.length > 0 && (
+                <div className="flex justify-center mt-3">
+                  <button
+                    type="button"
+                    onClick={() => setSlideshowProduct({
+                      photos: product.selectedProduct?.photos || [],
+                      mainPhoto: product.selectedProduct?.photos?.[0],
+                      name: product.selectedProduct?.description || ''
+                    })}
+                    className="w-16 h-16 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center border-2 border-gray-300 hover:border-purple-500 hover:scale-110 transition-all duration-200 shadow-lg cursor-pointer"
+                  >
+                    <Camera className="h-5 w-5 text-gray-500" />
+                  </button>
+                </div>
+              )}
+              {product.isAdvanceProduct && (
+                <span className="text-xs bg-gradient-to-r from-amber-100 to-orange-100 text-amber-800 px-3 py-1 rounded-full font-semibold shadow-sm flex justify-center">
+                  ⭐ Avance
+                </span>
+              )}
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Sélection produit */}
@@ -1319,6 +1359,18 @@ const MultiProductSaleForm: React.FC<MultiProductSaleFormProps> = ({ isOpen, onC
           </Button>
         )}
 
+        {editSale && onRefund && (
+          <Button
+            type="button"
+            onClick={() => onRefund(editSale)}
+            disabled={isSubmitting}
+            className="rounded-xl font-bold bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:via-orange-600 hover:to-amber-700 text-white border-0 shadow-lg shadow-amber-500/20 hover:shadow-xl hover:shadow-amber-500/30 transition-all duration-300 transform hover:-translate-y-0.5"
+          >
+            <RotateCcw className="h-4 w-4 mr-2" />
+            Rembourser
+          </Button>
+        )}
+
         <Button
           type="button"
           variant="outline"
@@ -1415,6 +1467,16 @@ const MultiProductSaleForm: React.FC<MultiProductSaleFormProps> = ({ isOpen, onC
       </AlertDialogFooter>
     </AlertDialogContent>
   </AlertDialog>
+
+  {/* Slideshow photos produit */}
+  <ProductPhotoSlideshow
+    photos={slideshowProduct?.photos || []}
+    mainPhoto={slideshowProduct?.mainPhoto}
+    productName={slideshowProduct?.name || ''}
+    isOpen={!!slideshowProduct}
+    onClose={() => setSlideshowProduct(null)}
+    baseUrl={API_BASE_URL}
+  />
 </Dialog>
 
   );

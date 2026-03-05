@@ -17,26 +17,27 @@
  import RdvNotifications from '@/components/rdv/RdvNotifications';
  import ObjectifIndicator from '@/components/navbar/ObjectifIndicator';
  
- import {
-   LayoutDashboard,
-   Users,
-   CalendarDays,
-   MessageSquare,
-   LogIn,
-   LogOut,
-   Moon,
-   Sun,
-   Menu,
-   X,
-   Package,
-   ChevronDown,
-   TrendingUp,
-   Sparkles,
-   Crown,
-   Diamond,
-   Gem,
-   Star,
- } from 'lucide-react';
+import {
+  LayoutDashboard,
+  Users,
+  CalendarDays,
+  MessageSquare,
+  LogIn,
+  LogOut,
+  Moon,
+  Sun,
+  Menu,
+  X,
+  Package,
+  ChevronDown,
+  TrendingUp,
+  Sparkles,
+  Crown,
+  Diamond,
+  Gem,
+  Star,
+  Clock,
+} from 'lucide-react';
  import { cn } from '@/lib/utils';
  
  const Navbar: React.FC = () => {
@@ -107,7 +108,17 @@
                    </motion.div>
                   </Link>
 
-                
+                  <Link to="/pointage">
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                      <Button variant="ghost" className="relative rounded-2xl hover:bg-gradient-to-r hover:from-cyan-500/10 hover:to-blue-500/10 transition-all duration-300 group overflow-hidden px-4 py-2 mirror-shine">
+                        <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-500 mr-2 shadow-lg shadow-cyan-500/30">
+                          <Clock className="h-4 w-4 text-white" />
+                        </div>
+                        <span className="font-bold relative z-10">Pointage</span>
+                      </Button>
+                    </motion.div>
+                  </Link>
+
                 </>
               )}
 
@@ -122,7 +133,30 @@
                </motion.div>
              </Link>
 
-             {isAuthenticated && <RdvNotifications />}
+              {isAuthenticated && <RdvNotifications />}
+              
+                {/**Créer une icons message sur version desktop */}
+              {/** 
+              {isAuthenticated && (
+                <>
+                  <RdvNotifications />
+                  <Link to="/messages">
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                      <Button variant="ghost" className="relative rounded-2xl h-10 w-10 hover:bg-gradient-to-r hover:from-blue-500/10 hover:to-cyan-500/10 transition-all duration-300 overflow-hidden group p-0">
+                        <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 shadow-lg shadow-blue-500/30">
+                          <MessageSquare className="h-4 w-4 text-white" />
+                        </div>
+                        {unreadCount > 0 && (
+                          <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[20px] h-5 px-1 rounded-full bg-red-500 text-white text-xs font-bold shadow-lg shadow-red-500/40 animate-pulse border-2 border-white dark:border-[#030014]">
+                            {unreadCount}
+                          </span>
+                        )}
+                      </Button>
+                    </motion.div>
+                  </Link>
+                </>
+              )}*/}
+
 
              {/* Theme */}
              <motion.div whileHover={{ scale: 1.1, rotate: 15 }} whileTap={{ scale: 0.9 }}>
@@ -174,10 +208,10 @@
                          <MessageSquare className="h-5 w-5 text-white" />
                        </div>
                        <span className="font-bold">Messages</span>
-                       {unreadCount > 0 && (
-                         <Badge className="ml-auto bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-0 shadow-lg animate-pulse">
-                           {unreadCount}
-                         </Badge>
+                        {unreadCount > 0 && (
+                          <Badge className="ml-auto bg-red-500 text-white border-0 shadow-lg shadow-red-500/40 animate-pulse">
+                            {unreadCount}
+                          </Badge>
                        )}
                      </Link>
                    </DropdownMenuItem>
@@ -208,9 +242,18 @@
                         </div>
                         <span className="font-bold">Produits</span>
                       </Link>
+                     </DropdownMenuItem>
+
+                    <DropdownMenuItem asChild className="rounded-xl hover:bg-gradient-to-r hover:from-cyan-500/10 hover:to-blue-500/10 focus:bg-cyan-500/10 cursor-pointer transition-all duration-300 py-3">
+                      <Link to="/pointage" className="flex items-center w-full py-2">
+                        <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-500 mr-3 shadow-lg shadow-cyan-500/30">
+                          <Clock className="h-5 w-5 text-white" />
+                        </div>
+                        <span className="font-bold">Pointage</span>
+                      </Link>
                     </DropdownMenuItem>
 
-                 </DropdownMenuContent>
+                  </DropdownMenuContent>
                </DropdownMenu>
              ) : (
                <Link to="/login">
@@ -318,6 +361,19 @@
           </Button>
         </Link>
 
+        {/* POINTAGE */}
+        <Link to="/pointage" onClick={() => setIsMobileMenuOpen(false)}>
+          <Button
+            variant="outline"
+            className="w-full py-4 sm:py-6 flex items-center justify-start gap-2 sm:gap-3 rounded-2xl border border-cyan-300/30 dark:border-cyan-700/30 shadow-lg shadow-cyan-500/10 bg-gradient-to-r from-white/90 to-cyan-50/80 dark:from-[#0a0020]/80 dark:to-cyan-950/60 hover:scale-105 transition-all duration-300 mirror-shine"
+          >
+            <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-500 shadow-lg shadow-cyan-500/30">
+              <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+            </div>
+            <span className="font-bold text-sm sm:text-base text-cyan-700 dark:text-cyan-300 relative z-10">Pointage</span>
+          </Button>
+        </Link>
+
         {/* RENDEZ-VOUS */}
         <Link to="/rdv" onClick={() => setIsMobileMenuOpen(false)}>
           <Button
@@ -341,11 +397,13 @@
               <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
             </div>
             <span className="font-bold text-sm sm:text-base text-blue-700 dark:text-blue-300 relative z-10">Messages</span>
-            {unreadCount > 0 && (
-              <Badge className="ml-auto bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-0 shadow-lg animate-pulse text-xs sm:text-sm">
-                {unreadCount}
-              </Badge>
-            )}
+            <div className="relative ml-auto">
+              {unreadCount > 0 && (
+                <Badge className="bg-red-500 text-white border-0 shadow-lg shadow-red-500/40 animate-pulse text-xs sm:text-sm">
+                  {unreadCount}
+                </Badge>
+              )}
+            </div>
           </Button>
         </Link>
 

@@ -42,13 +42,10 @@ router.get('/search-sales', authMiddleware, async (req, res) => {
     const allSales = Sale.getAll();
     const query = clientName.toLowerCase();
     
-    // Filter sales that match client name and are NOT already refunds (positive values)
     const matchingSales = allSales.filter(sale => {
       if (!sale.clientName) return false;
       if (!sale.clientName.toLowerCase().includes(query)) return false;
-      // Exclude sales that are already refunds (negative values)
       if (sale.isRefund) return false;
-      // Check if selling price is positive
       const sellingPrice = sale.totalSellingPrice || sale.sellingPrice || 0;
       if (sellingPrice < 0) return false;
       return true;
@@ -65,7 +62,6 @@ router.get('/search-sales', authMiddleware, async (req, res) => {
 router.post('/', authMiddleware, async (req, res) => {
   try {
     console.log('💰 REMBOURSEMENT - Création d\'un remboursement');
-    console.log('📝 Données reçues:', JSON.stringify(req.body, null, 2));
 
     const {
       originalSaleId,
@@ -76,23 +72,27 @@ router.post('/', authMiddleware, async (req, res) => {
       totalProfit,
       clientName,
       clientPhone,
-      clientAddress
+      clientAddress,
+      restoreStock,
+      productsToRestore
     } = req.body;
 
     if (!date || !products || products.length === 0) {
       return res.status(400).json({ message: 'Date and products are required' });
     }
 
-    // 1. Restore stock for each refunded product
-    for (const product of products) {
-      if (product.productId && product.quantitySold > 0) {
-        console.log(`🔄 Restauration stock: ${product.description} +${product.quantitySold}`);
-        Product.updateQuantity(product.productId, product.quantitySold);
+    // 1. Restore stock ONLY for products flagged for restoration (full refund)
+    if (restoreStock && productsToRestore && productsToRestore.length > 0) {
+      for (const product of products) {
+        const quantityToRestore = Math.abs(Number(product.quantitySold) || 0);
+        if (product.productId && productsToRestore.includes(product.productId) && quantityToRestore > 0) {
+          console.log(`🔄 Restauration stock: ${product.description} +${quantityToRestore}`);
+          Product.updateQuantity(product.productId, quantityToRestore);
+        }
       }
     }
 
     // 2. Create negative sale entry in sales.json
-    // Purchase price is also negative (refunded), but delivery fee stays unchanged
     const negativeSaleData = {
       date,
       products: products.map(p => ({
@@ -109,10 +109,11 @@ router.post('/', authMiddleware, async (req, res) => {
       clientPhone: clientPhone || null,
       clientAddress: clientAddress || null,
       isRefund: true,
-      originalSaleId: originalSaleId || null
+      originalSaleId: originalSaleId || null,
+      stockRestored: restoreStock || false,
+      productsRestored: (restoreStock && productsToRestore) ? productsToRestore : []
     };
 
-    console.log('💾 Création vente négative:', JSON.stringify(negativeSaleData, null, 2));
     const negativeSale = Sale.create(negativeSaleData);
 
     if (!negativeSale) {
@@ -124,22 +125,30 @@ router.post('/', authMiddleware, async (req, res) => {
       date,
       originalSaleId: originalSaleId || null,
       negativeSaleId: negativeSale.id,
-      products: products.map(p => ({
-        productId: p.productId,
-        description: p.description,
-        quantityRefunded: p.quantitySold,
-        refundPriceUnit: p.refundPriceUnit || p.sellingPrice / p.quantitySold,
-        totalRefundPrice: p.refundPrice || p.sellingPrice,
-        purchasePriceUnit: -Math.abs(p.purchasePrice / p.quantitySold),
-        totalPurchasePrice: -Math.abs(p.purchasePrice),
-        profit: p.profit
-      })),
+      products: products.map(p => {
+        const refundedQuantity = Number(p.quantitySold) || 0;
+        const refundedQuantityAbs = Math.abs(refundedQuantity);
+        const totalRefundPricePerProduct = Math.abs(p.refundPrice || p.sellingPrice || 0);
+
+        return {
+          productId: p.productId,
+          description: p.description,
+          quantityRefunded: refundedQuantity,
+          refundPriceUnit: p.refundPriceUnit || (refundedQuantityAbs > 0 ? totalRefundPricePerProduct / refundedQuantityAbs : 0),
+          totalRefundPrice: totalRefundPricePerProduct,
+          purchasePriceUnit: refundedQuantityAbs > 0 ? -Math.abs((p.purchasePrice || 0) / refundedQuantityAbs) : 0,
+          totalPurchasePrice: -Math.abs(p.purchasePrice || 0),
+          profit: p.profit
+        };
+      }),
       totalRefundPrice: Math.abs(totalRefundPrice),
       totalPurchasePrice: -Math.abs(totalPurchasePrice),
       totalProfit: Math.abs(totalProfit),
       clientName: clientName || null,
       clientPhone: clientPhone || null,
-      clientAddress: clientAddress || null
+      clientAddress: clientAddress || null,
+      stockRestored: restoreStock || false,
+      productsRestored: (restoreStock && productsToRestore) ? productsToRestore : []
     };
 
     const remboursement = Remboursement.create(remboursementData);
@@ -152,6 +161,51 @@ router.post('/', authMiddleware, async (req, res) => {
     res.status(201).json({ remboursement, negativeSale });
   } catch (error) {
     console.error('❌ Error creating remboursement:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Delete a refund - handle stock reversal
+router.delete('/:id', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log(`🗑️ Suppression remboursement: ${id}`);
+
+    // Get the remboursement first to check stock restoration
+    const allRemboursements = Remboursement.getAll();
+    const remboursement = allRemboursements.find(r => r.id === id);
+
+    if (!remboursement) {
+      return res.status(404).json({ message: 'Remboursement not found' });
+    }
+
+    // If stock was restored during refund, we need to decrease it back
+    if (remboursement.stockRestored && remboursement.productsRestored && remboursement.productsRestored.length > 0) {
+      for (const product of remboursement.products) {
+        const quantityToDecrease = Math.abs(Number(product.quantityRefunded) || 0);
+        if (product.productId && remboursement.productsRestored.includes(product.productId) && quantityToDecrease > 0) {
+          console.log(`📦 Diminution stock après suppression remboursement: ${product.description} -${quantityToDecrease}`);
+          Product.updateQuantity(product.productId, -quantityToDecrease);
+        }
+      }
+    }
+
+    // Delete the negative sale entry
+    if (remboursement.negativeSaleId) {
+      const Sale = require('../models/Sale');
+      Sale.delete(remboursement.negativeSaleId);
+    }
+
+    // Delete the remboursement
+    const deleted = Remboursement.delete(id);
+    if (!deleted) {
+      return res.status(500).json({ message: 'Error deleting remboursement' });
+    }
+
+    console.log('✅ Remboursement supprimé avec succès');
+    res.json({ message: 'Remboursement deleted successfully' });
+  } catch (error) {
+    console.error('❌ Error deleting remboursement:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

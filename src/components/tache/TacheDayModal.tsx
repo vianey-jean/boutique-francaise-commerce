@@ -21,7 +21,6 @@ interface TacheDayModalProps {
 
 const HOURS = Array.from({ length: 20 }, (_, i) => i + 4); // 4h to 23h
 
-// Hook for countdown timer
 const useCountdown = (heureFin: string, date: string, open: boolean) => {
   const [remaining, setRemaining] = useState<number>(0);
 
@@ -42,30 +41,19 @@ const useCountdown = (heureFin: string, date: string, open: boolean) => {
   return remaining;
 };
 
-const CountdownDisplay: React.FC<{ heureFin: string; date: string; open: boolean; onExpired: () => void; tacheId: string }> = ({
-  heureFin, date, open, onExpired, tacheId
+const CountdownDisplay: React.FC<{ heureFin: string; date: string; open: boolean }> = ({
+  heureFin, date, open
 }) => {
   const remaining = useCountdown(heureFin, date, open);
-  const expiredRef = useRef(false);
-
-  useEffect(() => {
-    if (remaining === 0 && !expiredRef.current && open) {
-      expiredRef.current = true;
-      onExpired();
-    }
-    if (remaining > 0) {
-      expiredRef.current = false;
-    }
-  }, [remaining, open, onExpired]);
 
   if (remaining <= 0) {
-    return <span className="text-[10px] font-black text-red-400 animate-pulse">⏰ Terminé</span>;
+    return <span className="text-[10px] font-black text-red-400 animate-pulse">⏰ À vérifier</span>;
   }
 
   const hours = Math.floor(remaining / 3600);
   const mins = Math.floor((remaining % 3600) / 60);
   const secs = remaining % 60;
-  const isUrgent = remaining < 3600; // < 1h
+  const isUrgent = remaining < 3600;
 
   return (
     <span className={cn(
@@ -118,13 +106,6 @@ const TacheDayModal: React.FC<TacheDayModalProps> = ({
     if (tacheId) {
       const newHeure = `${String(hour).padStart(2, '0')}:00`;
       onMoveTache(tacheId, newHeure);
-    }
-  };
-
-  const handleTimerExpired = (tache: Tache) => {
-    // Trigger validation via parent
-    if (!tache.completed) {
-      onValidateTache(tache);
     }
   };
 
@@ -201,8 +182,6 @@ const TacheDayModal: React.FC<TacheDayModalProps> = ({
                               heureFin={tache.heureFin}
                               date={selectedDay}
                               open={open}
-                              onExpired={() => handleTimerExpired(tache)}
-                              tacheId={tache.id}
                             />
                           )}
                           {tache.completed && (

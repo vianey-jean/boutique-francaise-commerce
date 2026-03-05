@@ -33,18 +33,36 @@ router.get('/:id', (req, res) => {
 
 // POST create
 router.post('/', (req, res) => {
-  const { date, heureDebut, heureFin, description, importance, travailleurId, travailleurNom } = req.body;
+  const { date, heureDebut, heureFin, description, importance, travailleurId, travailleurNom, parentId } = req.body;
+  const normalizedHeureFin = heureFin || heureDebut;
+
   if (!date || !heureDebut || !description || !importance) {
     return res.status(400).json({ error: 'Champs requis: date, heureDebut, description, importance' });
   }
+
+  const validation = Tache.validateTimeSlot({
+    date,
+    heureDebut,
+    heureFin: normalizedHeureFin
+  });
+
+  if (!validation.valid) {
+    return res.status(409).json({
+      error: validation.error,
+      availableSlots: validation.availableSlots,
+      conflict: validation.conflict || null
+    });
+  }
+
   const tache = Tache.create({
     date,
     heureDebut,
-    heureFin: heureFin || heureDebut,
+    heureFin: normalizedHeureFin,
     description,
     importance,
     travailleurId: travailleurId || '',
-    travailleurNom: travailleurNom || ''
+    travailleurNom: travailleurNom || '',
+    parentId: parentId || undefined
   });
   if (!tache) return res.status(500).json({ error: 'Erreur création' });
   res.status(201).json(tache);
@@ -54,22 +72,42 @@ router.post('/', (req, res) => {
 router.put('/:id', (req, res) => {
   const existing = Tache.getById(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Tâche non trouvée' });
-  
-  // Allow marking as completed for any task
+
   if (req.body.completed !== undefined && Object.keys(req.body).length === 1) {
     const updated = Tache.update(req.params.id, { completed: req.body.completed });
     if (!updated) return res.status(500).json({ error: 'Erreur mise à jour' });
     return res.json(updated);
   }
-  
-  // Vérifier les règles d'importance
+
   if (existing.importance === 'pertinent') {
     const updated = Tache.update(req.params.id, { description: req.body.description });
     if (!updated) return res.status(500).json({ error: 'Erreur mise à jour' });
     return res.json(updated);
   }
-  
-  const updated = Tache.update(req.params.id, req.body);
+
+  const nextDate = req.body.date || existing.date;
+  const nextHeureDebut = req.body.heureDebut || existing.heureDebut;
+  const nextHeureFin = req.body.heureFin || existing.heureFin;
+
+  const validation = Tache.validateTimeSlot({
+    date: nextDate,
+    heureDebut: nextHeureDebut,
+    heureFin: nextHeureFin,
+    excludeId: req.params.id
+  });
+
+  if (!validation.valid) {
+    return res.status(409).json({
+      error: validation.error,
+      availableSlots: validation.availableSlots,
+      conflict: validation.conflict || null
+    });
+  }
+
+  const updated = Tache.update(req.params.id, {
+    ...req.body,
+    heureFin: nextHeureFin
+  });
   if (!updated) return res.status(500).json({ error: 'Erreur mise à jour' });
   res.json(updated);
 });

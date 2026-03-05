@@ -31,7 +31,7 @@ const TacheView: React.FC = () => {
 
   // Confirm dialogs
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-  const [moveConfirm, setMoveConfirm] = useState<{ tacheId: string; newDate: string; newHeure: string } | null>(null);
+  const [moveConfirm, setMoveConfirm] = useState<{ tacheId: string; newDate: string; newHeure: string; newHeureFin: string } | null>(null);
 
   // Validation modal
   const [validationTache, setValidationTache] = useState<Tache | null>(null);
@@ -50,6 +50,16 @@ const TacheView: React.FC = () => {
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
+  const timeToMinutes = (time: string) => {
+    const [hours, minutes] = time.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+  const minutesToTime = (minutes: number) => {
+    const safeMinutes = Math.max(0, Math.min(23 * 60 + 59, minutes));
+    const hours = Math.floor(safeMinutes / 60);
+    const mins = safeMinutes % 60;
+    return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+  };
 
   const fetchData = useCallback(async () => {
     try {
@@ -107,8 +117,9 @@ const TacheView: React.FC = () => {
       setEditingTache(null);
       setFollowUpTache(null);
       fetchData();
-    } catch {
-      toast({ title: 'Erreur', description: "Impossible d'ajouter la tâche", variant: 'destructive' });
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || "Impossible d'ajouter la tâche";
+      toast({ title: 'Erreur', description: msg, variant: 'destructive' });
     }
   };
 
@@ -119,8 +130,9 @@ const TacheView: React.FC = () => {
       setShowFormModal(false);
       setEditingTache(null);
       fetchData();
-    } catch {
-      toast({ title: 'Erreur', description: "Impossible de modifier la tâche", variant: 'destructive' });
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || "Impossible de modifier la tâche";
+      toast({ title: 'Erreur', description: msg, variant: 'destructive' });
     }
   };
 
@@ -142,13 +154,15 @@ const TacheView: React.FC = () => {
     try {
       await tacheApi.update(moveConfirm.tacheId, {
         date: moveConfirm.newDate,
-        heureDebut: moveConfirm.newHeure
+        heureDebut: moveConfirm.newHeure,
+        heureFin: moveConfirm.newHeureFin
       });
       toast({ title: '✅ Tâche déplacée' });
       setMoveConfirm(null);
       fetchData();
-    } catch {
-      toast({ title: 'Erreur', variant: 'destructive' });
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || 'Impossible de déplacer la tâche';
+      toast({ title: 'Erreur', description: msg, variant: 'destructive' });
       setMoveConfirm(null);
     }
   };
@@ -164,7 +178,12 @@ const TacheView: React.FC = () => {
       toast({ title: '⚠️ Interdit', description: 'Les tâches pertinentes ne peuvent pas être déplacées', variant: 'destructive' });
       return;
     }
-    setMoveConfirm({ tacheId, newDate, newHeure: tache.heureDebut });
+    setMoveConfirm({
+      tacheId,
+      newDate,
+      newHeure: tache.heureDebut,
+      newHeureFin: tache.heureFin
+    });
   };
 
   // Validate task as completed
@@ -176,24 +195,14 @@ const TacheView: React.FC = () => {
   const handleConfirmValidation = async (tache: Tache) => {
     try {
       await tacheApi.update(tache.id, { completed: true });
-      // Also mark all related parent/child tasks as completed
-      const relatedTaches = taches.filter(t =>
-        t.parentId === tache.id || t.id === tache.parentId ||
-        (tache.parentId && t.parentId === tache.parentId)
-      );
-      for (const rt of relatedTaches) {
-        if (!rt.completed) {
-          await tacheApi.update(rt.id, { completed: true });
-        }
-      }
       toast({ title: '✅ Tâche validée comme terminée' });
       setShowValidationModal(false);
       setValidationTache(null);
-      // Remove related notifications
       setNotifications(prev => prev.filter(n => n.tache.id !== tache.id));
       fetchData();
-    } catch {
-      toast({ title: 'Erreur', variant: 'destructive' });
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || 'Impossible de valider la tâche';
+      toast({ title: 'Erreur', description: msg, variant: 'destructive' });
     }
   };
 
@@ -270,7 +279,7 @@ const TacheView: React.FC = () => {
   return (
     <>
       <TacheHero
-        totalTaches={taches.length}
+        totalTaches={taches.filter(t => !t.completed).length}
         todayCount={todayTaches.length}
         pertinentCount={pertinentCount}
         optionnelCount={optionnelCount}
@@ -307,7 +316,18 @@ const TacheView: React.FC = () => {
             toast({ title: '⚠️ Interdit', description: 'Tâche pertinente non modifiable', variant: 'destructive' });
             return;
           }
-          setMoveConfirm({ tacheId: id, newDate: selectedDay || '', newHeure });
+          const duration = Math.max(1, timeToMinutes(tache.heureFin) - timeToMinutes(tache.heureDebut));
+          const newEndMinutes = timeToMinutes(newHeure) + duration;
+          if (newEndMinutes > 23 * 60 + 59) {
+            toast({ title: 'Erreur', description: 'Ce déplacement dépasse la fin de journée autorisée.', variant: 'destructive' });
+            return;
+          }
+          setMoveConfirm({
+            tacheId: id,
+            newDate: selectedDay || '',
+            newHeure,
+            newHeureFin: minutesToTime(newEndMinutes)
+          });
         }}
         onValidateTache={handleValidateTache}
         premiumBtnClass={premiumBtnClass}

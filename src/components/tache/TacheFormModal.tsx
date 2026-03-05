@@ -7,8 +7,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { ListTodo, CalendarDays, Clock, FileText, AlertTriangle, X } from 'lucide-react';
 import { Tache } from '@/services/api/tacheApi';
+import tacheApi from '@/services/api/tacheApi';
 import { Travailleur } from '@/services/api/travailleurApi';
 import TravailleurSearchInput from '@/components/pointage/TravailleurSearchInput';
+import { useToast } from '@/hooks/use-toast';
 
 interface TacheFormModalProps {
   open: boolean;
@@ -22,9 +24,13 @@ interface TacheFormModalProps {
   isFollowUp?: boolean;
 }
 
+const DAY_START_MINUTES = 4 * 60;
+const DAY_END_MINUTES = 23 * 60 + 59;
+
 const TacheFormModal: React.FC<TacheFormModalProps> = ({
   open, onOpenChange, travailleurs, editingTache, onSubmit, premiumBtnClass, mirrorShine, defaultDate, isFollowUp
 }) => {
+  const { toast } = useToast();
   const [form, setForm] = useState({
     travailleurId: '',
     travailleurNom: '',
@@ -34,6 +40,8 @@ const TacheFormModal: React.FC<TacheFormModalProps> = ({
     description: '',
     importance: 'optionnel' as 'pertinent' | 'optionnel'
   });
+  const [dayTaches, setDayTaches] = useState<Tache[]>([]);
+  const [availabilityLoading, setAvailabilityLoading] = useState(false);
 
   useEffect(() => {
     if (editingTache) {
@@ -61,9 +69,121 @@ const TacheFormModal: React.FC<TacheFormModalProps> = ({
 
   const isPertinentEdit = editingTache?.importance === 'pertinent';
   const isFieldDisabledByFollowUp = !!isFollowUp;
+  const excludedTacheId = !isFollowUp ? (editingTache?.id || '') : '';
+
+  useEffect(() => {
+    if (!open || !form.date) {
+      setDayTaches([]);
+      return;
+    }
+
+    let cancelled = false;
+    setAvailabilityLoading(true);
+
+    tacheApi.getByDate(form.date)
+      .then((res) => {
+        if (cancelled) return;
+        setDayTaches(res.data.filter(t => t.id !== excludedTacheId));
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setDayTaches([]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setAvailabilityLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, form.date, excludedTacheId]);
+
+  const timeToMinutes = (time: string) => {
+    const [hours, minutes] = time.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+
+  const minutesToTime = (minutes: number) => {
+    const safeMinutes = Math.max(0, Math.min(DAY_END_MINUTES, minutes));
+    const hours = Math.floor(safeMinutes / 60);
+    const mins = safeMinutes % 60;
+    return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+  };
+
+  const sortedDayTaches = [...dayTaches].sort(
+    (a, b) => timeToMinutes(a.heureDebut) - timeToMinutes(b.heureDebut)
+  );
+
+  const occupiedRanges = sortedDayTaches.map(t => `${t.heureDebut} - ${t.heureFin}`);
+
+  const availableRanges = (() => {
+    const ranges: string[] = [];
+    let cursor = DAY_START_MINUTES;
+
+    sortedDayTaches.forEach(tache => {
+      const start = timeToMinutes(tache.heureDebut);
+      const end = timeToMinutes(tache.heureFin);
+
+      if (start > cursor) {
+        ranges.push(`${minutesToTime(cursor)} - ${minutesToTime(start - 1)}`);
+      }
+
+      cursor = Math.max(cursor, end + 1);
+    });
+
+    if (cursor <= DAY_END_MINUTES) {
+      ranges.push(`${minutesToTime(cursor)} - ${minutesToTime(DAY_END_MINUTES)}`);
+    }
+
+    return ranges;
+  })();
+
+  const validationMessage = (() => {
+    if (!form.heureDebut || !form.heureFin) return '';
+
+    const startMinutes = timeToMinutes(form.heureDebut);
+    const endMinutes = timeToMinutes(form.heureFin);
+
+    if (startMinutes < DAY_START_MINUTES || endMinutes > DAY_END_MINUTES) {
+      return 'Les tâches doivent être planifiées entre 04:00 et 23:59.';
+    }
+
+    if (endMinutes < startMinutes + 1) {
+      return "L'heure de fin doit être au moins 1 minute après l'heure de début.";
+    }
+
+    const startConflict = sortedDayTaches.find(tache => {
+      const occupiedStart = timeToMinutes(tache.heureDebut);
+      const occupiedEnd = timeToMinutes(tache.heureFin);
+      return startMinutes >= occupiedStart && startMinutes <= occupiedEnd;
+    });
+
+    if (startConflict) {
+      return `Cette heure de début est déjà occupée par "${startConflict.description}" (${startConflict.heureDebut} - ${startConflict.heureFin}). Choisissez un créneau libre, idéalement au moins 30 minutes avant ou après.`;
+    }
+
+    const overlapConflict = sortedDayTaches.find(tache => {
+      const occupiedStart = timeToMinutes(tache.heureDebut);
+      const occupiedEnd = timeToMinutes(tache.heureFin);
+      return startMinutes <= occupiedEnd && endMinutes >= occupiedStart;
+    });
+
+    if (overlapConflict) {
+      return `Ce créneau chevauche déjà "${overlapConflict.description}" (${overlapConflict.heureDebut} - ${overlapConflict.heureFin}).`;
+    }
+
+    return '';
+  })();
 
   const handleSubmit = () => {
     if (!form.date || !form.heureDebut || !form.description) return;
+    if (validationMessage) {
+      toast({ title: 'Horaire occupé', description: validationMessage, variant: 'destructive' });
+      return;
+    }
     onSubmit(form);
   };
 
@@ -79,7 +199,7 @@ const TacheFormModal: React.FC<TacheFormModalProps> = ({
           </DialogTitle>
           {isFollowUp && (
             <p className="text-xs text-amber-400 font-bold flex items-center justify-center gap-1">
-              ⚠️ Choisissez une nouvelle date et horaire pour reporter cette tâche
+              ⚠️ Choisissez une nouvelle date et un créneau libre pour reporter cette tâche
             </p>
           )}
           {isPertinentEdit && !isFollowUp && (
@@ -141,6 +261,33 @@ const TacheFormModal: React.FC<TacheFormModalProps> = ({
             </div>
           </div>
 
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-3 space-y-2">
+            <p className="text-xs font-bold text-white/80">Créneaux libres pour le {form.date || 'jour choisi'}</p>
+            {availabilityLoading ? (
+              <p className="text-xs text-white/50">Chargement des horaires...</p>
+            ) : availableRanges.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {availableRanges.map(range => (
+                  <span key={range} className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/15 border border-emerald-500/25 text-emerald-300">
+                    {range}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-red-300">Aucun créneau libre sur cette date.</p>
+            )}
+            {occupiedRanges.length > 0 && (
+              <p className="text-[11px] text-white/55">
+                Occupés : {occupiedRanges.join(' • ')}
+              </p>
+            )}
+            {validationMessage && (
+              <div className="rounded-xl border border-red-500/25 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-200">
+                {validationMessage}
+              </div>
+            )}
+          </div>
+
           <div className="space-y-2">
             <Label className="text-sm font-bold text-white/80 flex items-center gap-2">
               <FileText className="h-4 w-4 text-amber-400" /> Tâche à faire
@@ -199,7 +346,7 @@ const TacheFormModal: React.FC<TacheFormModalProps> = ({
           <div className="flex gap-3 pt-2">
             <Button
               onClick={handleSubmit}
-              disabled={!form.date || !form.heureDebut || !form.description}
+              disabled={!form.date || !form.heureDebut || !form.description || !!validationMessage}
               className={cn(premiumBtnClass, "flex-1 bg-gradient-to-br from-violet-500 via-violet-600 to-purple-700 border-violet-300/40 text-white shadow-[0_20px_70px_rgba(139,92,246,0.6)] disabled:opacity-50 disabled:hover:scale-100")}
             >
               <span className={mirrorShine} />

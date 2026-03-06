@@ -18,6 +18,7 @@ import { Commande, CommandeProduit, CommandeStatut } from '@/types/commande';
 import api from '@/service/api';
 import { rdvFromReservationService } from '@/services/rdvFromReservationService';
 import { reservationRdvSyncService } from '@/services/reservationRdvSyncService';
+import tacheApi from '@/services/api/tacheApi';
 
 // ============================================================================
 // Types locaux
@@ -116,6 +117,13 @@ export const useCommandesLogic = () => {
   const [showRdvFormModal, setShowRdvFormModal] = useState(false);
   const [pendingReservationForRdv, setPendingReservationForRdv] = useState<Commande | null>(null);
   const [isRdvLoading, setIsRdvLoading] = useState(false);
+
+  // =========================================================================
+  // États conflit tâche lors création RDV
+  // =========================================================================
+  const [showTacheConflictModal, setShowTacheConflictModal] = useState(false);
+  const [conflictingTache, setConflictingTache] = useState<any>(null);
+  const [pendingTacheData, setPendingTacheData] = useState<any>(null);
 
   // =========================================================================
   // Fonctions de chargement des données
@@ -641,8 +649,91 @@ export const useCommandesLogic = () => {
       };
       await api.post('/api/rdv', rdvData);
       toast({ title: '📅 Rendez-vous créé', description: `Le RDV a été créé pour le ${pendingReservationForRdv.dateEcheance}`, className: "bg-app-green text-white" });
+
+      // Also create as tache - check for time conflicts first
+      const tacheData = {
+        date: pendingReservationForRdv.dateEcheance || '',
+        heureDebut,
+        heureFin,
+        description: titre || `RDV: ${pendingReservationForRdv.clientNom}`,
+        importance: 'pertinent' as const,
+        travailleurId: '',
+        travailleurNom: '',
+      };
+
+      try {
+        await tacheApi.create(tacheData);
+        toast({ title: '📋 Tâche créée', description: 'La tâche correspondante a été ajoutée au calendrier', className: "bg-app-green text-white" });
+      } catch (tacheErr: any) {
+        if (tacheErr?.response?.status === 409) {
+          // Time conflict - check what task conflicts
+          const conflictData = tacheErr.response.data;
+          const conflictTache = conflictData.conflict;
+          
+          // Try to find the conflicting tache
+          try {
+            const existingTaches = await tacheApi.getByDate(tacheData.date);
+            const conflicting = existingTaches.data.find((t: any) => {
+              const tStart = t.heureDebut.split(':').map(Number);
+              const tEnd = t.heureFin.split(':').map(Number);
+              const tStartMin = tStart[0] * 60 + tStart[1];
+              const tEndMin = tEnd[0] * 60 + tEnd[1];
+              const newStartMin = heureDebut.split(':').map(Number);
+              const newEndMin = heureFin.split(':').map(Number);
+              const nStart = newStartMin[0] * 60 + newStartMin[1];
+              const nEnd = newEndMin[0] * 60 + newEndMin[1];
+              return nStart <= tEndMin && nEnd >= tStartMin;
+            });
+
+            if (conflicting && conflicting.importance !== 'pertinent') {
+              setConflictingTache(conflicting);
+              setPendingTacheData(tacheData);
+              setShowTacheConflictModal(true);
+            } else {
+              toast({ title: '⚠️ Conflit horaire', description: conflictData.error || 'Ce créneau est déjà occupé par une tâche non déplaçable', className: "bg-app-red text-white", variant: 'destructive' });
+            }
+          } catch {
+            toast({ title: '⚠️ Conflit horaire', description: conflictData.error || 'Ce créneau est déjà occupé', className: "bg-app-red text-white", variant: 'destructive' });
+          }
+        } else {
+          console.error('Erreur création tâche:', tacheErr);
+        }
+      }
     } catch (err) { console.error('Erreur création RDV:', err); toast({ title: 'Erreur', description: 'Impossible de créer le rendez-vous', className: "bg-app-red text-white", variant: 'destructive' }); }
     finally { setIsRdvLoading(false); setShowRdvFormModal(false); setPendingReservationForRdv(null); }
+  };
+
+  const handleRescheduleTacheAndCreate = async (tacheId: string, newDate: string, newHeureDebut: string, newHeureFin: string) => {
+    try {
+      // Reschedule conflicting tache
+      await tacheApi.update(tacheId, { date: newDate, heureDebut: newHeureDebut, heureFin: newHeureFin });
+      toast({ title: '✅ Tâche déplacée', description: 'La tâche conflictuelle a été déplacée', className: "bg-app-green text-white" });
+
+      // Now create the new tache
+      if (pendingTacheData) {
+        try {
+          await tacheApi.create(pendingTacheData);
+          toast({ title: '📋 Tâche créée', description: 'La tâche RDV a été ajoutée au calendrier', className: "bg-app-green text-white" });
+        } catch (err) {
+          console.error('Erreur création tâche après reschedule:', err);
+          toast({ title: 'Erreur', description: 'Impossible de créer la tâche après le déplacement', className: "bg-app-red text-white", variant: 'destructive' });
+        }
+      }
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || 'Impossible de déplacer la tâche';
+      toast({ title: 'Erreur', description: msg, className: "bg-app-red text-white", variant: 'destructive' });
+    } finally {
+      setShowTacheConflictModal(false);
+      setConflictingTache(null);
+      setPendingTacheData(null);
+    }
+  };
+
+  const handleSkipTacheConflict = () => {
+    setShowTacheConflictModal(false);
+    setConflictingTache(null);
+    setPendingTacheData(null);
+    toast({ title: 'ℹ️ Tâche non créée', description: 'Le RDV a été créé sans tâche associée' });
   };
 
   const handleDeclineRdv = useCallback(() => { setShowRdvConfirmDialog(false); setPendingReservationForRdv(null); }, []);
@@ -718,6 +809,7 @@ export const useCommandesLogic = () => {
     exportDialogOpen, setExportDialogOpen, exportDate, setExportDate,
     reporterModalOpen, setReporterModalOpen, reporterDate, setReporterDate, reporterHoraire, setReporterHoraire,
     showRdvConfirmDialog, showRdvFormModal, pendingReservationForRdv, isRdvLoading,
+    showTacheConflictModal, conflictingTache,
     // Handlers
     handleClientSelect, handleProductSelect,
     handleAddProduit, handleEditProduit, handleRemoveProduit,
@@ -725,6 +817,7 @@ export const useCommandesLogic = () => {
     handleStatusChange, confirmValidation, confirmCancellation,
     handleReporterConfirm, handleExportPDF,
     handleCreateRdvFromReservation, handleDeclineRdv, handleAcceptRdv, handleCloseRdvModal,
+    handleRescheduleTacheAndCreate, handleSkipTacheConflict,
     getStatusOptions, resetForm,
   };
 };

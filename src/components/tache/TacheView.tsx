@@ -43,7 +43,7 @@ const TacheView: React.FC = () => {
 
   // Travailleur modal
   const [showTravailleurModal, setShowTravailleurModal] = useState(false);
-  const [travailleurForm, setTravailleurForm] = useState({ nom: '', prenom: '', adresse: '', phone: '', genre: 'homme' as 'homme' | 'femme' });
+  const [travailleurForm, setTravailleurForm] = useState({ nom: '', prenom: '', adresse: '', phone: '', genre: 'homme' as 'homme' | 'femme', role: 'autre' as 'administrateur' | 'autre' });
 
   // Follow-up form (pre-filled)
   const [followUpTache, setFollowUpTache] = useState<Tache | null>(null);
@@ -172,6 +172,14 @@ const TacheView: React.FC = () => {
     setShowDayModal(true);
   };
 
+  const handleNavigateToDate = (dateStr: string) => {
+    // Navigate calendar to the month of that date, then open day modal
+    const d = new Date(dateStr + 'T00:00:00');
+    setCurrentDate(new Date(d.getFullYear(), d.getMonth(), 1));
+    setSelectedDay(dateStr);
+    setShowDayModal(true);
+  };
+
   const handleCalendarDrag = (tacheId: string, newDate: string) => {
     const tache = taches.find(t => t.id === tacheId);
     if (!tache || tache.importance === 'pertinent') {
@@ -194,7 +202,23 @@ const TacheView: React.FC = () => {
 
   const handleConfirmValidation = async (tache: Tache) => {
     try {
-      await tacheApi.update(tache.id, { completed: true });
+      // Capture current time as heureFin if completing before scheduled end
+      const now = new Date();
+      const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      const todayStr = now.toISOString().split('T')[0];
+      
+      const updateData: Partial<Tache> = { completed: true };
+      
+      // Only update heureFin if the task is for today and current time is before scheduled end
+      if (tache.date === todayStr) {
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+        const scheduledEndMinutes = timeToMinutes(tache.heureFin);
+        if (currentMinutes < scheduledEndMinutes) {
+          updateData.heureFin = currentTime;
+        }
+      }
+      
+      await tacheApi.update(tache.id, updateData);
       toast({ title: '✅ Tâche validée comme terminée' });
       setShowValidationModal(false);
       setValidationTache(null);
@@ -237,7 +261,7 @@ const TacheView: React.FC = () => {
       await travailleurApi.create(travailleurForm);
       toast({ title: '✅ Travailleur ajouté' });
       setShowTravailleurModal(false);
-      setTravailleurForm({ nom: '', prenom: '', adresse: '', phone: '', genre: 'homme' });
+      setTravailleurForm({ nom: '', prenom: '', adresse: '', phone: '', genre: 'homme', role: 'autre' });
       // Refresh travailleurs
       const travRes = await travailleurApi.getAll();
       setTravailleurs(travRes.data);
@@ -289,6 +313,8 @@ const TacheView: React.FC = () => {
         onShowToday={() => { setSelectedDay(todayStr); setShowDayModal(true); }}
         onShowWeek={() => setShowWeekModal(true)}
         onAddTravailleur={() => setShowTravailleurModal(true)}
+        allTaches={taches}
+        onNavigateToDate={handleNavigateToDate}
       />
 
       <div className="max-w-7xl mx-auto px-4 pb-12">
@@ -307,6 +333,7 @@ const TacheView: React.FC = () => {
         onOpenChange={setShowDayModal}
         selectedDay={selectedDay}
         taches={taches}
+        travailleurs={travailleurs}
         onEdit={(t) => { setEditingTache(t); setFollowUpTache(null); setShowDayModal(false); setShowFormModal(true); }}
         onDelete={(id) => setDeleteConfirm(id)}
         onAddTache={() => { setEditingTache(null); setFollowUpTache(null); setShowDayModal(false); setShowFormModal(true); }}

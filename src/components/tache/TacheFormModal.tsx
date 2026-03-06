@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { ListTodo, CalendarDays, Clock, FileText, AlertTriangle, X } from 'lucide-react';
 import { Tache } from '@/services/api/tacheApi';
 import tacheApi from '@/services/api/tacheApi';
+import rdvApiService from '@/services/api/rdvApi';
 import { Travailleur } from '@/services/api/travailleurApi';
 import TravailleurSearchInput from '@/components/pointage/TravailleurSearchInput';
 import { useToast } from '@/hooks/use-toast';
@@ -27,6 +28,23 @@ interface TacheFormModalProps {
 const DAY_START_MINUTES = 4 * 60;
 const DAY_END_MINUTES = 23 * 60 + 59;
 
+const isAdminTravailleur = (name: string, travailleursList: Travailleur[]) => {
+  if (!name) return false;
+  const nameLower = name.trim().toLowerCase();
+  return travailleursList.some(t => {
+    const fullName = `${t.prenom} ${t.nom}`.trim().toLowerCase();
+    const fullNameReverse = `${t.nom} ${t.prenom}`.trim().toLowerCase();
+    return (fullName === nameLower || fullNameReverse === nameLower) && t.role === 'administrateur';
+  });
+};
+
+interface OccupiedSlot {
+  heureDebut: string;
+  heureFin: string;
+  description: string;
+  source: 'tache' | 'rdv';
+}
+
 const TacheFormModal: React.FC<TacheFormModalProps> = ({
   open, onOpenChange, travailleurs, editingTache, onSubmit, premiumBtnClass, mirrorShine, defaultDate, isFollowUp
 }) => {
@@ -40,7 +58,7 @@ const TacheFormModal: React.FC<TacheFormModalProps> = ({
     description: '',
     importance: 'optionnel' as 'pertinent' | 'optionnel'
   });
-  const [dayTaches, setDayTaches] = useState<Tache[]>([]);
+  const [occupiedSlots, setOccupiedSlots] = useState<OccupiedSlot[]>([]);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
 
   useEffect(() => {
@@ -71,35 +89,64 @@ const TacheFormModal: React.FC<TacheFormModalProps> = ({
   const isFieldDisabledByFollowUp = !!isFollowUp;
   const excludedTacheId = !isFollowUp ? (editingTache?.id || '') : '';
 
+  // Fetch occupied slots filtered by person
   useEffect(() => {
     if (!open || !form.date) {
-      setDayTaches([]);
+      setOccupiedSlots([]);
       return;
     }
 
     let cancelled = false;
     setAvailabilityLoading(true);
 
-    tacheApi.getByDate(form.date)
-      .then((res) => {
+    const personName = (form.travailleurNom || '').trim().toLowerCase();
+
+    Promise.all([
+      tacheApi.getByDate(form.date),
+      isAdminTravailleur(form.travailleurNom, travailleurs) ? rdvApiService.getAll() : Promise.resolve([])
+    ])
+      .then(([tacheRes, rdvs]) => {
         if (cancelled) return;
-        setDayTaches(res.data.filter(t => t.id !== excludedTacheId));
+
+        // Filter taches for THIS person only
+        const tacheSlots: OccupiedSlot[] = tacheRes.data
+          .filter(t => {
+            if (t.id === excludedTacheId) return false;
+            const tName = (t.travailleurNom || '').trim().toLowerCase();
+            return tName === personName;
+          })
+          .map(t => ({
+            heureDebut: t.heureDebut,
+            heureFin: t.heureFin,
+            description: t.description,
+            source: 'tache' as const
+          }));
+
+        // For main user: also add RDV slots (date+time only, no name filter)
+        let rdvSlots: OccupiedSlot[] = [];
+        if (isAdminTravailleur(form.travailleurNom, travailleurs)) {
+          const rdvArray = Array.isArray(rdvs) ? rdvs : [];
+          rdvSlots = rdvArray
+            .filter(r => r.date === form.date && r.statut !== 'annule' && r.statut !== 'termine')
+            .map(r => ({
+              heureDebut: r.heureDebut,
+              heureFin: r.heureFin,
+              description: r.titre || 'RDV',
+              source: 'rdv' as const
+            }));
+        }
+
+        setOccupiedSlots([...tacheSlots, ...rdvSlots]);
       })
       .catch(() => {
-        if (!cancelled) {
-          setDayTaches([]);
-        }
+        if (!cancelled) setOccupiedSlots([]);
       })
       .finally(() => {
-        if (!cancelled) {
-          setAvailabilityLoading(false);
-        }
+        if (!cancelled) setAvailabilityLoading(false);
       });
 
-    return () => {
-      cancelled = true;
-    };
-  }, [open, form.date, excludedTacheId]);
+    return () => { cancelled = true; };
+  }, [open, form.date, excludedTacheId, form.travailleurNom]);
 
   const timeToMinutes = (time: string) => {
     const [hours, minutes] = time.split(':').map(Number);
@@ -113,19 +160,22 @@ const TacheFormModal: React.FC<TacheFormModalProps> = ({
     return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
   };
 
-  const sortedDayTaches = [...dayTaches].sort(
+  const sortedSlots = [...occupiedSlots].sort(
     (a, b) => timeToMinutes(a.heureDebut) - timeToMinutes(b.heureDebut)
   );
 
-  const occupiedRanges = sortedDayTaches.map(t => `${t.heureDebut} - ${t.heureFin}`);
+  const occupiedRanges = sortedSlots.map(s => {
+    const label = s.source === 'rdv' ? '📅' : '📋';
+    return `${label} ${s.heureDebut} - ${s.heureFin}`;
+  });
 
   const availableRanges = (() => {
     const ranges: string[] = [];
     let cursor = DAY_START_MINUTES;
 
-    sortedDayTaches.forEach(tache => {
-      const start = timeToMinutes(tache.heureDebut);
-      const end = timeToMinutes(tache.heureFin);
+    sortedSlots.forEach(slot => {
+      const start = timeToMinutes(slot.heureDebut);
+      const end = timeToMinutes(slot.heureFin);
 
       if (start > cursor) {
         ranges.push(`${minutesToTime(cursor)} - ${minutesToTime(start - 1)}`);
@@ -155,24 +205,15 @@ const TacheFormModal: React.FC<TacheFormModalProps> = ({
       return "L'heure de fin doit être au moins 1 minute après l'heure de début.";
     }
 
-    const startConflict = sortedDayTaches.find(tache => {
-      const occupiedStart = timeToMinutes(tache.heureDebut);
-      const occupiedEnd = timeToMinutes(tache.heureFin);
-      return startMinutes >= occupiedStart && startMinutes <= occupiedEnd;
-    });
-
-    if (startConflict) {
-      return `Cette heure de début est déjà occupée par "${startConflict.description}" (${startConflict.heureDebut} - ${startConflict.heureFin}). Choisissez un créneau libre, idéalement au moins 30 minutes avant ou après.`;
-    }
-
-    const overlapConflict = sortedDayTaches.find(tache => {
-      const occupiedStart = timeToMinutes(tache.heureDebut);
-      const occupiedEnd = timeToMinutes(tache.heureFin);
+    const overlapConflict = sortedSlots.find(slot => {
+      const occupiedStart = timeToMinutes(slot.heureDebut);
+      const occupiedEnd = timeToMinutes(slot.heureFin);
       return startMinutes <= occupiedEnd && endMinutes >= occupiedStart;
     });
 
     if (overlapConflict) {
-      return `Ce créneau chevauche déjà "${overlapConflict.description}" (${overlapConflict.heureDebut} - ${overlapConflict.heureFin}).`;
+      const sourceLabel = overlapConflict.source === 'rdv' ? 'un rendez-vous' : 'une tâche';
+      return `Ce créneau chevauche ${sourceLabel} : "${overlapConflict.description}" (${overlapConflict.heureDebut} - ${overlapConflict.heureFin}).`;
     }
 
     return '';
@@ -186,6 +227,10 @@ const TacheFormModal: React.FC<TacheFormModalProps> = ({
     }
     onSubmit(form);
   };
+
+  const personLabel = form.travailleurNom
+    ? (isAdminTravailleur(form.travailleurNom, travailleurs) ? `${form.travailleurNom} (tâches + RDV)` : `${form.travailleurNom} (tâches)`)
+    : 'jour choisi';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -262,7 +307,9 @@ const TacheFormModal: React.FC<TacheFormModalProps> = ({
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-white/5 p-3 space-y-2">
-            <p className="text-xs font-bold text-white/80">Créneaux libres pour le {form.date || 'jour choisi'}</p>
+            <p className="text-xs font-bold text-white/80">
+              Créneaux libres pour {personLabel} le {form.date || 'jour choisi'}
+            </p>
             {availabilityLoading ? (
               <p className="text-xs text-white/50">Chargement des horaires...</p>
             ) : availableRanges.length > 0 ? (

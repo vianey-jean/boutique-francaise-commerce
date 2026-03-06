@@ -2,13 +2,34 @@ const fs = require('fs');
 const path = require('path');
 
 const tachePath = path.join(__dirname, '../db/tache.json');
+const rdvPath = path.join(__dirname, '../db/rdv.json');
 
 const DAY_START_MINUTES = 4 * 60;
 const DAY_END_MINUTES = 23 * 60 + 59;
 
+const travailleurPath = path.join(__dirname, '../db/travailleur.json');
+
 const readTaches = () => {
   try {
     const data = fs.readFileSync(tachePath, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    return [];
+  }
+};
+
+const readRdvs = () => {
+  try {
+    const data = fs.readFileSync(rdvPath, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    return [];
+  }
+};
+
+const readTravailleurs = () => {
+  try {
+    const data = fs.readFileSync(travailleurPath, 'utf8');
     return JSON.parse(data);
   } catch (error) {
     return [];
@@ -32,6 +53,17 @@ const toTimeString = (minutes) => {
 };
 
 const sortByStartTime = (items) => [...items].sort((a, b) => toMinutes(a.heureDebut) - toMinutes(b.heureDebut));
+
+const isAdmin = (name) => {
+  if (!name) return false;
+  const travailleurs = readTravailleurs();
+  const nameLower = name.trim().toLowerCase();
+  return travailleurs.some(t => {
+    const fullName = `${t.prenom} ${t.nom}`.trim().toLowerCase();
+    const fullNameReverse = `${t.nom} ${t.prenom}`.trim().toLowerCase();
+    return (fullName === nameLower || fullNameReverse === nameLower) && t.role === 'administrateur';
+  });
+};
 
 const getRelatedTaskIds = (taskId, items) => {
   const relatedIds = new Set();
@@ -89,19 +121,60 @@ const buildAvailableSlots = (items) => {
   return slots.filter(slot => toMinutes(slot.start) <= toMinutes(slot.end));
 };
 
-const validateTimeSlot = ({ date, heureDebut, heureFin, excludeId = null }) => {
+/**
+ * Validate time slot per person:
+ * - For main user (RABEMANALINA): check taches by name+date+time AND rdv by date+time only
+ * - For other persons: check taches by name+date+time ONLY
+ */
+const validateTimeSlot = ({ date, heureDebut, heureFin, excludeId = null, travailleurNom = '' }) => {
   const items = readTaches();
   const startMinutes = toMinutes(heureDebut);
   const endMinutes = toMinutes(heureFin || heureDebut);
-  const sameDayItems = sortByStartTime(
-    items.filter(item => item.date === date && item.id !== excludeId)
+
+  // Filter taches for THIS person only on this date
+  const personTaches = sortByStartTime(
+    items.filter(item => {
+      if (item.id === excludeId) return false;
+      if (item.date !== date) return false;
+      // Only conflict with same person's tasks
+      const itemName = (item.travailleurNom || '').trim().toLowerCase();
+      const checkName = (travailleurNom || '').trim().toLowerCase();
+      return itemName === checkName;
+    })
   );
+
+  // For admin users, also get RDV slots (date+time only, no name filter)
+  let rdvSlots = [];
+  if (isAdmin(travailleurNom)) {
+    const rdvs = readRdvs();
+    rdvSlots = rdvs
+      .filter(r => r.date === date && r.statut !== 'annule' && r.statut !== 'termine')
+      .map(r => ({
+        heureDebut: r.heureDebut,
+        heureFin: r.heureFin,
+        description: r.titre || 'RDV',
+        source: 'rdv'
+      }));
+  }
+
+  // Combine all occupied slots for this person
+  const allOccupied = [
+    ...personTaches.map(t => ({
+      heureDebut: t.heureDebut,
+      heureFin: t.heureFin || t.heureDebut,
+      description: t.description,
+      source: 'tache'
+    })),
+    ...rdvSlots
+  ];
+
+  const sortedOccupied = sortByStartTime(allOccupied);
 
   if (!date || !heureDebut || !heureFin) {
     return {
       valid: false,
       error: 'Date, heure de début et heure de fin sont requis.',
-      availableSlots: buildAvailableSlots(sameDayItems)
+      availableSlots: buildAvailableSlots(sortedOccupied)
     };
   }
 
@@ -109,7 +182,7 @@ const validateTimeSlot = ({ date, heureDebut, heureFin, excludeId = null }) => {
     return {
       valid: false,
       error: 'Les tâches doivent être planifiées entre 04:00 et 23:59.',
-      availableSlots: buildAvailableSlots(sameDayItems)
+      availableSlots: buildAvailableSlots(sortedOccupied)
     };
   }
 
@@ -117,28 +190,29 @@ const validateTimeSlot = ({ date, heureDebut, heureFin, excludeId = null }) => {
     return {
       valid: false,
       error: "L'heure de fin doit être au moins 1 minute après l'heure de début.",
-      availableSlots: buildAvailableSlots(sameDayItems)
+      availableSlots: buildAvailableSlots(sortedOccupied)
     };
   }
 
-  const conflict = sameDayItems.find(item => {
+  const conflict = sortedOccupied.find(item => {
     const itemStart = toMinutes(item.heureDebut);
     const itemEnd = toMinutes(item.heureFin || item.heureDebut);
     return startMinutes <= itemEnd && endMinutes >= itemStart;
   });
 
   if (conflict) {
+    const sourceLabel = conflict.source === 'rdv' ? 'un rendez-vous' : 'une tâche';
     return {
       valid: false,
-      error: `Cet horaire est déjà occupé par "${conflict.description}" (${conflict.heureDebut} - ${conflict.heureFin}). Choisissez un créneau libre, idéalement au moins 30 minutes avant ou après.`,
+      error: `Cet horaire est déjà occupé par ${sourceLabel} : "${conflict.description}" (${conflict.heureDebut} - ${conflict.heureFin}). Choisissez un créneau libre.`,
       conflict,
-      availableSlots: buildAvailableSlots(sameDayItems)
+      availableSlots: buildAvailableSlots(sortedOccupied)
     };
   }
 
   return {
     valid: true,
-    availableSlots: buildAvailableSlots(sameDayItems)
+    availableSlots: buildAvailableSlots(sortedOccupied)
   };
 };
 
@@ -162,6 +236,7 @@ const Tache = {
     return readTaches().find(item => item.id === id) || null;
   },
 
+  isAdmin,
   validateTimeSlot,
 
   create: (itemData) => {
@@ -178,7 +253,6 @@ const Tache = {
       writeTaches(items);
       return newItem;
     } catch (error) {
-      console.error('Error creating tache:', error);
       return null;
     }
   },
@@ -190,13 +264,17 @@ const Tache = {
       if (index === -1) return null;
       const existing = items[index];
 
-      if (itemData.completed !== undefined && Object.keys(itemData).length === 1) {
+      if (itemData.completed !== undefined && Object.keys(itemData).filter(k => k !== 'completed' && k !== 'heureFin').length === 0) {
         const relatedIds = getRelatedTaskIds(id, items);
-        items = items.map(item => (
-          relatedIds.has(item.id)
-            ? { ...item, completed: itemData.completed }
-            : item
-        ));
+        items = items.map(item => {
+          if (!relatedIds.has(item.id)) return item;
+          const update = { ...item, completed: itemData.completed };
+          // Only update heureFin for the specific task being validated, not related ones
+          if (item.id === id && itemData.heureFin) {
+            update.heureFin = itemData.heureFin;
+          }
+          return update;
+        });
         writeTaches(items);
         return items.find(item => item.id === id) || null;
       }
@@ -217,7 +295,6 @@ const Tache = {
       writeTaches(items);
       return items[index];
     } catch (error) {
-      console.error('Error updating tache:', error);
       return null;
     }
   },
@@ -232,7 +309,6 @@ const Tache = {
       writeTaches(items);
       return true;
     } catch (error) {
-      console.error('Error deleting tache:', error);
       return false;
     }
   }

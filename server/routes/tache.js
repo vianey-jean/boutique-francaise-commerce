@@ -43,7 +43,8 @@ router.post('/', (req, res) => {
   const validation = Tache.validateTimeSlot({
     date,
     heureDebut,
-    heureFin: normalizedHeureFin
+    heureFin: normalizedHeureFin,
+    travailleurNom: travailleurNom || ''
   });
 
   if (!validation.valid) {
@@ -73,8 +74,10 @@ router.put('/:id', (req, res) => {
   const existing = Tache.getById(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Tâche non trouvée' });
 
-  if (req.body.completed !== undefined && Object.keys(req.body).length === 1) {
-    const updated = Tache.update(req.params.id, { completed: req.body.completed });
+  if (req.body.completed !== undefined && Object.keys(req.body).filter(k => k !== 'completed' && k !== 'heureFin').length === 0) {
+    const updateData = { completed: req.body.completed };
+    if (req.body.heureFin) updateData.heureFin = req.body.heureFin;
+    const updated = Tache.update(req.params.id, updateData);
     if (!updated) return res.status(500).json({ error: 'Erreur mise à jour' });
     return res.json(updated);
   }
@@ -88,12 +91,14 @@ router.put('/:id', (req, res) => {
   const nextDate = req.body.date || existing.date;
   const nextHeureDebut = req.body.heureDebut || existing.heureDebut;
   const nextHeureFin = req.body.heureFin || existing.heureFin;
+  const nextTravailleurNom = req.body.travailleurNom || existing.travailleurNom || '';
 
   const validation = Tache.validateTimeSlot({
     date: nextDate,
     heureDebut: nextHeureDebut,
     heureFin: nextHeureFin,
-    excludeId: req.params.id
+    excludeId: req.params.id,
+    travailleurNom: nextTravailleurNom
   });
 
   if (!validation.valid) {

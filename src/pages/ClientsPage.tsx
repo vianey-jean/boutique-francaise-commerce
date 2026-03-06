@@ -174,6 +174,7 @@ const ClientsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => 
   // Loading
   // =========================================================================
   if (isLoading) {
+    if (embedded) return <PremiumLoading text="Bienvenue sur Listes des Clients" size="xl" overlay={false} variant="default" />;
     return (
       <Layout>
         <PremiumLoading text="Bienvenue sur Listes des Clients" size="xl" overlay={true} variant="default" />
@@ -184,10 +185,11 @@ const ClientsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => 
   // =========================================================================
   // Rendu
   // =========================================================================
-  return (
+  const mainContent = (
+    <>
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/30 to-indigo-50/50 dark:from-[#030014] dark:via-[#0a0020]/80 dark:to-[#0e0030]">
-      <Navbar />
-      <ScrollToTop />
+      {!embedded && <Navbar />}
+      {!embedded && <ScrollToTop />}
 
       {/* Section héroïque décomposée */}
       <ClientHero clientCount={clients.length} onAddClient={handleAddClient} />

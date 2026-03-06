@@ -217,6 +217,7 @@ const RdvPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   }
 
   const content = (
+    <>
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30 dark:from-slate-900 dark:via-purple-950/30 dark:to-indigo-950/50">
         {/* Hero */}
         <RdvHero onNewRdv={() => handleOpenForm()} />

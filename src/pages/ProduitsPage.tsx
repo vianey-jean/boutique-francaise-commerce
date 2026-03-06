@@ -35,7 +35,7 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://server-gestion-ve
 
 type FilterType = 'tous' | 'perruque' | 'tissage' | 'extension' | 'autres';
 
-const ProduitsPage: React.FC = () => {
+const ProduitsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   const { products, fetchProducts } = useApp();
   const { toast } = useToast();
 

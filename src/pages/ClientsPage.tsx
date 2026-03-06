@@ -319,7 +319,7 @@ const ClientsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => 
         )}
       </div>
 
-      <Footer />
+      {!embedded && <Footer />}
       
       {/* Dialog principal ajout/modification */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>

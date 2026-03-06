@@ -35,7 +35,7 @@ import TendancesRecommendationsTab from '@/pages/tendances/TendancesRecommendati
 import TendancesStockTab from '@/pages/tendances/TendancesStockTab';
 import TendancesClientsTab from '@/pages/tendances/TendancesClientsTab';
 
-const TendancesPage = () => {
+const TendancesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   const { allSales, products, loading } = useApp();
   const [activeTab, setActiveTab] = useState('overview');
   const isMobile = useIsMobile();

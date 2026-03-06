@@ -403,7 +403,11 @@ const ClientsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => 
         </DialogContent>
       </Dialog>
     </div>
+    </>
   );
+
+  if (embedded) return mainContent;
+  return mainContent;
 };
 
 export default ClientsPage;

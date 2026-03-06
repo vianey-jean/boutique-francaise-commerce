@@ -115,16 +115,19 @@ const TendancesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) =
               <TendancesStockTab stockAnalysis={stockAnalysis} dailySalesAnalysis={dailySalesAnalysis} salesData={salesData} />
             </TabsContent>
           </Tabs>
-        </div>
       </div>
+    </div>
 
-      {/* Stats Modals */}
-      <VentesTotalesModal isOpen={activeModal === 'ventes'} onClose={() => setActiveModal(null)} revenue={salesData.totals.revenue} sales={salesData.totals.sales} salesByProduct={salesByProduct} />
-      <BeneficesModal isOpen={activeModal === 'benefices'} onClose={() => setActiveModal(null)} profit={salesData.totals.profit} margin={salesData.totals.revenue > 0 ? (salesData.totals.profit / salesData.totals.revenue) * 100 : 0} salesByProduct={salesByProduct} />
-      <ProduitsVendusModal isOpen={activeModal === 'produits'} onClose={() => setActiveModal(null)} quantity={salesData.totals.quantity} uniqueProducts={salesByProduct.length} salesByProduct={salesByProduct} />
-      <MeilleurRoiModal isOpen={activeModal === 'roi'} onClose={() => setActiveModal(null)} buyingRecommendations={buyingRecommendations} />
-    </Layout>
+    {/* Stats Modals */}
+    <VentesTotalesModal isOpen={activeModal === 'ventes'} onClose={() => setActiveModal(null)} revenue={salesData.totals.revenue} sales={salesData.totals.sales} salesByProduct={salesByProduct} />
+    <BeneficesModal isOpen={activeModal === 'benefices'} onClose={() => setActiveModal(null)} profit={salesData.totals.profit} margin={salesData.totals.revenue > 0 ? (salesData.totals.profit / salesData.totals.revenue) * 100 : 0} salesByProduct={salesByProduct} />
+    <ProduitsVendusModal isOpen={activeModal === 'produits'} onClose={() => setActiveModal(null)} quantity={salesData.totals.quantity} uniqueProducts={salesByProduct.length} salesByProduct={salesByProduct} />
+    <MeilleurRoiModal isOpen={activeModal === 'roi'} onClose={() => setActiveModal(null)} buyingRecommendations={buyingRecommendations} />
+    </>
   );
+
+  if (embedded) return content;
+  return <Layout requireAuth>{content}</Layout>;
 };
 
 export default TendancesPage;

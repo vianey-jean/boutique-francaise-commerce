@@ -293,8 +293,11 @@ const RdvPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
         {/* Stats Details Modal */}
         <RdvStatsDetailsModal isOpen={statsModalOpen} onClose={() => setStatsModalOpen(false)} title={statsModalTitle} rdvs={statsModalRdvs} onRdvClick={handleStatsModalRdvClick} accentColor={statsModalColor} />
       </div>
-    </Layout>
+    </div>
   );
+
+  if (embedded) return content;
+  return <Layout>{content}</Layout>;
 };
 
 export default RdvPage;

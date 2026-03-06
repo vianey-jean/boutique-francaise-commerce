@@ -260,8 +260,8 @@ const ProduitsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) =>
     { key: 'autres', label: 'Autres', icon: <Filter className="h-3.5 w-3.5" /> },
   ];
 
-  return (
-    <Layout>
+  const content = (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-violet-50/30 to-fuchsia-50/20 dark:from-[#030014] dark:via-[#0a0025] dark:to-[#0e0030]">
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-violet-50/30 to-fuchsia-50/20 dark:from-[#030014] dark:via-[#0a0025] dark:to-[#0e0030]">
         {/* Hero */}
         <div className="relative overflow-hidden">

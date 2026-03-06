@@ -23,7 +23,7 @@ import TacheView from '@/components/tache/TacheView';
 const premiumBtnClass = "group relative overflow-hidden rounded-xl sm:rounded-2xl backdrop-blur-xl border transition-all duration-300 hover:scale-105 px-4 py-2 sm:px-5 sm:py-3 text-xs sm:text-sm font-semibold";
 const mirrorShine = "absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500";
 
-const PointagePage: React.FC = () => {
+const PointagePage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<'pointage' | 'tache'>('pointage');
   const [currentDate, setCurrentDate] = useState(new Date());

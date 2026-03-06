@@ -206,6 +206,7 @@ const RdvPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   };
 
   if (loading) {
+    if (embedded) return <PremiumLoading text="Chargement des rendez-vous..." size="xl" variant="dashboard" />;
     return (
       <Layout>
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-purple-900/20">
@@ -215,9 +216,8 @@ const RdvPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
     );
   }
 
-  return (
-    <Layout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30 dark:from-slate-900 dark:via-purple-950/30 dark:to-indigo-950/50">
+  const content = (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30 dark:from-slate-900 dark:via-purple-950/30 dark:to-indigo-950/50">
         {/* Hero */}
         <RdvHero onNewRdv={() => handleOpenForm()} />
 

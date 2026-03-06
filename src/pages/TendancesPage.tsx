@@ -61,6 +61,7 @@ const TendancesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) =
   };
 
   if (loading) {
+    if (embedded) return <PremiumLoading text="Chargement des Tendances" size="lg" overlay={false} variant="tendances" />;
     return (
       <Layout requireAuth>
         <PremiumLoading text="Chargement des Tendances" size="lg" overlay={true} variant="tendances" />
@@ -68,10 +69,9 @@ const TendancesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) =
     );
   }
 
-  return (
-    <Layout requireAuth>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50/20 to-purple-50/30 dark:from-[#030014] dark:via-[#0a0020]/80 dark:to-[#0e0030]">
-        <div className="container mx-auto px-4 py-8">
+  const content = (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50/20 to-purple-50/30 dark:from-[#030014] dark:via-[#0a0020]/80 dark:to-[#0e0030]">
+      <div className="container mx-auto px-4 py-8">
           {/* Hero */}
           <TendancesHero />
 

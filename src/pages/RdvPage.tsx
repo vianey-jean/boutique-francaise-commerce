@@ -26,7 +26,7 @@ import { RdvHero, RdvPageStatsCards, RdvSearchBar, RdvListView } from '@/pages/r
 
 const ITEMS_PER_PAGE = 20;
 
-const RdvPage: React.FC = () => {
+const RdvPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   const { rdvs, loading, createRdv, updateRdv, deleteRdv, markAsNotified, checkConflicts } = useRdv();
   const [searchParams, setSearchParams] = useSearchParams();
   

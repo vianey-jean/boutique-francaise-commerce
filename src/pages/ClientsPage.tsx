@@ -48,7 +48,7 @@ interface Client {
 // Composant Principal
 // ============================================================================
 
-const ClientsPage: React.FC = () => {
+const ClientsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   const { isAuthenticated } = useAuth();
   const { clients, isLoading, refetch } = useClientSync();
   const { toast } = useToast();

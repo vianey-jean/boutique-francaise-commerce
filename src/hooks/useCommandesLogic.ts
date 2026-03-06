@@ -580,6 +580,19 @@ export const useCommandesLogic = () => {
       const totalSellingPrice = commandeToValidate.produits.reduce((sum, p) => sum + (p.prixVente * p.quantite), 0);
       const saleData = { date: today, products: saleProducts, totalPurchasePrice, totalSellingPrice, totalProfit: totalSellingPrice - totalPurchasePrice, clientName: commandeToValidate.clientNom, clientAddress: commandeToValidate.clientAddress, clientPhone: commandeToValidate.clientPhone, reste: 0, nextPaymentDate: null };
       if (commandeToValidate.type === 'reservation') { try { await api.put(`/api/rdv/by-commande/${validatingId}`, { statut: 'confirme' }); } catch (rdvError) { console.log('RDV non trouvé:', rdvError); } }
+      // Mark associated tache as completed with current time as heureFin
+      if (commandeToValidate.type === 'reservation') {
+        try {
+          const tachesResponse = await tacheApi.getAll();
+          const taches = tachesResponse.data || tachesResponse;
+          const associatedTache = (taches as any[]).find((t: any) => t.commandeId === validatingId);
+          if (associatedTache && !associatedTache.completed) {
+            const now = new Date();
+            const currentHeureFin = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+            await tacheApi.update(associatedTache.id, { completed: true, heureFin: currentHeureFin });
+          }
+        } catch (tacheErr) { console.log('Tâche associée non trouvée:', tacheErr); }
+      }
       const saleResponse = await api.post('/api/sales', saleData);
       const createdSale = saleResponse.data;
       await api.put(`/api/commandes/${validatingId}`, { statut: 'valide', saleId: createdSale.id });
@@ -659,6 +672,7 @@ export const useCommandesLogic = () => {
         importance: 'pertinent' as const,
         travailleurId: '',
         travailleurNom: '',
+        commandeId: pendingReservationForRdv.id,
       };
 
       try {

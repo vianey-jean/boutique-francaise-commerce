@@ -196,9 +196,8 @@ const PointagePage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) =>
     }
   };
 
-  return (
-    <Layout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 dark:from-[#030014] dark:via-[#0a0025] dark:to-[#0e0035]">
+  const content = (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 dark:from-[#030014] dark:via-[#0a0025] dark:to-[#0e0035]">
         <PointageTabNav activeTab={activeTab} onTabChange={setActiveTab} />
 
         {activeTab === 'pointage' ? (

@@ -33,7 +33,7 @@ router.get('/:id', (req, res) => {
 
 // POST create
 router.post('/', (req, res) => {
-  const { date, heureDebut, heureFin, description, importance, travailleurId, travailleurNom, parentId } = req.body;
+  const { date, heureDebut, heureFin, description, importance, travailleurId, travailleurNom, parentId, commandeId } = req.body;
   const normalizedHeureFin = heureFin || heureDebut;
 
   if (!date || !heureDebut || !description || !importance) {
@@ -63,7 +63,8 @@ router.post('/', (req, res) => {
     importance,
     travailleurId: travailleurId || '',
     travailleurNom: travailleurNom || '',
-    parentId: parentId || undefined
+    parentId: parentId || undefined,
+    commandeId: commandeId || undefined
   });
   if (!tache) return res.status(500).json({ error: 'Erreur création' });
   res.status(201).json(tache);

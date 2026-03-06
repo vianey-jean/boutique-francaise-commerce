@@ -874,8 +874,11 @@ const ProduitsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) =>
         isOpen={isEditProductOpen}
         onClose={() => setIsEditProductOpen(false)}
       />
-    </Layout>
+    </div>
   );
+
+  if (embedded) return content;
+  return <Layout>{content}</Layout>;
 };
 
 export default ProduitsPage;

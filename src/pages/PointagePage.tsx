@@ -282,8 +282,10 @@ const PointagePage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) =>
           <TacheView />
         )}
       </div>
-    </Layout>
   );
+
+  if (embedded) return content;
+  return <Layout>{content}</Layout>;
 };
 
 export default PointagePage;

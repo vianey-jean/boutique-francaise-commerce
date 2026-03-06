@@ -178,8 +178,11 @@ const CommandesPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) =
         onReschedule={logic.handleRescheduleTacheAndCreate}
         onSkip={logic.handleSkipTacheConflict}
       />
-    </Layout>
+    </>
   );
+
+  if (embedded) return content;
+  return <Layout>{content}</Layout>;
 };
 
 export default CommandesPage;

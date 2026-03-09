@@ -102,7 +102,7 @@ app.use(cors(corsOptions));
 
 // Ne pas bloquer SSE (connexion longue) avec le rate-limit global
 app.use((req, res, next) => {
-  if (req.path === '/api/sync/events') {
+  if (req.path === '/api/sync/events' || req.path === '/api/messagerie/events') {
     return next();
   }
   return rateLimitMiddleware('general')(req, res, next);

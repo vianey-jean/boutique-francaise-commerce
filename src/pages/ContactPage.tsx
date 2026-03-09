@@ -98,16 +98,54 @@ const ContactPage: React.FC = () => {
                 <div className="text-emerald-200/50 mb-8 text-lg leading-relaxed">
                   Merci pour votre message. Notre équipe vous répondra dans les plus brefs délais.
                 </div>
-                <Button
-                  onClick={() => setIsSubmitted(false)}
-                  className="w-full h-14 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white text-lg font-semibold shadow-[0_20px_40px_rgba(16,185,129,0.3)] border border-white/10 rounded-xl transition-all duration-300 hover:scale-[1.02]"
-                >
-                  <Send className="mr-3 h-5 w-5" />
-                  Envoyer un autre message
-                </Button>
+                <div className="space-y-4">
+                  <Button
+                    onClick={() => setIsSubmitted(false)}
+                    className="w-full h-14 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white text-lg font-semibold shadow-[0_20px_40px_rgba(16,185,129,0.3)] border border-white/10 rounded-xl transition-all duration-300 hover:scale-[1.02]"
+                  >
+                    <Send className="mr-3 h-5 w-5" />
+                    Envoyer un autre message
+                  </Button>
+
+                  <Button
+                    onClick={() => setShowLiveChat(true)}
+                    disabled={!adminOnline}
+                    className={`w-full h-14 text-lg font-semibold rounded-xl border border-white/10 transition-all duration-300 hover:scale-[1.02] ${
+                      adminOnline
+                        ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white shadow-[0_20px_40px_rgba(139,92,246,0.3)]'
+                        : 'bg-white/[0.05] text-white/30 cursor-not-allowed'
+                    }`}
+                  >
+                    <div className="flex items-center justify-center gap-3">
+                      <div className="relative">
+                        <MessageCircle className="h-5 w-5" />
+                        {adminOnline && (
+                          <Radio className="absolute -top-1 -right-1 h-3 w-3 text-emerald-400 animate-pulse" />
+                        )}
+                      </div>
+                      {adminOnline ? 'Chat en direct' : 'Chat hors ligne'}
+                      {adminOnline && (
+                        <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 text-xs rounded-full border border-emerald-500/30">
+                          LIVE
+                        </span>
+                      )}
+                    </div>
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </motion.div>
+
+          {/* Live Chat Visitor Widget */}
+          <AnimatePresence>
+            {showLiveChat && adminOnline && (
+              <LiveChatVisitor
+                visitorNom={submittedName || 'Visiteur'}
+                adminId="1"
+                onClose={() => setShowLiveChat(false)}
+              />
+            )}
+          </AnimatePresence>
         </div>
       </Layout>
     );

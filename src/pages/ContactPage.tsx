@@ -41,6 +41,22 @@ const ContactPage: React.FC = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  // Check admin online status
+  useEffect(() => {
+    const checkAdmin = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/messagerie/admin-status`);
+        if (res.ok) {
+          const data = await res.json();
+          setAdminOnline(data.online);
+        }
+      } catch { setAdminOnline(false); }
+    };
+    checkAdmin();
+    const interval = setInterval(checkAdmin, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.expediteurNom || !formData.expediteurEmail || !formData.sujet || !formData.contenu) {
@@ -50,6 +66,7 @@ const ContactPage: React.FC = () => {
     setIsSubmitting(true);
     try {
       await sendMessage(formData);
+      setSubmittedName(formData.expediteurNom);
       setIsSubmitted(true);
       toast({ title: "Message envoyé", description: "Votre message a été envoyé avec succès." });
       setFormData({ expediteurNom: '', expediteurEmail: '', expediteurTelephone: '', sujet: '', contenu: '', destinataireId: '1' });

@@ -17,15 +17,17 @@ import DayDetailModal from '@/components/pointage/modals/DayDetailModal';
 import EditPointageModal from '@/components/pointage/modals/EditPointageModal';
 import ParPersonneModal from '@/components/pointage/modals/ParPersonneModal';
 import YearlyTotalModal from '@/components/pointage/modals/YearlyTotalModal';
+import MonthDetailModal from '@/components/pointage/modals/MonthDetailModal';
 import PointageConfirmDialogs from '@/components/pointage/modals/PointageConfirmDialogs';
+import AvanceModal from '@/components/pointage/modals/AvanceModal';
 import TacheView from '@/components/tache/TacheView';
-
+import NotesKanbanView from '@/components/notes/NotesKanbanView';
 const premiumBtnClass = "group relative overflow-hidden rounded-xl sm:rounded-2xl backdrop-blur-xl border transition-all duration-300 hover:scale-105 px-4 py-2 sm:px-5 sm:py-3 text-xs sm:text-sm font-semibold";
 const mirrorShine = "absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500";
 
 const PointagePage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<'pointage' | 'tache'>('pointage');
+  const [activeTab, setActiveTab] = useState<'pointage' | 'tache' | 'notes'>('pointage');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [entreprises, setEntreprises] = useState<Entreprise[]>([]);
   const [pointages, setPointages] = useState<PointageEntry[]>([]);
@@ -40,6 +42,8 @@ const PointagePage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) =>
   const [showTravailleurModal, setShowTravailleurModal] = useState(false);
   const [showParPersonneModal, setShowParPersonneModal] = useState(false);
   const [showYearlyModal, setShowYearlyModal] = useState(false);
+  const [showAvanceModal, setShowAvanceModal] = useState(false);
+  const [showMonthDetailModal, setShowMonthDetailModal] = useState(false);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [editingPointage, setEditingPointage] = useState<PointageEntry | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
@@ -212,8 +216,10 @@ const PointagePage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) =>
               onAddEntreprise={() => setShowEntrepriseModal(true)}
               onAddTravailleur={() => setShowTravailleurModal(true)}
               onNewPointage={() => { setPtForm({ ...ptForm, date: new Date().toISOString().split('T')[0] }); setShowPointageModal(true); }}
+              onPriseAvance={() => setShowAvanceModal(true)}
               onShowParPersonne={() => setShowParPersonneModal(true)}
               onShowYearlyTotal={handleShowYearlyTotal}
+              onShowMonthDetail={() => setShowMonthDetailModal(true)}
               year={year}
             />
 
@@ -266,9 +272,19 @@ const PointagePage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) =>
               travailleurs={travailleurs}
               premiumBtnClass={premiumBtnClass} mirrorShine={mirrorShine}
             />
+            <AvanceModal
+              open={showAvanceModal} onOpenChange={setShowAvanceModal}
+              travailleurs={travailleurs} entreprises={entreprises}
+              premiumBtnClass={premiumBtnClass} mirrorShine={mirrorShine}
+            />
             <YearlyTotalModal
               open={showYearlyModal} onOpenChange={setShowYearlyModal}
               year={year} yearlyPointages={yearlyPointages} loading={yearlyLoading}
+            />
+            <MonthDetailModal
+              open={showMonthDetailModal} onOpenChange={setShowMonthDetailModal}
+              monthTotal={getMonthTotal()} pointages={pointages}
+              year={year} month={month}
             />
             <PointageConfirmDialogs
               deleteConfirm={deleteConfirm} setDeleteConfirm={setDeleteConfirm}
@@ -278,8 +294,10 @@ const PointagePage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) =>
               premiumBtnClass={premiumBtnClass} mirrorShine={mirrorShine}
             />
           </>
-        ) : (
+        ) : activeTab === 'tache' ? (
           <TacheView />
+        ) : (
+          <NotesKanbanView />
         )}
       </div>
   );

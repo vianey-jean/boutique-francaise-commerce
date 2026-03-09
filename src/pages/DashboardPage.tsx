@@ -40,7 +40,7 @@ import tacheApi from '@/services/api/tacheApi';
 const VentesContent = lazy(() => import('@/pages/VentesEmbedded'));
 const CommandesPage = lazy(() => import('@/pages/CommandesPage'));
 const RdvPage = lazy(() => import('@/pages/RdvPage'));
-const TendancesPage = lazy(() => import('@/pages/TendancesPage'));
+const ComptabiliteFinancesContent = lazy(() => import('@/components/dashboard/AdvancedDashboard'));
 const ClientsPage = lazy(() => import('@/pages/ClientsPage'));
 const ProduitsPage = lazy(() => import('@/pages/ProduitsPage'));
 const PointagePage = lazy(() => import('@/pages/PointagePage'));
@@ -93,9 +93,9 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
     activeText: 'text-orange-600 dark:text-orange-400',
   },
   {
-    id: 'tendances',
-    label: 'Tendances',
-    shortLabel: 'Tendances',
+    id: 'comptabilite',
+    label: 'Comptabilité & Finances',
+    shortLabel: 'Compta',
     icon: TrendingUp,
     gradient: 'from-cyan-500 to-blue-600',
     iconBg: 'bg-gradient-to-br from-cyan-500 to-blue-600',
@@ -159,6 +159,18 @@ const DashboardPage = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Adjust main content margin for fixed sidebar on desktop
+  React.useEffect(() => {
+    const mainContent = document.getElementById('main-content');
+    if (!isMobile && mainContent) {
+      const sidebarWidth = sidebarCollapsed ? 80 : 288;
+      mainContent.style.marginLeft = `${sidebarWidth}px`;
+      return () => {
+        mainContent.style.marginLeft = '0';
+      };
+    }
+  }, [isMobile, sidebarCollapsed]);
+
   const activeItem = SIDEBAR_ITEMS.find(i => i.id === activeSection)!;
 
   const handleSectionChange = (id: string) => {
@@ -168,7 +180,7 @@ const DashboardPage = () => {
 
   const renderContent = () => {
     const fallback = <PremiumLoading text="Chargement..." size="lg" overlay={false} variant="default" />;
-    
+
     switch (activeSection) {
       case 'ventes':
         return <Suspense fallback={fallback}><VentesContent /></Suspense>;
@@ -176,8 +188,8 @@ const DashboardPage = () => {
         return <Suspense fallback={fallback}><CommandesPage embedded /></Suspense>;
       case 'rdv':
         return <Suspense fallback={fallback}><RdvPage embedded /></Suspense>;
-      case 'tendances':
-        return <Suspense fallback={fallback}><TendancesPage embedded /></Suspense>;
+      case 'comptabilite':
+        return <Suspense fallback={fallback}><ComptabiliteFinancesContent /></Suspense>;
       case 'clients':
         return <Suspense fallback={fallback}><ClientsPage embedded /></Suspense>;
       case 'produits':
@@ -192,7 +204,7 @@ const DashboardPage = () => {
   return (
     <Layout requireAuth>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 dark:from-[#030014] dark:via-[#0a0025] dark:to-[#0e0035]">
-        
+
         {/* Mobile top bar */}
         {isMobile && (
           <div className="sticky top-16 z-40 px-3 pt-2 pb-1">
@@ -292,13 +304,13 @@ const DashboardPage = () => {
               initial={{ x: -20, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               className={cn(
-                'sticky top-16 h-[calc(100vh-4rem)] flex-shrink-0 transition-all duration-500 z-30',
+                'fixed top-16 left-0 h-[calc(100vh-4rem)] flex-shrink-0 transition-all duration-500 z-30',
                 sidebarCollapsed ? 'w-20' : 'w-72'
               )}
             >
               <div className="h-full p-3">
                 <div className="h-full rounded-3xl bg-white/60 dark:bg-white/5 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-2xl shadow-violet-500/5 flex flex-col overflow-hidden">
-                  
+
                   {/* Sidebar header */}
                   <div className="p-4 border-b border-white/10">
                     <div className="flex items-center justify-between">
@@ -416,9 +428,19 @@ const DashboardPage = () => {
                     <div className="p-4 border-t border-white/10">
                       <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-violet-500/5 to-fuchsia-500/5 border border-violet-200/20 dark:border-violet-800/20">
                         <Gem className="h-4 w-4 text-fuchsia-500" />
-                        <span className="text-[10px] font-bold text-muted-foreground">Ultra Premium</span>
+
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-bold text-muted-foreground">
+                            Ultra Premium
+                          </span>
+
+                        </div>
+
                         <Star className="h-3 w-3 text-amber-500 ml-auto" />
                       </div>
+                      <span className="text-[13px] font-bold text-blue-500">
+                        Créé par Jean Rabemanalina en 2026
+                      </span>
                     </div>
                   )}
                 </div>

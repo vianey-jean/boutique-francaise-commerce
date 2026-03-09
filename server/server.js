@@ -274,7 +274,6 @@ const tacheRoutes = require('./routes/tache');
 const notesRoutes = require('./routes/notes');
 const avanceRoutes = require('./routes/avance');
 const profileRoutes = require('./routes/profile');
-const messagerieRoutes = require('./routes/messagerie');
 
 // Use routes
 app.use('/api/auth', authRoutes);
@@ -303,7 +302,6 @@ app.use('/api/taches', tacheRoutes);
 app.use('/api/notes', notesRoutes);
 app.use('/api/avances', avanceRoutes);
 app.use('/api/profile', profileRoutes);
-app.use('/api/messagerie', messagerieRoutes);
 
 // Static file serving for uploaded files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

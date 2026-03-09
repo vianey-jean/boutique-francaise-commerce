@@ -1,17 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Mail, Phone, MapPin, Send, CheckCircle, Clock, Globe, Shield, Sparkles, Crown, MessageCircle } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, CheckCircle, Clock, Globe, Shield, Sparkles, Crown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Layout from '@/components/Layout';
 import { useMessages } from '@/hooks/use-messages';
-import { motion, AnimatePresence } from "framer-motion";
-import LiveChatWidget from '@/components/livechat/LiveChatWidget';
-import { messagerieApi } from '@/services/api/messagerieApi';
+import { motion } from "framer-motion";
 
 const ContactPage: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -24,38 +22,9 @@ const ContactPage: React.FC = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [showLiveChat, setShowLiveChat] = useState(false);
-  const [adminOnline, setAdminOnline] = useState(false);
-  const [submittedName, setSubmittedName] = useState('');
 
   const { toast } = useToast();
   const { sendMessage } = useMessages();
-
-  // Check admin online status
-  useEffect(() => {
-    const checkAdmin = async () => {
-      try {
-        const status = await messagerieApi.checkAdminOnline();
-        setAdminOnline(status.online);
-      } catch { setAdminOnline(false); }
-    };
-    checkAdmin();
-    const interval = setInterval(checkAdmin, 5000);
-
-    // Also listen to SSE for real-time admin status
-    const url = messagerieApi.getEventsUrl();
-    const es = new EventSource(url);
-    es.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type === 'admin-status') {
-          setAdminOnline(data.online);
-        }
-      } catch {}
-    };
-
-    return () => { clearInterval(interval); es.close(); };
-  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -75,7 +44,6 @@ const ContactPage: React.FC = () => {
     setIsSubmitting(true);
     try {
       await sendMessage(formData);
-      setSubmittedName(formData.expediteurNom);
       setIsSubmitted(true);
       toast({ title: "Message envoyé", description: "Votre message a été envoyé avec succès." });
       setFormData({ expediteurNom: '', expediteurEmail: '', expediteurTelephone: '', sujet: '', contenu: '', destinataireId: '1' });
@@ -114,37 +82,9 @@ const ContactPage: React.FC = () => {
                   <Send className="mr-3 h-5 w-5" />
                   Envoyer un autre message
                 </Button>
-
-                <Button
-                  onClick={() => {
-                    if (adminOnline) setShowLiveChat(true);
-                  }}
-                  disabled={!adminOnline}
-                  className={`w-full h-14 mt-4 text-lg font-semibold rounded-xl border border-white/10 transition-all duration-300 ${
-                    adminOnline
-                      ? 'bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-500 hover:via-purple-500 hover:to-indigo-500 text-white shadow-[0_20px_40px_rgba(139,92,246,0.3)] hover:scale-[1.02] cursor-pointer'
-                      : 'bg-white/5 text-white/30 cursor-not-allowed'
-                  }`}
-                >
-                  <MessageCircle className="mr-3 h-5 w-5" />
-                  {adminOnline ? 'Chat Live' : 'Live (hors ligne)'}
-                  {adminOnline && (
-                    <span className="ml-2 w-2.5 h-2.5 bg-emerald-400 rounded-full animate-pulse" />
-                  )}
-                </Button>
               </CardContent>
             </Card>
           </motion.div>
-
-          {/* Live Chat Widget */}
-          <AnimatePresence>
-            {showLiveChat && submittedName && (
-              <LiveChatWidget
-                visitorName={submittedName}
-                onClose={() => setShowLiveChat(false)}
-              />
-            )}
-          </AnimatePresence>
         </div>
       </Layout>
     );

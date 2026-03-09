@@ -11,7 +11,6 @@ import { motion } from 'framer-motion';
 import RdvNotifications from '@/components/rdv/RdvNotifications';
 import ObjectifIndicator from '@/components/navbar/ObjectifIndicator';
 import profileApi from '@/services/api/profileApi';
-import AdminChatPanel from '@/components/livechat/AdminChatPanel';
  
 import {
   LayoutDashboard,
@@ -103,21 +102,23 @@ import {
                    </motion.div>
                  </Link>
 
-                  {unreadCount === 0 && (
-                    <Link to="/messages">
-                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                        <Button variant="ghost" className="relative rounded-2xl hover:bg-gradient-to-r hover:from-blue-500/10 hover:to-cyan-500/10 transition-all duration-300 group overflow-hidden px-4 py-2 mirror-shine">
-                          <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 mr-2 shadow-lg shadow-blue-500/30">
-                            <MessageSquare className="h-4 w-4 text-white" />
-                          </div>
-                          <span className="font-bold relative z-10">Messages</span>
-                        </Button>
-                      </motion.div>
-                    </Link>
-                  )}
+                 <Link to="/messages">
+                   <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                     <Button variant="ghost" className="relative rounded-2xl hover:bg-gradient-to-r hover:from-blue-500/10 hover:to-cyan-500/10 transition-all duration-300 group overflow-hidden px-4 py-2 mirror-shine">
+                       <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 mr-2 shadow-lg shadow-blue-500/30">
+                         <MessageSquare className="h-4 w-4 text-white" />
+                       </div>
+                       <span className="font-bold relative z-10">Messages</span>
+                       {unreadCount > 0 && (
+                         <Badge className="ml-2 bg-red-500 text-white border-0 shadow-lg shadow-red-500/40 animate-pulse">
+                           {unreadCount}
+                         </Badge>
+                       )}
+                     </Button>
+                   </motion.div>
+                 </Link>
 
                  <RdvNotifications />
-                  {user?.role === 'administrateur' && <AdminChatPanel />}
                </>
              )}
 
@@ -268,15 +269,9 @@ import {
            </Button>
 
            {/* RDV Notifications */}
-            <div className="shrink-0">
-              <RdvNotifications />
-            </div>
-            {/* Admin Live Chat */}
-            {user?.role === 'administrateur' && (
-              <div className="shrink-0">
-                <AdminChatPanel />
-              </div>
-            )}
+           <div className="shrink-0">
+             <RdvNotifications />
+           </div>
          </div>
 
         {/* MESSAGES */}

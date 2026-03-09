@@ -12,6 +12,8 @@ import { useMessages } from '@/hooks/use-messages';
 import { motion, AnimatePresence } from "framer-motion";
 import LiveChatVisitor from '@/components/livechat/LiveChatVisitor';
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://server-gestion-ventes.onrender.com';
+
 const ContactPage: React.FC = () => {
   const [formData, setFormData] = useState({
     expediteurNom: '',
@@ -23,6 +25,9 @@ const ContactPage: React.FC = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [adminOnline, setAdminOnline] = useState(false);
+  const [showLiveChat, setShowLiveChat] = useState(false);
+  const [submittedName, setSubmittedName] = useState('');
 
   const { toast } = useToast();
   const { sendMessage } = useMessages();

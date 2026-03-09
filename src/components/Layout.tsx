@@ -46,6 +46,7 @@ const Layout: React.FC<LayoutProps> = ({ children, requireAuth = false }) => {
       
       <Footer />
       <ScrollToTop />
+      <FloatingChatWidget />
     </div>
   );
   

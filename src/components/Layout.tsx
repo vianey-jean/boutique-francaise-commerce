@@ -3,6 +3,7 @@ import React from 'react';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import ScrollToTop from './ScrollToTop';
+import FloatingChatWidget from './messagerie/FloatingChatWidget';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { RealtimeWrapper } from './common/RealtimeWrapper';
@@ -45,6 +46,7 @@ const Layout: React.FC<LayoutProps> = ({ children, requireAuth = false }) => {
       
       <Footer />
       <ScrollToTop />
+      <FloatingChatWidget />
     </div>
   );
   

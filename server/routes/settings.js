@@ -29,9 +29,14 @@ const writeJson = (filePath, data) => {
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
 };
 
-// Helper: check if user is admin
+// Helper: check if user is admin (both types)
 const isAdmin = (user) => {
-  return user && user.role === 'administrateur';
+  return user && (user.role === 'administrateur' || user.role === 'administrateur principale');
+};
+
+// Helper: check if user is admin principale
+const isAdminPrincipale = (user) => {
+  return user && user.role === 'administrateur principale';
 };
 
 // All DB files to backup/restore/delete
@@ -56,6 +61,69 @@ router.get('/', authMiddleware, (req, res) => {
     res.json({ settings, isAdmin: isUserAdmin });
   } catch (error) {
     console.error('Error reading settings:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+});
+
+// ==================
+// GET /api/settings/users - List all users (for role management)
+// ==================
+router.get('/users', authMiddleware, (req, res) => {
+  try {
+    if (!isAdminPrincipale(req.user)) {
+      return res.status(403).json({ message: 'Accès refusé. Administrateur principale requis.' });
+    }
+    const users = readJson(usersPath) || [];
+    const usersWithoutPasswords = users.map(({ password, ...rest }) => rest);
+    res.json({ users: usersWithoutPasswords });
+  } catch (error) {
+    console.error('Error listing users:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+});
+
+// ==================
+// PUT /api/settings/user-role - Change user role
+// ==================
+router.put('/user-role', authMiddleware, (req, res) => {
+  try {
+    if (!isAdminPrincipale(req.user)) {
+      return res.status(403).json({ message: 'Accès refusé. Administrateur principale requis.' });
+    }
+
+    const { userId, newRole } = req.body;
+    if (!userId) {
+      return res.status(400).json({ message: 'ID utilisateur requis' });
+    }
+
+    // Prevent changing admin principale role
+    const users = readJson(usersPath) || [];
+    const userIndex = users.findIndex(u => u.id === userId);
+    if (userIndex === -1) {
+      return res.status(404).json({ message: 'Utilisateur non trouvé' });
+    }
+
+    if (users[userIndex].role === 'administrateur principale') {
+      return res.status(403).json({ message: 'Impossible de modifier le rôle de l\'administrateur principale' });
+    }
+
+    // Only allow '' (simple) or 'administrateur'
+    if (newRole !== '' && newRole !== 'administrateur') {
+      return res.status(400).json({ message: 'Rôle invalide' });
+    }
+
+    if (newRole === '') {
+      delete users[userIndex].role;
+    } else {
+      users[userIndex].role = newRole;
+    }
+
+    writeJson(usersPath, users);
+
+    const { password, ...userWithoutPassword } = users[userIndex];
+    res.json({ success: true, user: userWithoutPassword });
+  } catch (error) {
+    console.error('Error changing user role:', error);
     res.status(500).json({ message: 'Erreur serveur' });
   }
 });
@@ -196,11 +264,12 @@ router.post('/restore', authMiddleware, (req, res) => {
 
 // ==================
 // POST /api/settings/delete-all - Supprimer toutes les données
+// Only administrateur principale can delete. Preserves admin principale account.
 // ==================
 router.post('/delete-all', authMiddleware, (req, res) => {
   try {
-    if (!isAdmin(req.user)) {
-      return res.status(403).json({ message: 'Accès refusé. Administrateur requis.' });
+    if (!isAdminPrincipale(req.user)) {
+      return res.status(403).json({ message: 'Accès refusé. Administrateur principale requis.' });
     }
 
     const { password } = req.body;
@@ -208,7 +277,7 @@ router.post('/delete-all', authMiddleware, (req, res) => {
       return res.status(400).json({ message: 'Mot de passe requis' });
     }
 
-    // Verify admin password
+    // Verify admin principale password
     const users = readJson(usersPath) || [];
     const adminUser = users.find(u => u.id === req.user.id);
     if (!adminUser) {
@@ -220,11 +289,17 @@ router.post('/delete-all', authMiddleware, (req, res) => {
       return res.status(401).json({ message: 'Mot de passe incorrect' });
     }
 
-    // Delete all data - write empty arrays/objects
+    // Preserve admin principale user(s)
+    const adminPrincipaleUsers = users.filter(u => u.role === 'administrateur principale');
+
+    // Delete all data - write empty arrays/objects, but keep admin principale in users
     DB_FILES.forEach(file => {
       const filePath = path.join(dbPath, file);
       if (fs.existsSync(filePath)) {
-        if (file === 'depensefixe.json') {
+        if (file === 'users.json') {
+          // Keep only admin principale users
+          writeJson(filePath, adminPrincipaleUsers);
+        } else if (file === 'depensefixe.json') {
           writeJson(filePath, {});
         } else if (file === 'settings.json') {
           writeJson(filePath, {});
@@ -234,7 +309,7 @@ router.post('/delete-all', authMiddleware, (req, res) => {
       }
     });
 
-    res.json({ success: true, message: 'Toutes les données ont été supprimées' });
+    res.json({ success: true, message: 'Toutes les données ont été supprimées (compte administrateur principale préservé)' });
   } catch (error) {
     console.error('Error deleting all data:', error);
     res.status(500).json({ message: 'Erreur lors de la suppression' });

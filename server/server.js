@@ -43,7 +43,14 @@ const PORT = process.env.PORT || 10000;
 // ===================
 
 // Compression pour performance
-app.use(compression());
+app.use(compression({
+  filter: (req, res) => {
+    if (req.path === '/api/sync/events' || req.path === '/api/messagerie/events') {
+      return false;
+    }
+    return compression.filter(req, res);
+  }
+}));
 
 // Security headers
 app.use(securityHeadersMiddleware);
@@ -272,9 +279,12 @@ const pointageRoutes = require('./routes/pointage');
 const travailleurRoutes = require('./routes/travailleur');
 const tacheRoutes = require('./routes/tache');
 const notesRoutes = require('./routes/notes');
+const notesShareRoutes = require('./routes/notesShare');
+const shareLinksRoutes = require('./routes/shareLinks');
 const avanceRoutes = require('./routes/avance');
 const profileRoutes = require('./routes/profile');
 const messagerieRoutes = require('./routes/messagerie');
+const settingsRoutes = require('./routes/settings');
 
 // Use routes
 app.use('/api/auth', authRoutes);
@@ -301,9 +311,12 @@ app.use('/api/pointages', pointageRoutes);
 app.use('/api/travailleurs', travailleurRoutes);
 app.use('/api/taches', tacheRoutes);
 app.use('/api/notes', notesRoutes);
+app.use('/api/notes-share', notesShareRoutes);
+app.use('/api/share-links', shareLinksRoutes);
 app.use('/api/avances', avanceRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/messagerie', messagerieRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // Static file serving for uploaded files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

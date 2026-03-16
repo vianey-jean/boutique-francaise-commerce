@@ -1,0 +1,30 @@
+{
+  "siteName": "Riziky Gestion",
+  "language": "fr",
+  "timezone": "Indian/Reunion",
+  "currency": "EUR",
+  "dateFormat": "DD/MM/YYYY",
+  "notifications": {
+    "rdvReminder": true,
+    "rdvReminderMinutes": 30,
+    "tacheReminder": true,
+    "emailNotifications": false,
+    "soundEnabled": true
+  },
+  "display": {
+    "itemsPerPage": 20,
+    "theme": "auto",
+    "compactMode": false,
+    "showWelcomeMessage": true
+  },
+  "security": {
+    "sessionTimeoutMinutes": 480,
+    "maxLoginAttempts": 5,
+    "requireStrongPassword": true
+  },
+  "backup": {
+    "lastBackupDate": null,
+    "autoBackup": false,
+    "autoBackupIntervalDays": 7
+  }
+}

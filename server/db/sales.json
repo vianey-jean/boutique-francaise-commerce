@@ -4036,5 +4036,77 @@
     "clientPhone": "0693821738",
     "reste": 0,
     "nextPaymentDate": null
+  },
+  {
+    "id": "1773061835923",
+    "date": "2026-03-09",
+    "products": [
+      {
+        "productId": "1753186907720",
+        "description": "Tissages bouclé noir 16 poucess",
+        "quantitySold": 1,
+        "purchasePrice": 12.82,
+        "sellingPrice": 100,
+        "profit": 87.18,
+        "deliveryFee": 0,
+        "deliveryLocation": "Saint-Denis"
+      }
+    ],
+    "totalPurchasePrice": 12.82,
+    "totalSellingPrice": 100,
+    "totalProfit": 87.18,
+    "clientName": "Lina Ma copilote",
+    "clientAddress": "Parking run market saint-Clotilde",
+    "clientPhone": "0692005905",
+    "reste": 0,
+    "nextPaymentDate": null
+  },
+  {
+    "id": "1773121582631",
+    "date": "2026-03-10",
+    "products": [
+      {
+        "productId": "1746811570529",
+        "description": "Avance Perruque ou Tissages",
+        "quantitySold": 0,
+        "purchasePrice": 0,
+        "sellingPrice": 100,
+        "profit": 0,
+        "deliveryFee": 0,
+        "deliveryLocation": "Saint-Denis"
+      }
+    ],
+    "totalPurchasePrice": 0,
+    "totalSellingPrice": 100,
+    "totalProfit": 0,
+    "clientName": "Emilienne Nomenjanahary",
+    "clientAddress": "Vaubon saint denis",
+    "clientPhone": "0693326932",
+    "reste": 0,
+    "nextPaymentDate": null
+  },
+  {
+    "id": "1773293321567",
+    "date": "2026-03-12",
+    "products": [
+      {
+        "productId": "1762441427899",
+        "description": "Perruque lisse noir 24 pouces",
+        "quantitySold": 1,
+        "purchasePrice": 44.99,
+        "sellingPrice": 170,
+        "profit": 125.01,
+        "deliveryFee": 0,
+        "deliveryLocation": "Saint-Denis"
+      }
+    ],
+    "totalPurchasePrice": 44.99,
+    "totalSellingPrice": 170,
+    "totalProfit": 125.01,
+    "clientName": "Sabrina Farida Jeannie Shenase",
+    "clientAddress": "48 avenue Lenine Parc boisé Le port",
+    "clientPhone": "0692626573",
+    "reste": 0,
+    "nextPaymentDate": null
   }
 ]

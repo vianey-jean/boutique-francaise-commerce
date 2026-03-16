@@ -27,7 +27,7 @@ const ContactPage: React.FC = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [adminOnline, setAdminOnline] = useState(false);
   const [showLiveChat, setShowLiveChat] = useState(false);
-  const [submittedName, setSubmittedName] = useState('');
+  const [submittedName, setSubmittedName] = useState(localStorage.getItem('livechat_pseudo') || '');
 
   const { toast } = useToast();
   const { sendMessage } = useMessages();
@@ -67,6 +67,7 @@ const ContactPage: React.FC = () => {
     try {
       await sendMessage(formData);
       setSubmittedName(formData.expediteurNom);
+      localStorage.setItem('livechat_pseudo', formData.expediteurNom);
       setIsSubmitted(true);
       toast({ title: "Message envoyé", description: "Votre message a été envoyé avec succès." });
       setFormData({ expediteurNom: '', expediteurEmail: '', expediteurTelephone: '', sujet: '', contenu: '', destinataireId: '1' });

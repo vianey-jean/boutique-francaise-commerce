@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import noteApi, { Note, NoteColumn } from '@/services/api/noteApi';
-import { Plus, StickyNote, Columns3, Sparkles } from 'lucide-react';
+import { Plus, StickyNote, Columns3, Sparkles, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import ShareLinkModal from '@/components/shared/ShareLinkModal';
 import KanbanColumn from './KanbanColumn';
 import NoteFormModal from './NoteFormModal';
 import ColumnFormModal from './ColumnFormModal';
@@ -30,6 +31,7 @@ const NotesKanbanView: React.FC = () => {
   const [editingCol, setEditingCol] = useState<NoteColumn | null>(null);
   const [confirmAction, setConfirmAction] = useState<{ message: string; action: () => void } | null>(null);
   const [dragOverColId, setDragOverColId] = useState<string | null>(null);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -157,6 +159,10 @@ const NotesKanbanView: React.FC = () => {
     });
   };
 
+  const handleShareNotes = () => {
+    setShowShareModal(true);
+  };
+
   const sortedColumns = [...columns].sort((a, b) => a.order - b.order);
 
   if (loading) {
@@ -200,6 +206,12 @@ const NotesKanbanView: React.FC = () => {
                 className="relative overflow-hidden bg-gradient-to-br from-violet-500 via-violet-600 to-purple-700 border border-violet-300/40 text-white shadow-[0_20px_70px_rgba(139,92,246,0.5)] hover:shadow-[0_35px_100px_rgba(139,92,246,0.7)] rounded-2xl px-5 py-2.5 font-bold text-sm transition-all hover:scale-105 active:scale-95"
               >
                 <Columns3 className="h-4 w-4 mr-2" /> Ajouter colonne
+              </Button>
+              <Button
+                onClick={handleShareNotes}
+                className="relative overflow-hidden bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-700 border border-emerald-300/40 text-white shadow-[0_20px_70px_rgba(16,185,129,0.5)] hover:shadow-[0_35px_100px_rgba(16,185,129,0.7)] rounded-2xl px-5 py-2.5 font-bold text-sm transition-all hover:scale-105 active:scale-95"
+              >
+                <Share2 className="h-4 w-4 mr-2" /> Partager notes
               </Button>
             </div>
           </div>
@@ -252,6 +264,14 @@ const NotesKanbanView: React.FC = () => {
       {confirmAction && (
         <ConfirmModal open={true} message={confirmAction.message} onConfirm={confirmAction.action} onCancel={() => setConfirmAction(null)} />
       )}
+
+      {/* Share Modal */}
+      <ShareLinkModal
+        open={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        type="notes"
+        typeLabel="Notes"
+      />
     </div>
   );
 };

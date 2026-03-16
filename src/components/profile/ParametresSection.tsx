@@ -1,0 +1,593 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Settings, Trash2, Upload, Download, Shield, Eye, EyeOff, AlertTriangle,
+  Bell, Monitor, Clock, Globe, DollarSign, Lock, ChevronDown, ChevronUp,
+  Volume2, VolumeX, Layout, Moon, Sun, Calendar, Users, FileText, CheckCircle2, XCircle
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import PasswordStrengthChecker from '@/components/PasswordStrengthChecker';
+import settingsApi, { AppSettings } from '@/services/api/settingsApi';
+
+const premiumBtnClass = "group relative overflow-hidden rounded-xl sm:rounded-2xl backdrop-blur-xl border transition-all duration-300 hover:scale-105 px-4 py-2 sm:px-5 sm:py-3 text-xs sm:text-sm font-semibold";
+
+interface ParametresSectionProps {
+  userRole?: string;
+}
+
+const ParametresSection: React.FC<ParametresSectionProps> = ({ userRole }) => {
+  const { toast } = useToast();
+  const { logout } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [settings, setSettings] = useState<AppSettings | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    notifications: true,
+    display: true,
+    security: true,
+    backup: false
+  });
+
+  // Delete state
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [showDeletePw, setShowDeletePw] = useState(false);
+  const [deleteAttempts, setDeleteAttempts] = useState(0);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDeleteStep, setConfirmDeleteStep] = useState(false);
+
+  // Backup state
+  const [showBackupDialog, setShowBackupDialog] = useState(false);
+  const [backupCode, setBackupCode] = useState('');
+  const [showBackupCode, setShowBackupCode] = useState(false);
+  const [isBackupCodeValid, setIsBackupCodeValid] = useState(false);
+  const [backingUp, setBackingUp] = useState(false);
+
+  // Restore state
+  const [showRestoreDialog, setShowRestoreDialog] = useState(false);
+  const [restoreCode, setRestoreCode] = useState('');
+  const [showRestoreCode, setShowRestoreCode] = useState(false);
+  const [isRestoreCodeValid, setIsRestoreCodeValid] = useState(false);
+  const [restoring, setRestoring] = useState(false);
+  const [restoreFile, setRestoreFile] = useState<any>(null);
+  const [restoreFileName, setRestoreFileName] = useState('');
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const fetchSettings = async () => {
+    try {
+      setLoading(true);
+      const result = await settingsApi.getSettings();
+      setSettings(result.settings);
+      setIsAdmin(result.isAdmin);
+    } catch (e) {
+      console.error('Error fetching settings:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateSetting = async (path: string, value: any) => {
+    if (!settings) return;
+    const keys = path.split('.');
+    const updated = { ...settings } as any;
+    let obj = updated;
+    for (let i = 0; i < keys.length - 1; i++) {
+      obj[keys[i]] = { ...obj[keys[i]] };
+      obj = obj[keys[i]];
+    }
+    obj[keys[keys.length - 1]] = value;
+    setSettings(updated);
+
+    try {
+      await settingsApi.updateSettings(updated);
+    } catch (e) {
+      toast({ title: 'Erreur', description: 'Impossible de sauvegarder le paramètre', variant: 'destructive' });
+    }
+  };
+
+  const toggleSection = (key: string) => {
+    setExpandedSections(p => ({ ...p, [key]: !p[key] }));
+  };
+
+  // ========== DELETE ALL ==========
+  const handleDeleteAll = async () => {
+    if (deleteAttempts >= 3) {
+      toast({ title: '🔒 Sécurité', description: 'Trop de tentatives. Déconnexion en cours...', variant: 'destructive' });
+      setTimeout(() => {
+        logout();
+        window.location.href = '/';
+      }, 1500);
+      return;
+    }
+
+    try {
+      setDeleting(true);
+      const result = await settingsApi.deleteAllData(deletePassword);
+      if (result.success) {
+        toast({ title: '✅ Suppression effectuée', description: 'Toutes les données ont été supprimées', className: 'bg-green-600 text-white border-green-600' });
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setTimeout(() => {
+          logout();
+          window.location.href = '/';
+        }, 1500);
+      }
+    } catch (e: any) {
+      const newAttempts = deleteAttempts + 1;
+      setDeleteAttempts(newAttempts);
+      if (newAttempts >= 3) {
+        toast({ title: '🔒 Sécurité', description: '3 tentatives échouées. Déconnexion pour sécurité.', variant: 'destructive' });
+        setTimeout(() => {
+          logout();
+          window.location.href = '/';
+        }, 1500);
+      } else {
+        toast({
+          title: 'Mot de passe incorrect',
+          description: `Tentative ${newAttempts}/3. Après 3 échecs, vous serez déconnecté.`,
+          variant: 'destructive'
+        });
+      }
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  // ========== BACKUP ==========
+  const handleBackup = async () => {
+    try {
+      setBackingUp(true);
+      const result = await settingsApi.backupData(backupCode);
+      if (result.success) {
+        // Download the encrypted file
+        const blob = new Blob([JSON.stringify(result.backup)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = result.filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        toast({ title: '✅ Sauvegarde réussie', description: 'Le fichier a été téléchargé. Gardez votre code en sécurité !', className: 'bg-green-600 text-white border-green-600' });
+        setShowBackupDialog(false);
+        setBackupCode('');
+      }
+    } catch (e) {
+      toast({ title: 'Erreur', description: 'Échec de la sauvegarde', variant: 'destructive' });
+    } finally {
+      setBackingUp(false);
+    }
+  };
+
+  // ========== RESTORE ==========
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setRestoreFileName(file.name);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = JSON.parse(event.target?.result as string);
+        setRestoreFile(data);
+        setShowRestoreDialog(true);
+      } catch {
+        toast({ title: 'Erreur', description: 'Fichier invalide. Sélectionnez un fichier de sauvegarde valide.', variant: 'destructive' });
+      }
+    };
+    reader.readAsText(file);
+    // Reset input
+    e.target.value = '';
+  };
+
+  const handleRestore = async () => {
+    if (!restoreFile) return;
+    try {
+      setRestoring(true);
+      const result = await settingsApi.restoreData(restoreFile, restoreCode);
+      if (result.success) {
+        toast({ title: '✅ Restauration réussie', description: result.message, className: 'bg-green-600 text-white border-green-600' });
+        setShowRestoreDialog(false);
+        setRestoreCode('');
+        setRestoreFile(null);
+        fetchSettings();
+      }
+    } catch (e: any) {
+      const msg = e?.response?.data?.message || 'Code incorrect ou fichier corrompu';
+      toast({ title: 'Erreur', description: msg, variant: 'destructive' });
+    } finally {
+      setRestoring(false);
+    }
+  };
+
+  // Toggle component
+  const Toggle = ({ value, onChange, label }: { value: boolean; onChange: (v: boolean) => void; label: string }) => (
+    <div className="flex items-center justify-between py-2">
+      <span className="text-sm text-foreground">{label}</span>
+      <button
+        onClick={() => onChange(!value)}
+        className={`relative w-11 h-6 rounded-full transition-all duration-300 ${value ? 'bg-gradient-to-r from-emerald-500 to-teal-500' : 'bg-muted'}`}
+      >
+        <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-300 ${value ? 'translate-x-[22px]' : 'translate-x-0.5'}`} />
+      </button>
+    </div>
+  );
+
+  // Section header
+  const SectionHeader = ({ icon: Icon, title, sectionKey, color }: { icon: any; title: string; sectionKey: string; color: string }) => (
+    <button
+      onClick={() => toggleSection(sectionKey)}
+      className="w-full flex items-center justify-between py-3 group"
+    >
+      <div className="flex items-center gap-2">
+        <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${color} flex items-center justify-center`}>
+          <Icon className="w-4 h-4 text-white" />
+        </div>
+        <span className="text-sm font-bold text-foreground">{title}</span>
+      </div>
+      {expandedSections[sectionKey] ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+    </button>
+  );
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin w-8 h-8 border-3 border-violet-500 border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+        className="relative rounded-3xl backdrop-blur-2xl bg-white/70 dark:bg-white/5 border border-violet-200/30 dark:border-violet-800/20 shadow-2xl shadow-violet-500/5 overflow-hidden"
+      >
+        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-amber-500 via-orange-500 to-red-500" />
+
+        <div className="p-8">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
+              <Settings className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-foreground">Paramètres</h3>
+              <p className="text-xs text-muted-foreground">Configuration du site et gestion des données</p>
+            </div>
+          </div>
+
+          <div className="space-y-1 divide-y divide-border/50">
+            {/* NOTIFICATIONS */}
+            <div>
+              <SectionHeader icon={Bell} title="Notifications" sectionKey="notifications" color="from-blue-500 to-indigo-500" />
+              <AnimatePresence>
+                {expandedSections.notifications && settings && (
+                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden pb-3 space-y-1">
+                    <Toggle value={settings.notifications.rdvReminder} onChange={v => updateSetting('notifications.rdvReminder', v)} label="Rappel de rendez-vous" />
+                    {settings.notifications.rdvReminder && (
+                      <div className="flex items-center justify-between py-2 pl-4">
+                        <span className="text-xs text-muted-foreground">Minutes avant le rappel</span>
+                        <select value={settings.notifications.rdvReminderMinutes} onChange={e => updateSetting('notifications.rdvReminderMinutes', Number(e.target.value))}
+                          className="rounded-lg border border-border bg-background px-2 py-1 text-xs">
+                          <option value={15}>15 min</option>
+                          <option value={30}>30 min</option>
+                          <option value={60}>1 heure</option>
+                          <option value={120}>2 heures</option>
+                        </select>
+                      </div>
+                    )}
+                    <Toggle value={settings.notifications.tacheReminder} onChange={v => updateSetting('notifications.tacheReminder', v)} label="Rappel de tâches" />
+                    <Toggle value={settings.notifications.emailNotifications} onChange={v => updateSetting('notifications.emailNotifications', v)} label="Notifications par email" />
+                    <Toggle value={settings.notifications.soundEnabled} onChange={v => updateSetting('notifications.soundEnabled', v)} label="Sons de notification" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* DISPLAY */}
+            <div>
+              <SectionHeader icon={Monitor} title="Affichage" sectionKey="display" color="from-purple-500 to-fuchsia-500" />
+              <AnimatePresence>
+                {expandedSections.display && settings && (
+                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden pb-3 space-y-1">
+                    <div className="flex items-center justify-between py-2">
+                      <span className="text-sm text-foreground">Éléments par page</span>
+                      <select value={settings.display.itemsPerPage} onChange={e => updateSetting('display.itemsPerPage', Number(e.target.value))}
+                        className="rounded-lg border border-border bg-background px-2 py-1 text-xs">
+                        <option value={10}>10</option>
+                        <option value={20}>20</option>
+                        <option value={50}>50</option>
+                        <option value={100}>100</option>
+                      </select>
+                    </div>
+                    <Toggle value={settings.display.compactMode} onChange={v => updateSetting('display.compactMode', v)} label="Mode compact" />
+                    <Toggle value={settings.display.showWelcomeMessage} onChange={v => updateSetting('display.showWelcomeMessage', v)} label="Message de bienvenue" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* SECURITY */}
+            <div>
+              <SectionHeader icon={Shield} title="Sécurité" sectionKey="security" color="from-emerald-500 to-teal-500" />
+              <AnimatePresence>
+                {expandedSections.security && settings && (
+                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden pb-3 space-y-1">
+                    <div className="flex items-center justify-between py-2">
+                      <span className="text-sm text-foreground">Expiration de session</span>
+                      <select value={settings.security.sessionTimeoutMinutes} onChange={e => updateSetting('security.sessionTimeoutMinutes', Number(e.target.value))}
+                        className="rounded-lg border border-border bg-background px-2 py-1 text-xs">
+                        <option value={60}>1 heure</option>
+                        <option value={240}>4 heures</option>
+                        <option value={480}>8 heures</option>
+                        <option value={1440}>24 heures</option>
+                      </select>
+                    </div>
+                    <div className="flex items-center justify-between py-2">
+                      <span className="text-sm text-foreground">Tentatives de connexion max</span>
+                      <select value={settings.security.maxLoginAttempts} onChange={e => updateSetting('security.maxLoginAttempts', Number(e.target.value))}
+                        className="rounded-lg border border-border bg-background px-2 py-1 text-xs">
+                        <option value={3}>3</option>
+                        <option value={5}>5</option>
+                        <option value={10}>10</option>
+                      </select>
+                    </div>
+                    <Toggle value={settings.security.requireStrongPassword} onChange={v => updateSetting('security.requireStrongPassword', v)} label="Exiger mot de passe fort" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* BACKUP INFO */}
+            <div>
+              <SectionHeader icon={Calendar} title="Sauvegarde" sectionKey="backup" color="from-amber-500 to-orange-500" />
+              <AnimatePresence>
+                {expandedSections.backup && settings && (
+                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden pb-3">
+                    <div className="rounded-xl bg-gradient-to-br from-slate-50 to-white dark:from-white/5 dark:to-white/[0.02] border border-border/50 p-3">
+                      <div className="flex items-center gap-2 text-sm">
+                        <Clock className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">Dernière sauvegarde :</span>
+                        <span className="font-semibold text-foreground">
+                          {settings.backup.lastBackupDate
+                            ? new Date(settings.backup.lastBackupDate).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                            : 'Aucune'}
+                        </span>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+
+          {/* ADMIN BUTTONS */}
+          {isAdmin && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="mt-8 pt-6 border-t border-border/50"
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <Shield className="w-4 h-4 text-amber-500" />
+                <span className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Zone Administrateur</span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {/* SAVE BUTTON */}
+                <Button
+                  onClick={() => setShowBackupDialog(true)}
+                  className={`${premiumBtnClass} bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border-emerald-300/30 text-emerald-600 dark:text-emerald-400 hover:from-emerald-500/20 hover:to-teal-500/20`}
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Sauvegarder
+                </Button>
+
+                {/* INJECT BUTTON */}
+                <Button
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`${premiumBtnClass} bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border-blue-300/30 text-blue-600 dark:text-blue-400 hover:from-blue-500/20 hover:to-indigo-500/20`}
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Injecter
+                </Button>
+                <input ref={fileInputRef} type="file" accept=".json" className="hidden" onChange={handleFileSelect} />
+
+                {/* DELETE BUTTON */}
+                <Button
+                  onClick={() => { setShowDeleteDialog(true); setDeletePassword(''); setConfirmDeleteStep(false); }}
+                  className={`${premiumBtnClass} bg-gradient-to-r from-red-500/10 to-rose-500/10 border-red-300/30 text-red-600 dark:text-red-400 hover:from-red-500/20 hover:to-rose-500/20`}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Supprimer tout
+                </Button>
+              </div>
+            </motion.div>
+          )}
+        </div>
+      </motion.div>
+
+      {/* ========== DELETE DIALOG ========== */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={v => { setShowDeleteDialog(v); if (!v) { setDeletePassword(''); setConfirmDeleteStep(false); } }}>
+        <AlertDialogContent className="rounded-3xl backdrop-blur-2xl bg-white/95 dark:bg-[#0a0020]/95 border border-red-200/30 max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="w-5 h-5" /> Suppression totale des données
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <span className="block text-red-500 font-bold">⚠️ ATTENTION : Cette action est IRRÉVERSIBLE !</span>
+              <span className="block">Toutes les données seront définitivement supprimées : utilisateurs, produits, ventes, clients, rendez-vous, tâches, notes, et tous les autres fichiers.</span>
+              <span className="block text-xs text-muted-foreground">Tentatives restantes : {3 - deleteAttempts}/3</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          {!confirmDeleteStep ? (
+            <div className="space-y-4 py-4">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
+                Mot de passe administrateur
+              </label>
+              <div className="relative">
+                <Input
+                  type={showDeletePw ? 'text' : 'password'}
+                  value={deletePassword}
+                  onChange={e => setDeletePassword(e.target.value)}
+                  placeholder="Saisissez votre mot de passe"
+                  className="rounded-xl border-red-200/30 dark:border-red-800/20 pr-10"
+                />
+                <button type="button" onClick={() => setShowDeletePw(!showDeletePw)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  {showDeletePw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="py-4 text-center">
+              <div className="w-16 h-16 mx-auto rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center mb-3">
+                <AlertTriangle className="w-8 h-8 text-red-500 animate-pulse" />
+              </div>
+              <p className="text-sm font-bold text-red-600">Confirmez-vous la suppression TOTALE ?</p>
+              <p className="text-xs text-muted-foreground mt-1">Cette action ne peut pas être annulée</p>
+            </div>
+          )}
+
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl">Annuler</AlertDialogCancel>
+            {!confirmDeleteStep ? (
+              <Button
+                onClick={() => setConfirmDeleteStep(true)}
+                disabled={!deletePassword}
+                className="rounded-xl bg-gradient-to-r from-red-500 to-rose-500 text-white hover:from-red-600 hover:to-rose-600"
+              >
+                Continuer
+              </Button>
+            ) : (
+              <Button
+                onClick={handleDeleteAll}
+                disabled={deleting}
+                className="rounded-xl bg-gradient-to-r from-red-600 to-rose-600 text-white hover:from-red-700 hover:to-rose-700"
+              >
+                {deleting ? 'Suppression...' : '🗑️ Supprimer définitivement'}
+              </Button>
+            )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* ========== BACKUP DIALOG ========== */}
+      <AlertDialog open={showBackupDialog} onOpenChange={v => { setShowBackupDialog(v); if (!v) { setBackupCode(''); setIsBackupCodeValid(false); } }}>
+        <AlertDialogContent className="rounded-3xl backdrop-blur-2xl bg-white/95 dark:bg-[#0a0020]/95 border border-emerald-200/30 max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-emerald-600">
+              <Download className="w-5 h-5" /> Sauvegarder les données
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Créez un code de cryptage pour protéger votre sauvegarde. Ce code sera nécessaire pour restaurer les données.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="space-y-4 py-4">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
+              Code de cryptage
+            </label>
+            <div className="relative">
+              <Input
+                type={showBackupCode ? 'text' : 'password'}
+                value={backupCode}
+                onChange={e => setBackupCode(e.target.value)}
+                placeholder="Créez un code de cryptage sécurisé"
+                className="rounded-xl border-emerald-200/30 dark:border-emerald-800/20 pr-10"
+              />
+              <button type="button" onClick={() => setShowBackupCode(!showBackupCode)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                {showBackupCode ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+            <PasswordStrengthChecker password={backupCode} onValidityChange={setIsBackupCodeValid} />
+            <div className="rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200/50 p-3">
+              <p className="text-xs text-amber-700 dark:text-amber-400 flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                Mémorisez bien ce code ! Sans lui, les données ne pourront pas être restaurées.
+              </p>
+            </div>
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl">Annuler</AlertDialogCancel>
+            <Button
+              onClick={handleBackup}
+              disabled={!isBackupCodeValid || backingUp}
+              className="rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:from-emerald-600 hover:to-teal-600"
+            >
+              {backingUp ? 'Sauvegarde...' : '📦 Sauvegarder et télécharger'}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* ========== RESTORE DIALOG ========== */}
+      <AlertDialog open={showRestoreDialog} onOpenChange={v => { setShowRestoreDialog(v); if (!v) { setRestoreCode(''); setRestoreFile(null); setIsRestoreCodeValid(false); } }}>
+        <AlertDialogContent className="rounded-3xl backdrop-blur-2xl bg-white/95 dark:bg-[#0a0020]/95 border border-blue-200/30 max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-blue-600">
+              <Upload className="w-5 h-5" /> Restaurer les données
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Fichier sélectionné : <strong>{restoreFileName}</strong>
+              <br />Saisissez le code de cryptage utilisé lors de la sauvegarde.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="space-y-4 py-4">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
+              Code de décryptage
+            </label>
+            <div className="relative">
+              <Input
+                type={showRestoreCode ? 'text' : 'password'}
+                value={restoreCode}
+                onChange={e => setRestoreCode(e.target.value)}
+                placeholder="Saisissez le code de sauvegarde"
+                className="rounded-xl border-blue-200/30 dark:border-blue-800/20 pr-10"
+              />
+              <button type="button" onClick={() => setShowRestoreCode(!showRestoreCode)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                {showRestoreCode ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+            <PasswordStrengthChecker password={restoreCode} onValidityChange={setIsRestoreCodeValid} />
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl">Annuler</AlertDialogCancel>
+            <Button
+              onClick={handleRestore}
+              disabled={!isRestoreCodeValid || restoring}
+              className="rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:from-blue-600 hover:to-indigo-600"
+            >
+              {restoring ? 'Restauration...' : '📥 Restaurer les données'}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+};
+
+export default ParametresSection;

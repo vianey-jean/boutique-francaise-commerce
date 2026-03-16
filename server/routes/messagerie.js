@@ -57,21 +57,22 @@ function broadcastToAdmins(event, data) {
 // =====================
 // SSE Endpoint
 // =====================
-router.get('/events', (req, res) => {
-  const origin = req.get('Origin');
-  if (origin) {
-    res.header('Access-Control-Allow-Origin', origin);
-  } else {
-    res.header('Access-Control-Allow-Origin', '*');
-  }
-  res.header('Access-Control-Allow-Credentials', 'true');
+router.options('/events', (req, res) => {
+  res.sendStatus(204);
+});
 
-  res.writeHead(200, {
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache, no-store, must-revalidate',
-    'Connection': 'keep-alive',
-    'X-Accel-Buffering': 'no'
-  });
+router.get('/events', (req, res) => {
+  // Laisser le middleware CORS global gérer les headers CORS
+  // et définir ici uniquement les headers SSE.
+  res.status(200);
+  res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders?.();
+
+  req.socket?.setKeepAlive?.(true, 15000);
+  req.socket?.setNoDelay?.(true);
 
   const clientId = `livechat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   const visitorId = req.query.visitorId || null;
@@ -283,6 +284,96 @@ router.get('/unread-count/:adminId', (req, res) => {
     res.json({ count });
   } catch {
     res.json({ count: 0 });
+  }
+});
+
+// =====================
+// Edit a message (only own messages)
+// =====================
+router.put('/edit/:messageId', (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const { contenu, from, visitorId, adminId } = req.body;
+    if (!contenu || !contenu.trim()) {
+      return res.status(400).json({ message: 'Contenu requis' });
+    }
+    const messages = readDB();
+    const idx = messages.findIndex(m => m.id === messageId);
+    if (idx === -1) return res.status(404).json({ message: 'Message non trouvé' });
+    
+    // Verify ownership
+    if (messages[idx].from !== from) {
+      return res.status(403).json({ message: 'Non autorisé' });
+    }
+    
+    messages[idx].contenu = contenu.trim();
+    messages[idx].edited = true;
+    messages[idx].editedAt = new Date().toISOString();
+    writeDB(messages);
+    
+    broadcastToConversation(messages[idx].visitorId, messages[idx].adminId, 'message_edited', messages[idx]);
+    res.json(messages[idx]);
+  } catch (error) {
+    console.error('Error editing message:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+});
+
+// =====================
+// Delete a message (only own messages)
+// =====================
+router.delete('/delete/:messageId', (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const { from } = req.body;
+    const messages = readDB();
+    const idx = messages.findIndex(m => m.id === messageId);
+    if (idx === -1) return res.status(404).json({ message: 'Message non trouvé' });
+    
+    if (messages[idx].from !== from) {
+      return res.status(403).json({ message: 'Non autorisé' });
+    }
+    
+    // Replace content with deletion notice
+    messages[idx].contenu = '';
+    messages[idx].deleted = true;
+    messages[idx].deletedAt = new Date().toISOString();
+    writeDB(messages);
+    
+    broadcastToConversation(messages[idx].visitorId, messages[idx].adminId, 'message_deleted', messages[idx]);
+    res.json(messages[idx]);
+  } catch (error) {
+    console.error('Error deleting message:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+});
+
+// =====================
+// Like/unlike a message
+// =====================
+router.post('/like/:messageId', (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const { from } = req.body; // who is liking
+    const messages = readDB();
+    const idx = messages.findIndex(m => m.id === messageId);
+    if (idx === -1) return res.status(404).json({ message: 'Message non trouvé' });
+    
+    if (!messages[idx].likes) messages[idx].likes = [];
+    
+    const likeIdx = messages[idx].likes.indexOf(from);
+    if (likeIdx === -1) {
+      messages[idx].likes.push(from);
+    } else {
+      messages[idx].likes.splice(likeIdx, 1);
+    }
+    
+    writeDB(messages);
+    broadcastToConversation(messages[idx].visitorId, messages[idx].adminId, 'message_liked', messages[idx]);
+    res.json(messages[idx]);
+  } catch (error) {
+    console.error('Error liking message:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
   }
 });
 

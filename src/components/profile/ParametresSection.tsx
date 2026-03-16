@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Settings, Trash2, Upload, Download, Shield, Eye, EyeOff, AlertTriangle,
   Bell, Monitor, Clock, Globe, DollarSign, Lock, ChevronDown, ChevronUp,
-  Volume2, VolumeX, Layout, Moon, Sun, Calendar, Users, FileText, CheckCircle2, XCircle
+  Volume2, VolumeX, Layout, Moon, Sun, Calendar, Users, FileText, CheckCircle2, XCircle,
+  UserCog, ArrowUpCircle, ArrowDownCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import PasswordStrengthChecker from '@/components/PasswordStrengthChecker';
 import settingsApi, { AppSettings } from '@/services/api/settingsApi';
+import api from '@/service/api';
 
 const premiumBtnClass = "group relative overflow-hidden rounded-xl sm:rounded-2xl backdrop-blur-xl border transition-all duration-300 hover:scale-105 px-4 py-2 sm:px-5 sm:py-3 text-xs sm:text-sm font-semibold";
 
@@ -27,8 +29,11 @@ const ParametresSection: React.FC<ParametresSectionProps> = ({ userRole }) => {
   const { logout } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const isAdminPrincipal = userRole === 'administrateur principale';
+  const isAdmin = userRole === 'administrateur' || isAdminPrincipal;
+
   const [settings, setSettings] = useState<AppSettings | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdminFromServer, setIsAdminFromServer] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
@@ -42,7 +47,6 @@ const ParametresSection: React.FC<ParametresSectionProps> = ({ userRole }) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
   const [showDeletePw, setShowDeletePw] = useState(false);
-  const [deleteAttempts, setDeleteAttempts] = useState(0);
   const [deleting, setDeleting] = useState(false);
   const [confirmDeleteStep, setConfirmDeleteStep] = useState(false);
 
@@ -62,20 +66,43 @@ const ParametresSection: React.FC<ParametresSectionProps> = ({ userRole }) => {
   const [restoreFile, setRestoreFile] = useState<any>(null);
   const [restoreFileName, setRestoreFileName] = useState('');
 
+  // Role management state
+  const [allUsers, setAllUsers] = useState<any[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [showRoleDialog, setShowRoleDialog] = useState(false);
+  const [roleChangeUser, setRoleChangeUser] = useState<any>(null);
+  const [roleChangeTarget, setRoleChangeTarget] = useState('');
+  const [changingRole, setChangingRole] = useState(false);
+
   useEffect(() => {
     fetchSettings();
-  }, []);
+    if (isAdminPrincipal) {
+      fetchUsers();
+    }
+  }, [isAdminPrincipal]);
 
   const fetchSettings = async () => {
     try {
       setLoading(true);
       const result = await settingsApi.getSettings();
       setSettings(result.settings);
-      setIsAdmin(result.isAdmin);
+      setIsAdminFromServer(result.isAdmin);
     } catch (e) {
       console.error('Error fetching settings:', e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      setLoadingUsers(true);
+      const response = await api.get('/api/settings/users');
+      setAllUsers(response.data.users || []);
+    } catch (e) {
+      console.error('Error fetching users:', e);
+    } finally {
+      setLoadingUsers(false);
     }
   };
 
@@ -102,17 +129,8 @@ const ParametresSection: React.FC<ParametresSectionProps> = ({ userRole }) => {
     setExpandedSections(p => ({ ...p, [key]: !p[key] }));
   };
 
-  // ========== DELETE ALL ==========
+  // ========== DELETE ALL (1 attempt only) ==========
   const handleDeleteAll = async () => {
-    if (deleteAttempts >= 3) {
-      toast({ title: '🔒 Sécurité', description: 'Trop de tentatives. Déconnexion en cours...', variant: 'destructive' });
-      setTimeout(() => {
-        logout();
-        window.location.href = '/';
-      }, 1500);
-      return;
-    }
-
     try {
       setDeleting(true);
       const result = await settingsApi.deleteAllData(deletePassword);
@@ -126,23 +144,37 @@ const ParametresSection: React.FC<ParametresSectionProps> = ({ userRole }) => {
         }, 1500);
       }
     } catch (e: any) {
-      const newAttempts = deleteAttempts + 1;
-      setDeleteAttempts(newAttempts);
-      if (newAttempts >= 3) {
-        toast({ title: '🔒 Sécurité', description: '3 tentatives échouées. Déconnexion pour sécurité.', variant: 'destructive' });
-        setTimeout(() => {
-          logout();
-          window.location.href = '/';
-        }, 1500);
-      } else {
-        toast({
-          title: 'Mot de passe incorrect',
-          description: `Tentative ${newAttempts}/3. Après 3 échecs, vous serez déconnecté.`,
-          variant: 'destructive'
-        });
-      }
+      // 1 wrong attempt = immediate logout
+      toast({ title: '🔒 Mot de passe incorrect', description: 'Déconnexion immédiate pour sécurité.', variant: 'destructive' });
+      setTimeout(() => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        logout();
+        window.location.href = '/';
+      }, 1500);
     } finally {
       setDeleting(false);
+    }
+  };
+
+  // ========== ROLE CHANGE ==========
+  const handleRoleChange = async () => {
+    if (!roleChangeUser) return;
+    try {
+      setChangingRole(true);
+      const response = await api.put('/api/settings/user-role', {
+        userId: roleChangeUser.id,
+        newRole: roleChangeTarget
+      });
+      if (response.data.success) {
+        toast({ title: '✅ Rôle modifié', description: `Le rôle de ${roleChangeUser.firstName} a été mis à jour`, className: 'bg-green-600 text-white border-green-600' });
+        setShowRoleDialog(false);
+        fetchUsers();
+      }
+    } catch (e: any) {
+      toast({ title: 'Erreur', description: e?.response?.data?.message || 'Erreur lors du changement de rôle', variant: 'destructive' });
+    } finally {
+      setChangingRole(false);
     }
   };
 
@@ -152,7 +184,6 @@ const ParametresSection: React.FC<ParametresSectionProps> = ({ userRole }) => {
       setBackingUp(true);
       const result = await settingsApi.backupData(backupCode);
       if (result.success) {
-        // Download the encrypted file
         const blob = new Blob([JSON.stringify(result.backup)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -190,7 +221,6 @@ const ParametresSection: React.FC<ParametresSectionProps> = ({ userRole }) => {
       }
     };
     reader.readAsText(file);
-    // Reset input
     e.target.value = '';
   };
 
@@ -256,7 +286,7 @@ const ParametresSection: React.FC<ParametresSectionProps> = ({ userRole }) => {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
+        transition={{ delay: 0.1 }}
         className="relative rounded-3xl backdrop-blur-2xl bg-white/70 dark:bg-white/5 border border-violet-200/30 dark:border-violet-800/20 shadow-2xl shadow-violet-500/5 overflow-hidden"
       >
         <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-amber-500 via-orange-500 to-red-500" />
@@ -365,7 +395,7 @@ const ParametresSection: React.FC<ParametresSectionProps> = ({ userRole }) => {
                         <Clock className="w-4 h-4 text-muted-foreground" />
                         <span className="text-muted-foreground">Dernière sauvegarde :</span>
                         <span className="font-semibold text-foreground">
-                          {settings.backup.lastBackupDate
+                          {settings.backup?.lastBackupDate
                             ? new Date(settings.backup.lastBackupDate).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
                             : 'Aucune'}
                         </span>
@@ -377,7 +407,7 @@ const ParametresSection: React.FC<ParametresSectionProps> = ({ userRole }) => {
             </div>
           </div>
 
-          {/* ADMIN BUTTONS */}
+          {/* ADMIN BUTTONS: Backup/Restore for both admin roles, Delete only for admin principale */}
           {isAdmin && (
             <motion.div
               initial={{ opacity: 0 }}
@@ -390,7 +420,7 @@ const ParametresSection: React.FC<ParametresSectionProps> = ({ userRole }) => {
                 <span className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Zone Administrateur</span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className={`grid grid-cols-1 ${isAdminPrincipal ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-3`}>
                 {/* SAVE BUTTON */}
                 <Button
                   onClick={() => setShowBackupDialog(true)}
@@ -410,15 +440,78 @@ const ParametresSection: React.FC<ParametresSectionProps> = ({ userRole }) => {
                 </Button>
                 <input ref={fileInputRef} type="file" accept=".json" className="hidden" onChange={handleFileSelect} />
 
-                {/* DELETE BUTTON */}
-                <Button
-                  onClick={() => { setShowDeleteDialog(true); setDeletePassword(''); setConfirmDeleteStep(false); }}
-                  className={`${premiumBtnClass} bg-gradient-to-r from-red-500/10 to-rose-500/10 border-red-300/30 text-red-600 dark:text-red-400 hover:from-red-500/20 hover:to-rose-500/20`}
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Supprimer tout
-                </Button>
+                {/* DELETE BUTTON - Only for administrateur principale */}
+                {isAdminPrincipal && (
+                  <Button
+                    onClick={() => { setShowDeleteDialog(true); setDeletePassword(''); setConfirmDeleteStep(false); }}
+                    className={`${premiumBtnClass} bg-gradient-to-r from-red-500/10 to-rose-500/10 border-red-300/30 text-red-600 dark:text-red-400 hover:from-red-500/20 hover:to-rose-500/20`}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Supprimer tout
+                  </Button>
+                )}
               </div>
+            </motion.div>
+          )}
+
+          {/* ROLE MANAGEMENT - Only for administrateur principale */}
+          {isAdminPrincipal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              className="mt-8 pt-6 border-t border-border/50"
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <UserCog className="w-4 h-4 text-violet-500" />
+                <span className="text-xs font-bold text-violet-600 dark:text-violet-400 uppercase tracking-wider">Gestion des rôles</span>
+              </div>
+
+              {loadingUsers ? (
+                <div className="flex items-center justify-center py-6">
+                  <div className="animate-spin w-6 h-6 border-2 border-violet-500 border-t-transparent rounded-full" />
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {allUsers.filter(u => u.role !== 'administrateur principale').map(u => (
+                    <div key={u.id} className="flex items-center justify-between rounded-xl bg-gradient-to-br from-slate-50 to-white dark:from-white/5 dark:to-white/[0.02] border border-border/50 p-3">
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">{u.firstName} {u.lastName}</p>
+                        <p className="text-xs text-muted-foreground">{u.email}</p>
+                        <span className={`inline-block mt-1 text-xs px-2 py-0.5 rounded-full font-bold ${
+                          u.role === 'administrateur'
+                            ? 'bg-violet-500/10 text-violet-600 border border-violet-500/20'
+                            : 'bg-slate-500/10 text-slate-600 border border-slate-500/20'
+                        }`}>
+                          {u.role === 'administrateur' ? 'Administrateur' : 'Simple utilisateur'}
+                        </span>
+                      </div>
+                      <div>
+                        {u.role === 'administrateur' ? (
+                          <Button
+                            size="sm"
+                            onClick={() => { setRoleChangeUser(u); setRoleChangeTarget(''); setShowRoleDialog(true); }}
+                            className="rounded-xl bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-300/30 text-orange-600 dark:text-orange-400 text-xs hover:from-orange-500/20 hover:to-red-500/20"
+                          >
+                            <ArrowDownCircle className="w-3 h-3 mr-1" /> Rétrograder
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            onClick={() => { setRoleChangeUser(u); setRoleChangeTarget('administrateur'); setShowRoleDialog(true); }}
+                            className="rounded-xl bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 border border-violet-300/30 text-violet-600 dark:text-violet-400 text-xs hover:from-violet-500/20 hover:to-fuchsia-500/20"
+                          >
+                            <ArrowUpCircle className="w-3 h-3 mr-1" /> Promouvoir
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  {allUsers.filter(u => u.role !== 'administrateur principale').length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-4">Aucun autre utilisateur</p>
+                  )}
+                </div>
+              )}
             </motion.div>
           )}
         </div>
@@ -433,8 +526,8 @@ const ParametresSection: React.FC<ParametresSectionProps> = ({ userRole }) => {
             </AlertDialogTitle>
             <AlertDialogDescription className="space-y-2">
               <span className="block text-red-500 font-bold">⚠️ ATTENTION : Cette action est IRRÉVERSIBLE !</span>
-              <span className="block">Toutes les données seront définitivement supprimées : utilisateurs, produits, ventes, clients, rendez-vous, tâches, notes, et tous les autres fichiers.</span>
-              <span className="block text-xs text-muted-foreground">Tentatives restantes : {3 - deleteAttempts}/3</span>
+              <span className="block">Toutes les données seront supprimées sauf votre compte administrateur principale.</span>
+              <span className="block text-xs text-red-400 font-semibold">⚡ Vous n'avez qu'UNE SEULE tentative. Un mot de passe incorrect = déconnexion immédiate.</span>
             </AlertDialogDescription>
           </AlertDialogHeader>
 
@@ -486,6 +579,43 @@ const ParametresSection: React.FC<ParametresSectionProps> = ({ userRole }) => {
                 {deleting ? 'Suppression...' : '🗑️ Supprimer définitivement'}
               </Button>
             )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* ========== ROLE CHANGE DIALOG ========== */}
+      <AlertDialog open={showRoleDialog} onOpenChange={v => { setShowRoleDialog(v); if (!v) { setRoleChangeUser(null); } }}>
+        <AlertDialogContent className="rounded-3xl backdrop-blur-2xl bg-white/95 dark:bg-[#0a0020]/95 border border-violet-200/30 max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-violet-600">
+              <UserCog className="w-5 h-5" /> Modifier le rôle
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {roleChangeUser && (
+                <>
+                  <span className="font-semibold">{roleChangeUser.firstName} {roleChangeUser.lastName}</span>
+                  <br />
+                  {roleChangeTarget === 'administrateur'
+                    ? 'Promouvoir en Administrateur ?'
+                    : 'Rétrograder en simple utilisateur ?'
+                  }
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl">Annuler</AlertDialogCancel>
+            <Button
+              onClick={handleRoleChange}
+              disabled={changingRole}
+              className={`rounded-xl text-white ${
+                roleChangeTarget === 'administrateur'
+                  ? 'bg-gradient-to-r from-violet-500 to-fuchsia-500'
+                  : 'bg-gradient-to-r from-orange-500 to-red-500'
+              }`}
+            >
+              {changingRole ? 'Modification...' : 'Confirmer'}
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

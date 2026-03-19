@@ -1,15 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   Settings, Trash2, Upload, Download, Shield, Eye, EyeOff, AlertTriangle,
-  Bell, Monitor, Clock, Globe, DollarSign, Lock, ChevronDown, ChevronUp,
-  Volume2, VolumeX, Layout, Moon, Sun, Calendar, Users, FileText, CheckCircle2, XCircle,
-  UserCog, ArrowUpCircle, ArrowDownCircle
+ ChevronDown, ChevronUp,
+  UserCog, ArrowUpCircle, ArrowDownCircle, CalendarOff
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialog, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
@@ -17,6 +16,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import PasswordStrengthChecker from '@/components/PasswordStrengthChecker';
 import settingsApi, { AppSettings } from '@/services/api/settingsApi';
 import api from '@/service/api';
+import IndisponibiliteSection from './IndisponibiliteSection';
+import ModuleSettingsSection from './ModuleSettingsSection';
 
 const premiumBtnClass = "group relative overflow-hidden rounded-xl sm:rounded-2xl backdrop-blur-xl border transition-all duration-300 hover:scale-105 px-4 py-2 sm:px-5 sm:py-3 text-xs sm:text-sm font-semibold";
 
@@ -33,9 +34,8 @@ const ParametresSection: React.FC<ParametresSectionProps> = ({ userRole }) => {
   const isAdmin = userRole === 'administrateur' || isAdminPrincipal;
 
   const [settings, setSettings] = useState<AppSettings | null>(null);
-  const [isAdminFromServer, setIsAdminFromServer] = useState(false);
+  const [, setIsAdminFromServer] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     notifications: true,
     display: true,
@@ -81,14 +81,32 @@ const ParametresSection: React.FC<ParametresSectionProps> = ({ userRole }) => {
     }
   }, [isAdminPrincipal]);
 
+  const defaultSettings: AppSettings = {
+    siteName: 'Riziky', language: 'fr', timezone: 'Indian/Reunion', currency: 'EUR', dateFormat: 'DD/MM/YYYY',
+    notifications: { rdvReminder: true, rdvReminderMinutes: 30, tacheReminder: true, emailNotifications: false, soundEnabled: true },
+    display: { itemsPerPage: 10, theme: 'system', compactMode: false, showWelcomeMessage: true },
+    security: { sessionTimeoutMinutes: 60, maxLoginAttempts: 5, requireStrongPassword: true },
+    backup: { lastBackupDate: null, autoBackup: false, autoBackupIntervalDays: 7 },
+  };
+
   const fetchSettings = async () => {
     try {
       setLoading(true);
       const result = await settingsApi.getSettings();
-      setSettings(result.settings);
+      // Merge with defaults to prevent undefined nested objects
+      const merged: AppSettings = {
+        ...defaultSettings,
+        ...result.settings,
+        notifications: { ...defaultSettings.notifications, ...(result.settings?.notifications || {}) },
+        display: { ...defaultSettings.display, ...(result.settings?.display || {}) },
+        security: { ...defaultSettings.security, ...(result.settings?.security || {}) },
+        backup: { ...defaultSettings.backup, ...(result.settings?.backup || {}) },
+      };
+      setSettings(merged);
       setIsAdminFromServer(result.isAdmin);
     } catch (e) {
       console.error('Error fetching settings:', e);
+      setSettings(defaultSettings);
     } finally {
       setLoading(false);
     }
@@ -300,111 +318,22 @@ const ParametresSection: React.FC<ParametresSectionProps> = ({ userRole }) => {
               <h3 className="text-lg font-bold text-foreground">Paramètres</h3>
               <p className="text-xs text-muted-foreground">Configuration du site et gestion des données</p>
             </div>
+           </div>
+
+          {/* Indisponibilités / Congés */}
+          <div className="mt-6 pt-6 border-t border-border/50">
+            <IndisponibiliteSection />
           </div>
 
-          <div className="space-y-1 divide-y divide-border/50">
-            {/* NOTIFICATIONS */}
-            <div>
-              <SectionHeader icon={Bell} title="Notifications" sectionKey="notifications" color="from-blue-500 to-indigo-500" />
-              <AnimatePresence>
-                {expandedSections.notifications && settings && (
-                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden pb-3 space-y-1">
-                    <Toggle value={settings.notifications.rdvReminder} onChange={v => updateSetting('notifications.rdvReminder', v)} label="Rappel de rendez-vous" />
-                    {settings.notifications.rdvReminder && (
-                      <div className="flex items-center justify-between py-2 pl-4">
-                        <span className="text-xs text-muted-foreground">Minutes avant le rappel</span>
-                        <select value={settings.notifications.rdvReminderMinutes} onChange={e => updateSetting('notifications.rdvReminderMinutes', Number(e.target.value))}
-                          className="rounded-lg border border-border bg-background px-2 py-1 text-xs">
-                          <option value={15}>15 min</option>
-                          <option value={30}>30 min</option>
-                          <option value={60}>1 heure</option>
-                          <option value={120}>2 heures</option>
-                        </select>
-                      </div>
-                    )}
-                    <Toggle value={settings.notifications.tacheReminder} onChange={v => updateSetting('notifications.tacheReminder', v)} label="Rappel de tâches" />
-                    <Toggle value={settings.notifications.emailNotifications} onChange={v => updateSetting('notifications.emailNotifications', v)} label="Notifications par email" />
-                    <Toggle value={settings.notifications.soundEnabled} onChange={v => updateSetting('notifications.soundEnabled', v)} label="Sons de notification" />
-                  </motion.div>
-                )}
-              </AnimatePresence>
+          {/* Module Settings */}
+          <div className="mt-6 pt-6 border-t border-border/50">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center">
+                <Settings className="w-4 h-4 text-white" />
+              </div>
+              <span className="text-sm font-bold text-foreground">Paramètres des modules</span>
             </div>
-
-            {/* DISPLAY */}
-            <div>
-              <SectionHeader icon={Monitor} title="Affichage" sectionKey="display" color="from-purple-500 to-fuchsia-500" />
-              <AnimatePresence>
-                {expandedSections.display && settings && (
-                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden pb-3 space-y-1">
-                    <div className="flex items-center justify-between py-2">
-                      <span className="text-sm text-foreground">Éléments par page</span>
-                      <select value={settings.display.itemsPerPage} onChange={e => updateSetting('display.itemsPerPage', Number(e.target.value))}
-                        className="rounded-lg border border-border bg-background px-2 py-1 text-xs">
-                        <option value={10}>10</option>
-                        <option value={20}>20</option>
-                        <option value={50}>50</option>
-                        <option value={100}>100</option>
-                      </select>
-                    </div>
-                    <Toggle value={settings.display.compactMode} onChange={v => updateSetting('display.compactMode', v)} label="Mode compact" />
-                    <Toggle value={settings.display.showWelcomeMessage} onChange={v => updateSetting('display.showWelcomeMessage', v)} label="Message de bienvenue" />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* SECURITY */}
-            <div>
-              <SectionHeader icon={Shield} title="Sécurité" sectionKey="security" color="from-emerald-500 to-teal-500" />
-              <AnimatePresence>
-                {expandedSections.security && settings && (
-                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden pb-3 space-y-1">
-                    <div className="flex items-center justify-between py-2">
-                      <span className="text-sm text-foreground">Expiration de session</span>
-                      <select value={settings.security.sessionTimeoutMinutes} onChange={e => updateSetting('security.sessionTimeoutMinutes', Number(e.target.value))}
-                        className="rounded-lg border border-border bg-background px-2 py-1 text-xs">
-                        <option value={60}>1 heure</option>
-                        <option value={240}>4 heures</option>
-                        <option value={480}>8 heures</option>
-                        <option value={1440}>24 heures</option>
-                      </select>
-                    </div>
-                    <div className="flex items-center justify-between py-2">
-                      <span className="text-sm text-foreground">Tentatives de connexion max</span>
-                      <select value={settings.security.maxLoginAttempts} onChange={e => updateSetting('security.maxLoginAttempts', Number(e.target.value))}
-                        className="rounded-lg border border-border bg-background px-2 py-1 text-xs">
-                        <option value={3}>3</option>
-                        <option value={5}>5</option>
-                        <option value={10}>10</option>
-                      </select>
-                    </div>
-                    <Toggle value={settings.security.requireStrongPassword} onChange={v => updateSetting('security.requireStrongPassword', v)} label="Exiger mot de passe fort" />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* BACKUP INFO */}
-            <div>
-              <SectionHeader icon={Calendar} title="Sauvegarde" sectionKey="backup" color="from-amber-500 to-orange-500" />
-              <AnimatePresence>
-                {expandedSections.backup && settings && (
-                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden pb-3">
-                    <div className="rounded-xl bg-gradient-to-br from-slate-50 to-white dark:from-white/5 dark:to-white/[0.02] border border-border/50 p-3">
-                      <div className="flex items-center gap-2 text-sm">
-                        <Clock className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">Dernière sauvegarde :</span>
-                        <span className="font-semibold text-foreground">
-                          {settings.backup?.lastBackupDate
-                            ? new Date(settings.backup.lastBackupDate).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-                            : 'Aucune'}
-                        </span>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+            <ModuleSettingsSection />
           </div>
 
           {/* ADMIN BUTTONS: Backup/Restore for both admin roles, Delete only for admin principale */}
@@ -542,6 +471,9 @@ const ParametresSection: React.FC<ParametresSectionProps> = ({ userRole }) => {
                   value={deletePassword}
                   onChange={e => setDeletePassword(e.target.value)}
                   placeholder="Saisissez votre mot de passe"
+                  autoComplete="new-password"
+                  data-lpignore="true"
+                  data-form-type="other"
                   className="rounded-xl border-red-200/30 dark:border-red-800/20 pr-10"
                 />
                 <button type="button" onClick={() => setShowDeletePw(!showDeletePw)}
@@ -549,6 +481,7 @@ const ParametresSection: React.FC<ParametresSectionProps> = ({ userRole }) => {
                   {showDeletePw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+              <PasswordStrengthChecker password={deletePassword} />
             </div>
           ) : (
             <div className="py-4 text-center">
@@ -642,6 +575,9 @@ const ParametresSection: React.FC<ParametresSectionProps> = ({ userRole }) => {
                 value={backupCode}
                 onChange={e => setBackupCode(e.target.value)}
                 placeholder="Créez un code de cryptage sécurisé"
+                autoComplete="new-password"
+                data-lpignore="true"
+                data-form-type="other"
                 className="rounded-xl border-emerald-200/30 dark:border-emerald-800/20 pr-10"
               />
               <button type="button" onClick={() => setShowBackupCode(!showBackupCode)}
@@ -694,6 +630,9 @@ const ParametresSection: React.FC<ParametresSectionProps> = ({ userRole }) => {
                 value={restoreCode}
                 onChange={e => setRestoreCode(e.target.value)}
                 placeholder="Saisissez le code de sauvegarde"
+                autoComplete="new-password"
+                data-lpignore="true"
+                data-form-type="other"
                 className="rounded-xl border-blue-200/30 dark:border-blue-800/20 pr-10"
               />
               <button type="button" onClick={() => setShowRestoreCode(!showRestoreCode)}

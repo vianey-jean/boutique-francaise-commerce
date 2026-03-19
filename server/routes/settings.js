@@ -24,6 +24,38 @@ const readJson = (filePath) => {
   } catch { return null; }
 };
 
+// Default settings structure
+const DEFAULT_SETTINGS = {
+  siteName: 'Riziky',
+  language: 'fr',
+  timezone: 'Indian/Reunion',
+  currency: 'EUR',
+  dateFormat: 'DD/MM/YYYY',
+  notifications: {
+    rdvReminder: true,
+    rdvReminderMinutes: 30,
+    tacheReminder: true,
+    emailNotifications: false,
+    soundEnabled: true,
+  },
+  display: {
+    itemsPerPage: 10,
+    theme: 'system',
+    compactMode: false,
+    showWelcomeMessage: true,
+  },
+  security: {
+    sessionTimeoutMinutes: 60,
+    maxLoginAttempts: 5,
+    requireStrongPassword: true,
+  },
+  backup: {
+    lastBackupDate: null,
+    autoBackup: false,
+    autoBackupIntervalDays: 7,
+  },
+};
+
 // Helper: write JSON file
 const writeJson = (filePath, data) => {
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
@@ -39,24 +71,30 @@ const isAdminPrincipale = (user) => {
   return user && user.role === 'administrateur principale';
 };
 
-// All DB files to backup/restore/delete
-const DB_FILES = [
-  'users.json', 'products.json', 'sales.json', 'clients.json',
-  'pretfamilles.json', 'pretproduits.json', 'depensedumois.json',
-  'depensefixe.json', 'benefice.json', 'commandes.json', 'remboursement.json',
-  'fournisseurs.json', 'entreprise.json', 'pointage.json', 'travailleur.json',
-  'tache.json', 'notes.json', 'noteColumns.json', 'rdv.json',
-  'rdvNotifications.json', 'objectif.json', 'nouvelle_achat.json',
-  'compta.json', 'avance.json', 'messages.json', 'messagerie.json',
-  'shareTokens.json', 'lienIp.json', 'settings.json'
-];
+// Dynamically get ALL .json files in the db folder for backup/restore/delete
+const getDbFiles = () => {
+  try {
+    return fs.readdirSync(dbPath).filter(f => f.endsWith('.json'));
+  } catch {
+    return [];
+  }
+};
 
 // ==================
 // GET /api/settings
 // ==================
 router.get('/', authMiddleware, (req, res) => {
   try {
-    const settings = readJson(settingsPath) || {};
+    const rawSettings = readJson(settingsPath) || {};
+    // Merge with defaults to ensure all fields exist
+    const settings = {
+      ...DEFAULT_SETTINGS,
+      ...rawSettings,
+      notifications: { ...DEFAULT_SETTINGS.notifications, ...(rawSettings.notifications || {}) },
+      display: { ...DEFAULT_SETTINGS.display, ...(rawSettings.display || {}) },
+      security: { ...DEFAULT_SETTINGS.security, ...(rawSettings.security || {}) },
+      backup: { ...DEFAULT_SETTINGS.backup, ...(rawSettings.backup || {}) },
+    };
     const isUserAdmin = isAdmin(req.user);
     res.json({ settings, isAdmin: isUserAdmin });
   } catch (error) {
@@ -162,7 +200,7 @@ router.post('/backup', authMiddleware, (req, res) => {
 
     // Collect all DB data
     const backupData = {};
-    DB_FILES.forEach(file => {
+    getDbFiles().forEach(file => {
       const filePath = path.join(dbPath, file);
       const data = readJson(filePath);
       if (data !== null) {
@@ -186,10 +224,14 @@ router.post('/backup', authMiddleware, (req, res) => {
     let encrypted = cipher.update(jsonData, 'utf8', 'hex');
     encrypted += cipher.final('hex');
 
+    // Hash the encryption code with bcrypt (like a password)
+    const hashedCode = bcrypt.hashSync(encryptionCode, 10);
+
     const encryptedPackage = {
       iv: iv.toString('hex'),
       data: encrypted,
-      checksum: crypto.createHash('sha256').update(jsonData).digest('hex')
+      checksum: crypto.createHash('sha256').update(jsonData).digest('hex'),
+      codeHash: hashedCode
     };
 
     // Update last backup date
@@ -223,6 +265,14 @@ router.post('/restore', authMiddleware, (req, res) => {
       return res.status(400).json({ message: 'Données et code de décryptage requis' });
     }
 
+    // Verify the decryption code against the stored hash first
+    if (encryptedData.codeHash) {
+      const codeMatch = bcrypt.compareSync(decryptionCode, encryptedData.codeHash);
+      if (!codeMatch) {
+        return res.status(400).json({ message: 'Code de décryptage incorrect. Veuillez vérifier votre code.' });
+      }
+    }
+
     // Decrypt data
     const algorithm = 'aes-256-cbc';
     const key = crypto.scryptSync(decryptionCode, 'riziky-salt-2024', 32);
@@ -243,7 +293,7 @@ router.post('/restore', authMiddleware, (req, res) => {
     
     // Restore each file
     let restoredCount = 0;
-    DB_FILES.forEach(file => {
+    getDbFiles().forEach(file => {
       if (backupData[file] !== undefined) {
         const filePath = path.join(dbPath, file);
         writeJson(filePath, backupData[file]);
@@ -293,18 +343,19 @@ router.post('/delete-all', authMiddleware, (req, res) => {
     const adminPrincipaleUsers = users.filter(u => u.role === 'administrateur principale');
 
     // Delete all data - write empty arrays/objects, but keep admin principale in users
-    DB_FILES.forEach(file => {
+    getDbFiles().forEach(file => {
       const filePath = path.join(dbPath, file);
       if (fs.existsSync(filePath)) {
         if (file === 'users.json') {
-          // Keep only admin principale users
           writeJson(filePath, adminPrincipaleUsers);
-        } else if (file === 'depensefixe.json') {
-          writeJson(filePath, {});
-        } else if (file === 'settings.json') {
-          writeJson(filePath, {});
         } else {
-          writeJson(filePath, []);
+          // Detect if the file contains an object or array, reset accordingly
+          const currentData = readJson(filePath);
+          if (currentData !== null && !Array.isArray(currentData) && typeof currentData === 'object') {
+            writeJson(filePath, {});
+          } else {
+            writeJson(filePath, []);
+          }
         }
       }
     });

@@ -8,7 +8,7 @@
  * - Base de données JSON (fichiers dans server/db/)
  * - Synchronisation temps réel via SSE (/api/sync/events)
  * - Sécurité : rate limiting, sanitization, headers sécurisés
- * - CORS configuré pour Vercel, Lovable et localhost
+ * - CORS configuré pour Vercel et localhost
  * 
  * @module server
  * @version 4.2.0
@@ -45,7 +45,7 @@ const PORT = process.env.PORT || 10000;
 // Compression pour performance
 app.use(compression({
   filter: (req, res) => {
-    if (req.path === '/api/sync/events' || req.path === '/api/messagerie/events') {
+  if (req.path === '/api/sync/events' || req.path === '/api/messagerie/events' || req.path === '/api/admin-chat/events') {
       return false;
     }
     return compression.filter(req, res);
@@ -109,7 +109,7 @@ app.use(cors(corsOptions));
 
 // Ne pas bloquer SSE (connexion longue) avec le rate-limit global
 app.use((req, res, next) => {
-  if (req.path === '/api/sync/events' || req.path === '/api/messagerie/events') {
+  if (req.path === '/api/sync/events' || req.path === '/api/messagerie/events' || req.path === '/api/admin-chat/events') {
     return next();
   }
   return rateLimitMiddleware('general')(req, res, next);
@@ -122,9 +122,10 @@ app.use(suspiciousActivityLogger);
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 
-// Sanitization de tous les inputs (skip for drawing uploads - base64 data)
+// Sanitization de tous les inputs
+// Skip pour payloads volumineux/chiffrés qui seraient tronqués par la sanitization
 app.use((req, res, next) => {
-  if (req.path === '/api/notes/upload-drawing') {
+  if (req.path === '/api/notes/upload-drawing' || req.path === '/api/settings/restore') {
     return next();
   }
   return sanitizeMiddleware(req, res, next);
@@ -285,6 +286,10 @@ const avanceRoutes = require('./routes/avance');
 const profileRoutes = require('./routes/profile');
 const messagerieRoutes = require('./routes/messagerie');
 const settingsRoutes = require('./routes/settings');
+const indisponibleRoutes = require('./routes/indisponible');
+const moduleSettingsRoutes = require('./routes/moduleSettings');
+const parametresRoutes = require('./routes/parametres');
+const adminChatRoutes = require('./routes/adminChat');
 
 // Use routes
 app.use('/api/auth', authRoutes);
@@ -317,6 +322,10 @@ app.use('/api/avances', avanceRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/messagerie', messagerieRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/indisponible', indisponibleRoutes);
+app.use('/api/module-settings', moduleSettingsRoutes);
+app.use('/api/parametres', parametresRoutes);
+app.use('/api/admin-chat', adminChatRoutes);
 
 // Static file serving for uploaded files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

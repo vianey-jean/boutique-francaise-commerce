@@ -14,7 +14,8 @@ import {
   User,
   Search,
   Sparkles,
-  Crown
+  Crown,
+  Users
 } from 'lucide-react';
 import { useMessages, Message } from '@/hooks/use-messages';
 import { useAuth } from '@/contexts/AuthContext';
@@ -26,13 +27,16 @@ import { fr } from 'date-fns/locale';
 import { Input } from '@/components/ui/input';
 import PremiumLoading from '@/components/ui/premium-loading';
 import { motion } from 'framer-motion';
+import AdminToAdminChat from '@/components/livechat/AdminToAdminChat';
 
 const MessagesPage: React.FC = () => {
   const { messages, unreadCount, isLoading, markAsRead, markAsUnread, deleteMessage } = useMessages();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { toast } = useToast();
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState<'inbox' | 'admin'>('inbox');
+  const isAdmin = user?.role === 'administrateur' || user?.role === 'administrateur principale';
 
   if (!isAuthenticated) {
     return (
@@ -131,6 +135,39 @@ const MessagesPage: React.FC = () => {
             </div>
           </motion.div>
 
+          {/* Tab switcher for admins */}
+          {isAdmin && (
+            <div className="flex items-center justify-center gap-2 mb-8">
+              <button
+                onClick={() => setActiveTab('inbox')}
+                className={`px-6 py-3 rounded-2xl font-semibold text-sm transition-all ${
+                  activeTab === 'inbox'
+                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-[0_8px_20px_rgba(168,85,247,0.3)]'
+                    : 'bg-white/[0.05] text-purple-300/60 hover:bg-white/[0.08] border border-white/[0.08]'
+                }`}
+              >
+                <Mail className="h-4 w-4 inline mr-2" />
+                Boîte de réception
+              </button>
+              <button
+                onClick={() => setActiveTab('admin')}
+                className={`px-6 py-3 rounded-2xl font-semibold text-sm transition-all ${
+                  activeTab === 'admin'
+                    ? 'bg-gradient-to-r from-indigo-500 to-blue-500 text-white shadow-[0_8px_20px_rgba(99,102,241,0.3)]'
+                    : 'bg-white/[0.05] text-blue-300/60 hover:bg-white/[0.08] border border-white/[0.08]'
+                }`}
+              >
+                <Users className="h-4 w-4 inline mr-2" />
+                Chat Admin
+              </button>
+            </div>
+          )}
+
+          {activeTab === 'admin' && isAdmin ? (
+            <div className="max-w-2xl mx-auto" style={{ height: '600px' }}>
+              <AdminToAdminChat />
+            </div>
+          ) : (
           <div className="grid lg:grid-cols-5 gap-6 max-w-8xl mx-auto">
             {/* Sidebar */}
             <div className="lg:col-span-2">
@@ -300,6 +337,7 @@ const MessagesPage: React.FC = () => {
               )}
             </div>
           </div>
+          )}
         </div>
       </div>
     </Layout>

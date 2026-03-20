@@ -45,7 +45,7 @@ const PORT = process.env.PORT || 10000;
 // Compression pour performance
 app.use(compression({
   filter: (req, res) => {
-  if (req.path === '/api/sync/events' || req.path === '/api/messagerie/events' || req.path === '/api/admin-chat/events') {
+    if (req.path === '/api/sync/events' || req.path === '/api/messagerie/events') {
       return false;
     }
     return compression.filter(req, res);
@@ -109,7 +109,7 @@ app.use(cors(corsOptions));
 
 // Ne pas bloquer SSE (connexion longue) avec le rate-limit global
 app.use((req, res, next) => {
-  if (req.path === '/api/sync/events' || req.path === '/api/messagerie/events' || req.path === '/api/admin-chat/events') {
+  if (req.path === '/api/sync/events' || req.path === '/api/messagerie/events') {
     return next();
   }
   return rateLimitMiddleware('general')(req, res, next);
@@ -289,7 +289,6 @@ const settingsRoutes = require('./routes/settings');
 const indisponibleRoutes = require('./routes/indisponible');
 const moduleSettingsRoutes = require('./routes/moduleSettings');
 const parametresRoutes = require('./routes/parametres');
-const adminChatRoutes = require('./routes/adminChat');
 
 // Use routes
 app.use('/api/auth', authRoutes);
@@ -325,7 +324,6 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/indisponible', indisponibleRoutes);
 app.use('/api/module-settings', moduleSettingsRoutes);
 app.use('/api/parametres', parametresRoutes);
-app.use('/api/admin-chat', adminChatRoutes);
 
 // Static file serving for uploaded files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

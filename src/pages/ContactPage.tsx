@@ -11,6 +11,7 @@ import Layout from '@/components/Layout';
 import { useMessages } from '@/hooks/use-messages';
 import { motion, AnimatePresence } from "framer-motion";
 import LiveChatVisitor from '@/components/livechat/LiveChatVisitor';
+import SEOHead from '@/components/SEOHead';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://server-gestion-ventes.onrender.com';
 
@@ -28,6 +29,7 @@ const ContactPage: React.FC = () => {
   const [adminOnline, setAdminOnline] = useState(false);
   const [showLiveChat, setShowLiveChat] = useState(false);
   const [submittedName, setSubmittedName] = useState(localStorage.getItem('livechat_pseudo') || '');
+  const [liveAdminId, setLiveAdminId] = useState<string>('1');
 
   const { toast } = useToast();
   const { sendMessage } = useMessages();
@@ -49,6 +51,7 @@ const ContactPage: React.FC = () => {
         if (res.ok) {
           const data = await res.json();
           setAdminOnline(data.online);
+          if (data.adminId) setLiveAdminId(data.adminId);
         }
       } catch { setAdminOnline(false); }
     };
@@ -142,7 +145,7 @@ const ContactPage: React.FC = () => {
             {showLiveChat && adminOnline && (
               <LiveChatVisitor
                 visitorNom={submittedName || 'Visiteur'}
-                adminId="1"
+                adminId={liveAdminId}
                 onClose={() => setShowLiveChat(false)}
               />
             )}
@@ -154,6 +157,11 @@ const ContactPage: React.FC = () => {
 
   return (
     <Layout>
+      <SEOHead
+        title="Contact"
+        description="Contactez l'équipe Gestion Vente. Support technique, partenariat ou consultation - nous répondons sous 24h."
+        canonical="https://riziky-boutic.vercel.app/contact"
+      />
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-950/50 to-indigo-950 relative">
         {/* Background effects */}
         <div className="fixed inset-0 overflow-hidden pointer-events-none">

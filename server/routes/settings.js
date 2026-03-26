@@ -80,6 +80,113 @@ const getDbFiles = () => {
   }
 };
 
+const isPlainObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
+
+const sortDeep = (value) => {
+  if (Array.isArray(value)) {
+    return value.map(sortDeep);
+  }
+
+  if (isPlainObject(value)) {
+    return Object.keys(value)
+      .sort()
+      .reduce((acc, key) => {
+        acc[key] = sortDeep(value[key]);
+        return acc;
+      }, {});
+  }
+
+  return value;
+};
+
+const stableStringify = (value) => JSON.stringify(sortDeep(value));
+
+const getComparableIdentity = (item) => {
+  if (!isPlainObject(item)) {
+    return stableStringify(item);
+  }
+
+  const priorityKeys = ['id', '_id', 'email', 'code', 'reference', 'numero', 'phone', 'nom', 'name'];
+  const matchedKey = priorityKeys.find((key) => item[key] !== undefined && item[key] !== null && item[key] !== '');
+
+  return matchedKey ? `${matchedKey}:${String(item[matchedKey])}` : stableStringify(item);
+};
+
+const areItemsEquivalent = (existingItem, incomingItem) => {
+  if (stableStringify(existingItem) === stableStringify(incomingItem)) {
+    return true;
+  }
+
+  if (isPlainObject(existingItem) && isPlainObject(incomingItem)) {
+    return getComparableIdentity(existingItem) === getComparableIdentity(incomingItem);
+  }
+
+  return false;
+};
+
+const mergeRestoreData = (existingData, incomingData) => {
+  if (existingData === null || existingData === undefined) {
+    return { data: incomingData, added: 1, skipped: 0, changed: true };
+  }
+
+  if (Array.isArray(existingData) && Array.isArray(incomingData)) {
+    const merged = [...existingData];
+    let added = 0;
+    let skipped = 0;
+
+    incomingData.forEach((incomingItem) => {
+      const alreadyExists = existingData.some((existingItem) => areItemsEquivalent(existingItem, incomingItem));
+
+      if (alreadyExists) {
+        skipped += 1;
+      } else {
+        merged.push(incomingItem);
+        added += 1;
+      }
+    });
+
+    return { data: merged, added, skipped, changed: added > 0 };
+  }
+
+  if (isPlainObject(existingData) && isPlainObject(incomingData)) {
+    const merged = { ...existingData };
+    let added = 0;
+    let skipped = 0;
+    let changed = false;
+
+    Object.entries(incomingData).forEach(([key, value]) => {
+      if (!(key in existingData)) {
+        merged[key] = value;
+        added += 1;
+        changed = true;
+        return;
+      }
+
+      const nested = mergeRestoreData(existingData[key], value);
+
+      if (nested.changed) {
+        merged[key] = nested.data;
+        changed = true;
+      }
+
+      added += nested.added;
+      skipped += nested.skipped;
+
+      if (!nested.changed && stableStringify(existingData[key]) === stableStringify(value)) {
+        skipped += 1;
+      }
+    });
+
+    return { data: merged, added, skipped, changed };
+  }
+
+  if (stableStringify(existingData) === stableStringify(incomingData)) {
+    return { data: existingData, added: 0, skipped: 1, changed: false };
+  }
+
+  return { data: existingData, added: 0, skipped: 1, changed: false };
+};
+
 // ==================
 // GET /api/settings
 // ==================
@@ -134,7 +241,6 @@ router.put('/user-role', authMiddleware, (req, res) => {
       return res.status(400).json({ message: 'ID utilisateur requis' });
     }
 
-    // Prevent changing admin principale role
     const users = readJson(usersPath) || [];
     const userIndex = users.findIndex(u => u.id === userId);
     if (userIndex === -1) {
@@ -145,13 +251,13 @@ router.put('/user-role', authMiddleware, (req, res) => {
       return res.status(403).json({ message: 'Impossible de modifier le rôle de l\'administrateur principale' });
     }
 
-    // Only allow '' (simple) or 'administrateur'
     if (newRole !== '' && newRole !== 'administrateur') {
       return res.status(400).json({ message: 'Rôle invalide' });
     }
 
     if (newRole === '') {
       delete users[userIndex].role;
+      delete users[userIndex].specification;
     } else {
       users[userIndex].role = newRole;
     }
@@ -162,6 +268,46 @@ router.put('/user-role', authMiddleware, (req, res) => {
     res.json({ success: true, user: userWithoutPassword });
   } catch (error) {
     console.error('Error changing user role:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+});
+
+// ==================
+// PUT /api/settings/user-specification - Change user specification
+// ==================
+router.put('/user-specification', authMiddleware, (req, res) => {
+  try {
+    if (!isAdminPrincipale(req.user)) {
+      return res.status(403).json({ message: 'Accès refusé. Administrateur principale requis.' });
+    }
+
+    const { userId, specification } = req.body;
+    if (!userId) {
+      return res.status(400).json({ message: 'ID utilisateur requis' });
+    }
+
+    const users = readJson(usersPath) || [];
+    const userIndex = users.findIndex(u => u.id === userId);
+    if (userIndex === -1) {
+      return res.status(404).json({ message: 'Utilisateur non trouvé' });
+    }
+
+    if (users[userIndex].role !== 'administrateur') {
+      return res.status(400).json({ message: 'Seul un administrateur peut avoir une spécification' });
+    }
+
+    if (specification === 'live') {
+      users[userIndex].specification = 'live';
+    } else {
+      delete users[userIndex].specification;
+    }
+
+    writeJson(usersPath, users);
+
+    const { password, ...userWithoutPassword } = users[userIndex];
+    res.json({ success: true, user: userWithoutPassword });
+  } catch (error) {
+    console.error('Error changing user specification:', error);
     res.status(500).json({ message: 'Erreur serveur' });
   }
 });
@@ -265,7 +411,6 @@ router.post('/restore', authMiddleware, (req, res) => {
       return res.status(400).json({ message: 'Données et code de décryptage requis' });
     }
 
-    // Verify the decryption code against the stored hash first
     if (encryptedData.codeHash) {
       const codeMatch = bcrypt.compareSync(decryptionCode, encryptedData.codeHash);
       if (!codeMatch) {
@@ -273,11 +418,10 @@ router.post('/restore', authMiddleware, (req, res) => {
       }
     }
 
-    // Decrypt data
     const algorithm = 'aes-256-cbc';
     const key = crypto.scryptSync(decryptionCode, 'riziky-salt-2024', 32);
     const iv = Buffer.from(encryptedData.iv, 'hex');
-    
+
     let decrypted;
     try {
       const decipher = crypto.createDecipheriv(algorithm, key, iv);
@@ -287,24 +431,54 @@ router.post('/restore', authMiddleware, (req, res) => {
       return res.status(400).json({ message: 'Code de décryptage incorrect. Impossible de lire les données.' });
     }
 
-    // Verify checksum
     const backupData = JSON.parse(decrypted);
     const checksum = crypto.createHash('sha256').update(decrypted).digest('hex');
-    
-    // Restore each file
-    let restoredCount = 0;
+    if (encryptedData.checksum && encryptedData.checksum !== checksum) {
+      return res.status(400).json({ message: 'Fichier corrompu ou incomplet. Vérifiez la sauvegarde.' });
+    }
+
+    let updatedFilesCount = 0;
+    let unchangedFilesCount = 0;
+    let totalAddedEntries = 0;
+
     getDbFiles().forEach(file => {
-      if (backupData[file] !== undefined) {
-        const filePath = path.join(dbPath, file);
-        writeJson(filePath, backupData[file]);
-        restoredCount++;
+      if (backupData[file] === undefined) {
+        return;
+      }
+
+      const filePath = path.join(dbPath, file);
+      const existingData = readJson(filePath);
+      const mergeResult = mergeRestoreData(existingData, backupData[file]);
+
+      if (mergeResult.changed) {
+        writeJson(filePath, mergeResult.data);
+        updatedFilesCount += 1;
+        totalAddedEntries += mergeResult.added;
+      } else {
+        unchangedFilesCount += 1;
       }
     });
 
-    res.json({
+    if (updatedFilesCount === 0 && totalAddedEntries === 0) {
+      return res.json({
+        success: true,
+        status: 'unchanged',
+        message: 'Ces données déjà dans la base de donnée.',
+        metadata: backupData._metadata,
+        updatedFilesCount,
+        unchangedFilesCount,
+        totalAddedEntries
+      });
+    }
+
+    return res.json({
       success: true,
-      message: `${restoredCount} fichiers restaurés avec succès`,
-      metadata: backupData._metadata
+      status: 'updated',
+      message: 'Vos donné sont mise a jours.',
+      metadata: backupData._metadata,
+      updatedFilesCount,
+      unchangedFilesCount,
+      totalAddedEntries
     });
   } catch (error) {
     console.error('Error restoring backup:', error);

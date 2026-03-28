@@ -1,3 +1,15 @@
+/**
+ * settingsApi — Service API pour les paramètres de l'application
+ * 
+ * Endpoints :
+ * - GET /api/settings : récupérer les paramètres globaux + statut admin
+ * - PUT /api/settings : modifier les paramètres (admin requis)
+ * - POST /api/settings/backup : sauvegarder toutes les données (chiffrement AES-256)
+ * - POST /api/settings/restore : restaurer des données depuis un fichier chiffré
+ * - POST /api/settings/delete-all : supprimer toutes les données (admin principale)
+ * - POST /api/settings/verify-password : vérifier le mot de passe admin
+ * - POST /api/settings/auto-backup : sauvegarde automatique avec mot de passe
+ */
 import api from '../../service/api';
 
 export interface AppSettings {
@@ -59,6 +71,11 @@ const settingsApi = {
 
   async verifyPassword(password: string): Promise<{ valid: boolean }> {
     const response = await api.post('/api/settings/verify-password', { password });
+    return response.data;
+  },
+
+  async autoBackup(encryptionPassword: string): Promise<{ success: boolean; backup: any; filename: string }> {
+    const response = await api.post('/api/settings/auto-backup', { encryptionPassword });
     return response.data;
   }
 };
